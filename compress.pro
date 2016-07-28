@@ -1,0 +1,28 @@
+TEMPLATE = app
+CONFIG += console c++14
+CONFIG -= app_bundle
+CONFIG -= qt
+
+QMAKE_CXXFLAGS += -O2
+
+INCLUDEPATH += .    \
+    utils   \
+    image
+
+SOURCES += main.cpp \
+    thirdparty/stb_image/stb_image_impl.c
+
+HEADERS += \
+    thirdparty/stb_image/stb_image.h \
+    thirdparty/stb_image/stb_image_write.h \
+    utils/buffer.hpp    \
+    image/image.h   \
+    image/transform.h \
+    utils/size.hpp \
+    image/metrics.h \
+    utils/point2d.hpp \
+    image/partition.h \
+    encode/encoder.h
+
+DISTFILES += \
+    ../tasks.todo
