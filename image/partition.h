@@ -62,7 +62,8 @@ namespace Frac {
 
         }
         PartitionData create(const Image& image) override {
-            assert(image.size().isAligned(_size.x(), _size.y()) && "cant create grid partition on unaligned image !");
+			assert(image.size().isAligned(_size.x(), _size.y()) && "can't create grid partition on unaligned image!");
+			assert(image.size().isAligned(_offset.x(), _offset.y()) && "can't create grid partition with unaligned offset!");
             PartitionData result;
             uint32_t x = 0, y = 0;
             do {

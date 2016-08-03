@@ -31,7 +31,7 @@ static void test_encoder(const char* path) {
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
-    memset(buffer->get(), 0, w * h);
+    buffer->memset(0);
     Image result = Image(buffer, w, h, w);
     Decoder decoder(result, 10);
     decoder.decode(data);

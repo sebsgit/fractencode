@@ -9,6 +9,29 @@
 
 namespace Frac {
 
+class Image;
+
+class SamplerLinear {
+public:
+    SamplerLinear(const Image& source);
+    uint8_t operator() (uint32_t x, uint32_t y) const;
+private:
+    const uint8_t* _source;
+    const uint32_t _stride;
+};
+
+class SamplerBilinear {
+public:
+    SamplerBilinear(const Image& source);
+    uint8_t operator() (uint32_t x, uint32_t y) const;
+private:
+    const uint8_t* _source;
+    const uint32_t _stride;
+    const uint32_t _width;
+    const uint32_t _height;
+};
+
+
 class Image {
 public:
     Image(const char* fileName, const int channelCount = 1) {
@@ -50,17 +73,6 @@ public:
         const auto offset = y * _stride + x;
         auto buffer = BufferSlice<uint8_t>::slice(_data, offset, _data->size() - offset);
         return Image(buffer, width, height, _stride);
-    }
-    uint8_t value(const uint32_t x, const uint32_t y) const {
-        return _data->get()[x + y * stride()];
-    }
-    uint8_t value_2x2(uint32_t x, uint32_t y) const {
-        if (x == width() - 1)
-            --x;
-        if (y == height() - 1)
-            --y;
-        const double total = u2d(value(x, y)) + u2d(value(x + 1, y)) + u2d(value(x, y + 1)) + u2d(value(x + 1, y + 1));
-        return (uint8_t)(total / 4);
     }
     Image copy() const {
         return Image(this->_data->clone() , width(), height(), stride());

@@ -3,14 +3,15 @@ CONFIG += console c++14
 CONFIG -= app_bundle
 CONFIG -= qt
 
-QMAKE_CXXFLAGS += -O2
+QMAKE_CXXFLAGS += -pg -O1
 
 INCLUDEPATH += .    \
     utils   \
     image
 
 SOURCES += main.cpp \
-    thirdparty/stb_image/stb_image_impl.c
+    thirdparty/stb_image/stb_image_impl.c \
+    image/image.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \

@@ -113,12 +113,13 @@ namespace Frac {
         void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const {
             const auto targetSize = target.size();
             const auto targetPtr = target.data()->get();
+			const SamplerBilinear sourceSampler(source);
             for (uint32_t y = 0 ; y<targetSize.y() ; ++y) {
                 for (uint32_t x = 0 ; x<targetSize.x() ; ++x) {
                     const uint32_t srcY = (y * source.height()) / targetSize.y();
                     const uint32_t srcX = (x * source.width()) / targetSize.x();
                     const auto p = this->map(srcX, srcY, source.size());
-                    const double result = contrast * u2d(source.value_2x2(p.x(), p.y())) + brightness;
+					const double result = contrast * u2d(sourceSampler(p.x(), p.y())) + brightness;
                     targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (uint8_t)result;
                 }
             }

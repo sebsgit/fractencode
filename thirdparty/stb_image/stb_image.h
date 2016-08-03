@@ -3527,7 +3527,7 @@ static int stbi__zbuild_huffman(stbi__zhuffman *z, stbi_uc *sizelist, int num)
          if (s <= STBI__ZFAST_BITS) {
             int j = stbi__bit_reverse(next_code[s],s);
             while (j < (1 << STBI__ZFAST_BITS)) {
-			   if (j < 0 || j >= sizeof(z->fast)/sizeof(z->fast[0]))
+			   if (j < 0 || (size_t)j >= sizeof(z->fast)/sizeof(z->fast[0]))
                   return stbi__err("stbi__zbuild_huffman","invalid array index");
                z->fast[j] = fastv;
                j += (1 << s);
@@ -3596,7 +3596,7 @@ static int stbi__zhuffman_decode_slowpath(stbi__zbuf *a, stbi__zhuffman *z)
    if (s == 16) return -1; // invalid code!
    // code size is s, so:
    b = (k >> (16-s)) - z->firstcode[s] + z->firstsymbol[s];
-   if (b < 0 || b >= sizeof(z->value)/sizeof(z->value[0]))
+   if (b < 0 || (size_t)b >= sizeof(z->value)/sizeof(z->value[0]))
       return stbi__err("stbi__zhuffman_decode","invalid array index");
    STBI_ASSERT(z->size[b] == s);
    a->code_buffer >>= s;
@@ -3609,7 +3609,7 @@ stbi_inline static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z)
    int b,s;
    if (a->num_bits < 16) stbi__fill_bits(a);
    b = a->code_buffer & STBI__ZFAST_MASK;
-   if (b < sizeof(z->fast) / sizeof(z->fast[0])) {
+   if ((size_t)b < sizeof(z->fast) / sizeof(z->fast[0])) {
       b = z->fast[b];
       if (b) {
          s = b >> 9;

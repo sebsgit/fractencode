@@ -27,12 +27,13 @@ namespace Frac {
                     }
                 }
             } else {
+                const SamplerBilinear samplerB(b);
                 for (uint32_t y = 0 ; y < a.height() ; ++y) {
                     const uint32_t yB = (y * b.height()) / a.height();
                     for (uint32_t x = 0 ; x < a.width() ; ++x) {
                         const uint32_t xB = (x * b.width()) / a.width();
                         const Point2du p = t.map(xB, yB, b.size());
-                        const double val = u2d(srcA[x + y * a.stride()]) - u2d(b.value_2x2(p.x(), p.y()));
+                        const double val = u2d(srcA[x + y * a.stride()]) - u2d(samplerB(p.x(), p.y()));
                         sum += val * val;
                     }
                 }

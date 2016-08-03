@@ -36,8 +36,8 @@ public:
     Encoder(const Image& image)
         : _metric(new RootMeanSquare)
     {
-        const Size32u gridOffset(4, 4);
-        const Size32u gridSizeSource(8, 8);
+        const Size32u gridOffset(8, 8);
+        const Size32u gridSizeSource(16, 16);
         const Size32u gridSizeTarget = gridSizeSource / 2;
         GridPartition gridCreatorSource(gridSizeSource, gridOffset);
         GridPartition gridCreatorTarget(gridSizeTarget, gridOffset);
@@ -48,13 +48,6 @@ public:
             item_match_t match = this->matchItem(it, gridSource);
             std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
             std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
-
-            /*std::stringstream ss;
-            ss << "parts/" << debug;
-            gridSource.at(match.i)->image().savePng((ss.str() + "_match.png").c_str());
-            it->image().savePng((ss.str() + "_source.png").c_str());*/
-
-
             _data.items.push_back(match);
             ++debug;
         }
@@ -84,6 +77,7 @@ private:
     score_t matchTransform(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
         score_t result;
         Transform t(Transform::Id);
+        const SamplerBilinear samplerB(b->image());
         do {
             score_t candidate;
             const double N = (double)(a->image().width()) * a->image().height();
@@ -94,7 +88,7 @@ private:
                     const uint32_t srcX = (x * b->image().width()) / a->image().width();
                     const auto p = t.map(srcX, srcY, b->image().size());
                     const double valA = u2d(a->image().data()->get()[x + y * a->image().stride()]);
-                    const double valB = u2d(b->image().value_2x2(p.x(), p.y()));
+                    const double valB = u2d(samplerB(p.x(), p.y()));
                     sumA += valA;
                     sumB += valB;
                     sumA2 += valA * valA;
@@ -130,14 +124,9 @@ public:
     }
     void decode(const Encoder::grid_encode_data_t& data) {
         AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(_target.height() * _target.width());
-        memset(buffer->get(), 100, _target.width() * _target.height());
+        buffer->memset(100);
         Image source(buffer, _target.width(), _target.height(), _target.stride());
         for (int i=0 ; i<_iterations ; ++i) {
-
-            std::stringstream ss;
-            ss << "result" << i << ".png";
-            _target.savePng(ss.str().c_str());
-
             this->decodeStep(source, _target, data);
             source = _target.copy();
         }
@@ -154,15 +143,6 @@ private:
             Transform t = Transform(data.items[p].score.transform);
             t.copy(sourcePart, targetPart, data.items[p].score.contrast, data.items[p].score.brightness);
         }
-
-        /*
-        uint32_t tt = 0;
-        for (uint32_t p = 0 ; p<gridTarget.size() ; ++p) {
-            const Image& source = gridSource.at(tt++)->image();
-            Image& target = gridTarget.at(p)->image();
-            Transform().copy(source, target);
-        }
-        break;*/
     }
 private:
     Image& _target;
