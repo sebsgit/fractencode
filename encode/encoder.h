@@ -87,8 +87,8 @@ private:
                     const uint32_t srcY = (y * b->image().height()) / a->image().height();
                     const uint32_t srcX = (x * b->image().width()) / a->image().width();
                     const auto p = t.map(srcX, srcY, b->image().size());
-                    const double valA = u2d(a->image().data()->get()[x + y * a->image().stride()]);
-                    const double valB = u2d(samplerB(p.x(), p.y()));
+                    const double valA = convert<double, Image::Pixel>(a->image().data()->get()[x + y * a->image().stride()]);
+                    const double valB = convert<double, Image::Pixel>(samplerB(p.x(), p.y()));
                     sumA += valA;
                     sumB += valB;
                     sumA2 += valA * valA;

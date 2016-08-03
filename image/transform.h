@@ -117,7 +117,7 @@ namespace Frac {
                 const uint32_t srcY = (y * source.height()) / targetSize.y();
                 const uint32_t srcX = (x * source.width()) / targetSize.x();
                 const auto p = this->map(srcX, srcY, source.size());
-                const double result = contrast * u2d(sourceSampler(p.x(), p.y())) + brightness;
+                const double result = contrast * convert<double, Image::Pixel>(sourceSampler(p.x(), p.y())) + brightness;
                 targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (uint8_t)result;
             });
         }

@@ -10,8 +10,7 @@ INCLUDEPATH += .    \
     image
 
 SOURCES += main.cpp \
-    thirdparty/stb_image/stb_image_impl.c \
-    image/image.cpp
+    thirdparty/stb_image/stb_image_impl.c
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \

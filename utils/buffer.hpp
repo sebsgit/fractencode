@@ -20,8 +20,19 @@ static double __u2d_lookup[] = {
     224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255
 };
 
-static double u2d(const uint8_t x) noexcept {
-    return __u2d_lookup[x];
+template <typename T, typename U>
+T convert(const U u) {
+    return static_cast<T>(u);
+}
+
+template <>
+double convert(const uint8_t u) {
+    return __u2d_lookup[u];
+}
+
+template <>
+float convert(const uint8_t u) {
+    return __u2d_lookup[u];
 }
 
 template <typename T>
