@@ -9,31 +9,9 @@
 
 namespace Frac {
 
-class Image;
-
-class SamplerLinear {
-public:
-    SamplerLinear(const Image& source);
-    uint8_t operator() (uint32_t x, uint32_t y) const;
-private:
-    const uint8_t* _source;
-    const uint32_t _stride;
-};
-
-class SamplerBilinear {
-public:
-    SamplerBilinear(const Image& source);
-    uint8_t operator() (uint32_t x, uint32_t y) const;
-private:
-    const uint8_t* _source;
-    const uint32_t _stride;
-    const uint32_t _width;
-    const uint32_t _height;
-};
-
-
 class Image {
 public:
+    typedef uint8_t Pixel;
     Image(const char* fileName, const int channelCount = 1) {
         assert(channelCount == 1 && "multiple channels not implemented");
         int components = 0;
@@ -43,10 +21,10 @@ public:
             _width = w;
             _height = h;
             _stride = _width * channelCount;
-            _data.reset(new Buffer<uint8_t>(data, _height * _stride));
+            _data.reset(new Buffer<Pixel>(data, _height * _stride));
         }
     }
-    Image(AbstractBufferPtr<uint8_t> data, uint32_t width, uint32_t height, uint32_t stride)
+    Image(AbstractBufferPtr<Pixel> data, uint32_t width, uint32_t height, uint32_t stride)
         :_data(data)
         ,_width(width)
         ,_height(height)
@@ -58,10 +36,10 @@ public:
     uint32_t width() const { return _width; }
     uint32_t height() const { return _height; }
     uint32_t stride() const { return _stride; }
-    AbstractBufferPtr<uint8_t> data() {
+    AbstractBufferPtr<Pixel> data() {
         return _data;
     }
-    const AbstractBufferPtr<uint8_t> data() const {
+    const AbstractBufferPtr<Pixel> data() const {
         return _data;
     }
     const Size32u size() const noexcept {
@@ -71,7 +49,7 @@ public:
         assert(x + width <= _width);
         assert(y + height <= _height);
         const auto offset = y * _stride + x;
-        auto buffer = BufferSlice<uint8_t>::slice(_data, offset, _data->size() - offset);
+        auto buffer = BufferSlice<Pixel>::slice(_data, offset, _data->size() - offset);
         return Image(buffer, width, height, _stride);
     }
     Image copy() const {
@@ -88,9 +66,51 @@ public:
         }
     }
 private:
-    AbstractBufferPtr<uint8_t> _data;
+    AbstractBufferPtr<Pixel> _data;
     uint32_t _width = 0, _height = 0, _stride = 0;
 };
+
+class SamplerLinear {
+public:
+    SamplerLinear(const Image& source)
+        : _source(source.data()->get())
+        , _stride(source.stride())
+    {
+
+    }
+    Image::Pixel operator() (uint32_t x, uint32_t y) const {
+        return _source[x + y * _stride];
+    }
+private:
+    const Image::Pixel* _source;
+    const uint32_t _stride;
+};
+
+class SamplerBilinear {
+public:
+    SamplerBilinear(const Image& source)
+        : _source(source.data()->get())
+        , _stride(source.stride())
+        , _width(source.width())
+        , _height(source.height())
+    {
+
+    }
+    Image::Pixel operator() (uint32_t x, uint32_t y) const {
+        if (x == _width - 1)
+            --x;
+        if (y == _height - 1)
+            --y;
+        const int total = (int)_source[x + y * _stride] + (int)_source[x + 1 + y * _stride] + (int)_source[x + (y + 1) * _stride] + (int)_source[x + 1 + (y + 1) * _stride];
+        return (Image::Pixel)(total / 4);
+    }
+private:
+    const Image::Pixel* _source;
+    const uint32_t _stride;
+    const uint32_t _width;
+    const uint32_t _height;
+};
+
 
 class Painter {
 public:
@@ -99,10 +119,10 @@ public:
     {
 
     }
-    void set(const uint32_t x, const uint32_t y, const uint8_t color) {
+    void set(const uint32_t x, const uint32_t y, const Image::Pixel color) {
         _image.data()->get()[x + y * _image.stride()] = color;
     }
-    void fill(const uint8_t color) {
+    void fill(const Image::Pixel color) {
         for (uint32_t y = 0 ; y < _image.height() ; ++y) {
             for (uint32_t x = 0 ; x < _image.width() ; ++x) {
                 this->set(x, y, color);

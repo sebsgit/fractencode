@@ -16,8 +16,8 @@ namespace Frac {
     public:
         double distance(const Image& a, const Image& b, const Transform& t = Transform()) const override {
             double sum = 0.0;
-            const uint8_t* srcA = a.data()->get();
-            const uint8_t* srcB = b.data()->get();
+            const auto* srcA = a.data()->get();
+            const auto* srcB = b.data()->get();
             if (a.size() == b.size()) {
                 a.map([&](uint32_t x, uint32_t y) {
                     const Point2du p = t.map(x, y, a.size());

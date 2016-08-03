@@ -68,9 +68,9 @@ namespace Frac {
             if (this->_type == Id)
                 return source;
             const Size32u targetSize = this->map(source.size());
-            AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(targetSize.x() * targetSize.y());
-            const uint8_t* sourcePtr = source.data()->get();
-            uint8_t* targetPtr = buffer->get();
+            AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(targetSize.x() * targetSize.y());
+            const auto* sourcePtr = source.data()->get();
+            auto* targetPtr = buffer->get();
             Image result(buffer, targetSize.x(), targetSize.y(), targetSize.x());
             result.map([&](uint32_t x, uint32_t y) {
                 const Point2du p = this->map(x, y, targetSize);
@@ -132,8 +132,8 @@ namespace Frac {
         Image _resize_impl(const Image& source, const Size32u& targetSize) const {
             if (source.size() != targetSize || this->_type != Id) {
                 const Sampler samplerSource(source);
-                AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(targetSize.x() * targetSize.y());
-                uint8_t* targetPtr = buffer->get();
+                AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(targetSize.x() * targetSize.y());
+                auto* targetPtr = buffer->get();
                 for (uint32_t y = 0 ; y<targetSize.y() ; ++y) {
                     for (uint32_t x = 0 ; x<targetSize.x() ; ++x) {
                         const uint32_t srcY = (y * source.height()) / targetSize.y();
