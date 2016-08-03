@@ -34,7 +34,7 @@ namespace Frac {
                     sum += val * val;
                 });
             }
-            return sqrt(sum);
+            return sqrt(sum / a.size().area());
         }
     };
 }
