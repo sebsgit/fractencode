@@ -19,24 +19,20 @@ namespace Frac {
             const uint8_t* srcA = a.data()->get();
             const uint8_t* srcB = b.data()->get();
             if (a.size() == b.size()) {
-                for (uint32_t y = 0 ; y < a.height() ; ++y) {
-                    for (uint32_t x = 0 ; x < a.width() ; ++x) {
-                        const Point2du p = t.map(x, y, a.size());
-                        const double val = u2d(srcA[x + y * a.stride()]) - u2d(srcB[p.x() + p.y() * b.stride()]);
-                        sum += val * val;
-                    }
-                }
+                a.map([&](uint32_t x, uint32_t y) {
+                    const Point2du p = t.map(x, y, a.size());
+                    const double val = u2d(srcA[x + y * a.stride()]) - u2d(srcB[p.x() + p.y() * b.stride()]);
+                    sum += val * val;
+                });
             } else {
                 const SamplerBilinear samplerB(b);
-                for (uint32_t y = 0 ; y < a.height() ; ++y) {
+                a.map([&](uint32_t x, uint32_t y) {
                     const uint32_t yB = (y * b.height()) / a.height();
-                    for (uint32_t x = 0 ; x < a.width() ; ++x) {
-                        const uint32_t xB = (x * b.width()) / a.width();
-                        const Point2du p = t.map(xB, yB, b.size());
-                        const double val = u2d(srcA[x + y * a.stride()]) - u2d(samplerB(p.x(), p.y()));
-                        sum += val * val;
-                    }
-                }
+                    const uint32_t xB = (x * b.width()) / a.width();
+                    const Point2du p = t.map(xB, yB, b.size());
+                    const double val = u2d(srcA[x + y * a.stride()]) - u2d(samplerB(p.x(), p.y()));
+                    sum += val * val;
+                });
             }
             return sqrt(sum);
         }

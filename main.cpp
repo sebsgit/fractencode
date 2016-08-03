@@ -51,32 +51,10 @@ int main(int argc, char *argv[])
                 painter.set(i, i, 255);
             //corner.savePng("test.png");
             Frac::Transform t;
-            //t.setType(Frac::Transform::Flip_Rotate_270);
-            Frac::Image rescaled = t.resize(image, t.map(Frac::Size32u(186, 931)));
-            //rescaled.savePng("resize.png");
+            t.setType(Frac::Transform::Flip_Rotate_270);
+            t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::NearestNeighbor).savePng("resNN.png");
+            t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::Bilinear).savePng("resBI.png");
             std::cout << Frac::RootMeanSquare().distance(image, image) << '\n';
-//            t = Frac::Transform(Frac::Transform::Rotate_90);
-//            auto rotated = t.map(rescaled);
-//            rotated.savePng("rotated_1_90.png");
-//            t.setType(Frac::Transform::Rotate_180);
-//            rotated = t.map(rescaled);
-//            rotated.savePng("rotated_2_180.png");
-//            t.setType(Frac::Transform::Rotate_270);
-//            rotated = t.map(rescaled);
-//            rotated.savePng("rotated_3_270.png");
-
-//            t.setType(Frac::Transform::Flip);
-//            rotated = t.map(rescaled);
-//            rotated.savePng("rotated_4_flip.png");
-//            t.setType(Frac::Transform::Flip_Rotate_90);
-//            rotated = t.map(rescaled);
-//            rotated.savePng("rotated_5_90_flip.png");
-//            t.setType(Frac::Transform::Flip_Rotate_180);
-//            rotated = t.map(rescaled);
-//            rotated.savePng("rotated_6_180_flip.png");
-//            t.setType(Frac::Transform::Flip_Rotate_270);
-//            rotated = t.map(rescaled);
-//            rotated.savePng("rotated_7_270_flip.png");
         }
     }
     return 0;

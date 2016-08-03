@@ -80,6 +80,13 @@ public:
     void savePng(const char* path) const {
         stbi_write_png(path, _width, _height, 1, _data->get(), _stride);
     }
+    void map(const std::function<void(uint32_t, uint32_t)>& f) const {
+        for (uint32_t y = 0 ; y<this->height() ; ++y) {
+            for (uint32_t x = 0 ; x<this->width() ; ++x) {
+                f(x, y);
+            }
+        }
+    }
 private:
     AbstractBufferPtr<uint8_t> _data;
     uint32_t _width = 0, _height = 0, _stride = 0;

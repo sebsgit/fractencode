@@ -71,13 +71,12 @@ namespace Frac {
             AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(targetSize.x() * targetSize.y());
             const uint8_t* sourcePtr = source.data()->get();
             uint8_t* targetPtr = buffer->get();
-            for (uint32_t y = 0 ; y<targetSize.y() ; ++y) {
-                for (uint32_t x = 0 ; x<targetSize.x() ; ++x) {
-                    const Point2du p = this->map(x, y, targetSize);
-                    targetPtr[x + y * targetSize.x()] = sourcePtr[p.x() + p.y() * source.stride()];
-                }
-            }
-            return Image(buffer, targetSize.x(), targetSize.y(), targetSize.x());
+            Image result(buffer, targetSize.x(), targetSize.y(), targetSize.x());
+            result.map([&](uint32_t x, uint32_t y) {
+                const Point2du p = this->map(x, y, targetSize);
+                targetPtr[x + y * targetSize.x()] = sourcePtr[p.x() + p.y() * source.stride()];
+            });
+            return result;
         }
         Size32u map(const Size32u& s) const noexcept {
             switch(_type) {
@@ -114,39 +113,39 @@ namespace Frac {
             const auto targetSize = target.size();
             const auto targetPtr = target.data()->get();
 			const SamplerBilinear sourceSampler(source);
-            for (uint32_t y = 0 ; y<targetSize.y() ; ++y) {
-                for (uint32_t x = 0 ; x<targetSize.x() ; ++x) {
-                    const uint32_t srcY = (y * source.height()) / targetSize.y();
-                    const uint32_t srcX = (x * source.width()) / targetSize.x();
-                    const auto p = this->map(srcX, srcY, source.size());
-					const double result = contrast * u2d(sourceSampler(p.x(), p.y())) + brightness;
-                    targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (uint8_t)result;
-                }
-            }
+            target.map([&](uint32_t x, uint32_t y) {
+                const uint32_t srcY = (y * source.height()) / targetSize.y();
+                const uint32_t srcX = (x * source.width()) / targetSize.x();
+                const auto p = this->map(srcX, srcY, source.size());
+                const double result = contrast * u2d(sourceSampler(p.x(), p.y())) + brightness;
+                targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (uint8_t)result;
+            });
         }
     private:
         Image _resize_nn(const Image& source, const Size32u& targetSize) const {
+            return this->_resize_impl<SamplerLinear>(source, targetSize);
+        }
+        Image _resize_b(const Image& source, const Size32u& targetSize) const {
+            return this->_resize_impl<SamplerBilinear>(source, targetSize);
+        }
+        template <typename Sampler>
+        Image _resize_impl(const Image& source, const Size32u& targetSize) const {
             if (source.size() != targetSize || this->_type != Id) {
+                const Sampler samplerSource(source);
                 AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(targetSize.x() * targetSize.y());
-                const uint8_t* sourcePtr = source.data()->get();
                 uint8_t* targetPtr = buffer->get();
                 for (uint32_t y = 0 ; y<targetSize.y() ; ++y) {
                     for (uint32_t x = 0 ; x<targetSize.x() ; ++x) {
                         const uint32_t srcY = (y * source.height()) / targetSize.y();
                         const uint32_t srcX = (x * source.width()) / targetSize.x();
                         const auto p = this->map(srcX, srcY, source.size());
-                        targetPtr[x + y * targetSize.x()] = sourcePtr[p.x() + p.y() * source.stride()];
+                        targetPtr[x + y * targetSize.x()] = samplerSource(p.x(), p.y());
                     }
                 }
                 return Image(buffer, targetSize.x(), targetSize.y(), targetSize.x());
             } else {
                 return source;
             }
-        }
-        Image _resize_b(const Image& source, const Size32u& targetSize) const {
-            assert(false);
-            assert(targetSize.x() != 0);
-            return source;
         }
     private:
         Type _type = Id;
