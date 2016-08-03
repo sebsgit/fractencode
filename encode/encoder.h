@@ -33,11 +33,11 @@ public:
     };
 
 public:
-    Encoder(const Image& image)
+    Encoder(const Image& image, int gridSize = 16)
         : _metric(new RootMeanSquare)
     {
-        const Size32u gridOffset(8, 8);
-        const Size32u gridSizeSource(16, 16);
+        const Size32u gridSizeSource(gridSize, gridSize);
+        const Size32u gridOffset = gridSizeSource / 2;
         const Size32u gridSizeTarget = gridSizeSource / 2;
         GridPartition gridCreatorSource(gridSizeSource, gridOffset);
         GridPartition gridCreatorTarget(gridSizeTarget, gridOffset);

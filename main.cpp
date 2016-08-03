@@ -24,10 +24,10 @@ static void test_partition() {
     //image.savePng("grid.png");
 }
 
-static void test_encoder(const char* path) {
+static void test_encoder(const char* path, int gridSize) {
     using namespace Frac;
     Image image(path);
-    Encoder encoder(image);
+    Encoder encoder(image, gridSize);
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         Frac::Image image(argv[1]);
         if (image.data()) {
-            test_encoder(argv[1]);
+            test_encoder(argv[1], argc > 2 ? atoi(argv[2]) : 16);
             Frac::Image corner = image.slice(image.width() / 2, image.height() / 2, image.width() / 2, image.height() / 2);
             Frac::Painter painter(corner);
             for (uint32_t i=0 ; i<corner.height() ; ++i)
@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
             //corner.savePng("test.png");
             Frac::Transform t;
             t.setType(Frac::Transform::Flip_Rotate_270);
-            t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::NearestNeighbor).savePng("resNN.png");
-            t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::Bilinear).savePng("resBI.png");
+           // t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::NearestNeighbor).savePng("resNN.png");
+           // t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::Bilinear).savePng("resBI.png");
             std::cout << Frac::RootMeanSquare().distance(image, image) << '\n';
         }
     }
