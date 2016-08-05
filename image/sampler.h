@@ -5,6 +5,9 @@
 #include "transform.h"
 
 namespace Frac {
+
+class Transform;
+
 class SamplerLinear {
 public:
     SamplerLinear(const Image& source);
@@ -18,6 +21,7 @@ class SamplerBilinear {
 public:
     SamplerBilinear(const Image& source);
     Image::Pixel operator() (uint32_t x, uint32_t y) const;
+    Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const Size32u& s) const;
 private:
     const Image::Pixel* _source;
     const uint32_t _stride;

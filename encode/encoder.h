@@ -87,9 +87,8 @@ private:
                 for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
                     const auto srcY = (y * b->image().height()) / a->image().height();
                     const auto srcX = (x * b->image().width()) / a->image().width();
-                    const auto p = t.map(srcX, srcY, b->image().size());
                     const double valA = convert<double, Image::Pixel>(a->image().data()->get()[x + y * a->image().stride()]);
-                    const double valB = convert<double, Image::Pixel>(samplerB(p.x(), p.y()));
+                    const double valB = convert<double, Image::Pixel>(samplerB(srcX, srcY, t, b->image().size()));
                     sumA += valA;
                     sumB += valB;
                     sumA2 += valA * valA;
