@@ -7,6 +7,34 @@
 #include <cassert>
 #include <cstring>
 
+class CmdArgs {
+public:
+    std::string inputPath;
+    int gridSize = 16;
+    int decodeSteps = -1;
+
+    CmdArgs(int argc, char** argv) {
+        assert(argc > 1);
+        this->inputPath = argv[1];
+        this->_parse(argv + 2, argc - 2);
+    }
+private:
+    void _parse(char** s, const int count) {
+        int index = 0;
+        while (index < count) {
+            std::string tmp(s[index]);
+            if (tmp == "--decode") {
+                decodeSteps = atoi(s[index + 1]);
+                ++index;
+            } else if (tmp == "--grid") {
+                gridSize = atoi(s[index + 1]);
+                ++index;
+            }
+            ++index;
+        }
+    }
+};
+
 static void test_partition() {
     using namespace Frac;
     const uint32_t w = 128, h = 128;
@@ -24,18 +52,19 @@ static void test_partition() {
     //image.savePng("grid.png");
 }
 
-static void test_encoder(const char* path, int gridSize) {
+static void test_encoder(const CmdArgs& args) {
     using namespace Frac;
-    Image image(path);
-    Encoder encoder(image, gridSize);
+    Image image(args.inputPath.c_str());
+    Encoder encoder(image, args.gridSize);
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
     buffer->memset(0);
     Image result = Image(buffer, w, h, w);
-    Decoder decoder(result, 10);
-    decoder.decode(data);
+    Decoder decoder(result, args.decodeSteps);
+    auto stats = decoder.decode(data);
     result.savePng("result.png");
+    std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
 }
 
 int main(int argc, char *argv[])
@@ -44,7 +73,7 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         Frac::Image image(argv[1]);
         if (image.data()) {
-            test_encoder(argv[1], argc > 2 ? atoi(argv[2]) : 16);
+            test_encoder(CmdArgs(argc, argv));
             Frac::Image corner = image.slice(image.width() / 2, image.height() / 2, image.width() / 2, image.height() / 2);
             Frac::Painter painter(corner);
             for (uint32_t i=0 ; i<corner.height() ; ++i)

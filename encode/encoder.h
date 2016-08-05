@@ -84,8 +84,8 @@ private:
             double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
             for (uint32_t y = 0 ; y<a->image().height() ; ++y) {
                 for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
-                    const uint32_t srcY = (y * b->image().height()) / a->image().height();
-                    const uint32_t srcX = (x * b->image().width()) / a->image().width();
+                    const auto srcY = (y * b->image().height()) / a->image().height();
+                    const auto srcX = (x * b->image().width()) / a->image().width();
                     const auto p = t.map(srcX, srcY, b->image().size());
                     const double valA = convert<double, Image::Pixel>(a->image().data()->get()[x + y * a->image().stride()]);
                     const double valB = convert<double, Image::Pixel>(samplerB(p.x(), p.y()));
@@ -117,19 +117,31 @@ private:
 
 class Decoder {
 public:
-    Decoder(Image& target, const int nIterations = 10)
+    struct decode_stats_t {
+        int iterations;
+        double rms;
+    };
+    Decoder(Image& target, const int nMaxIterations = -1, const double rmsEpsilon = 0.00001)
         :_target(target)
-        ,_iterations(nIterations)
+        ,_iterations(nMaxIterations < 0 ? 300 : nMaxIterations)
+        ,_rmsEpsilon(rmsEpsilon)
     {
     }
-    void decode(const Encoder::grid_encode_data_t& data) {
+    decode_stats_t decode(const Encoder::grid_encode_data_t& data) {
         AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(_target.height() * _target.width());
         buffer->memset(100);
         Image source(buffer, _target.width(), _target.height(), _target.stride());
-        for (int i=0 ; i<_iterations ; ++i) {
+        RootMeanSquare metric;
+        int i=0;
+        double rms = 0.0;
+        for ( ; i<_iterations ; ++i) {
             this->decodeStep(source, _target, data);
+            rms = metric.distance(source, _target);
+            if (rms < _rmsEpsilon)
+                break;
             source = _target.copy();
         }
+        return { i, rms };
     }
 private:
     void decodeStep(const Image& source, Image& target, const Encoder::grid_encode_data_t& data) const {
@@ -147,6 +159,7 @@ private:
 private:
     Image& _target;
     const int _iterations;
+    const double _rmsEpsilon;
 };
 
 }
