@@ -30,3 +30,5 @@ HEADERS += \
 
 DISTFILES += \
     ../tasks.todo
+
+OBJECTS_DIR = build
