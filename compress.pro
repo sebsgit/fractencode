@@ -10,7 +10,10 @@ INCLUDEPATH += .    \
     image
 
 SOURCES += main.cpp \
-    thirdparty/stb_image/stb_image_impl.c
+    thirdparty/stb_image/stb_image_impl.c \
+    image/sampler.cpp \
+    image/transform.cpp \
+    utils/utils.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -22,7 +25,8 @@ HEADERS += \
     image/metrics.h \
     utils/point2d.hpp \
     image/partition.h \
-    encode/encoder.h
+    encode/encoder.h \
+    image/sampler.h
 
 DISTFILES += \
     ../tasks.todo

@@ -3,6 +3,7 @@
 
 #include "image/partition.h"
 #include "image/transform.h"
+#include "image/sampler.h"
 #include <iostream>
 #include <sstream>
 
