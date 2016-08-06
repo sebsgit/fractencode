@@ -34,10 +34,19 @@ public:
         Size32u offsetSize;
     };
 
+    struct encode_stats_t {
+        uint64_t rejectedMappings = 0;
+        uint64_t totalMappings = 0;
+
+        void print() {
+            std::cout << "classifier rejected " << rejectedMappings << " out of " << totalMappings << " comparisons.\n";
+        }
+    };
+
 public:
     Encoder(const Image& image, int gridSize = 16)
         : _metric(new RootMeanSquare)
-        , _classifier(new DummyClassifier)
+        , _classifier(new TextureClassifier)
     {
         const Size32u gridSizeSource(gridSize, gridSize);
         const Size32u gridOffset = gridSizeSource / 2;
@@ -51,12 +60,16 @@ public:
             item_match_t match = this->matchItem(it, gridSource);
             std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
             std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
+            std::cout << "va, vb: " << _classifier->variance(it->image()) - _classifier->variance(gridSource.at(match.i)->image()) << "\n";
             _data.items.push_back(match);
             ++debug;
         }
         _data.sourceItemSize = gridSizeSource;
         _data.targetItemSize = gridSizeTarget;
         _data.offsetSize = gridOffset;
+
+        this->_stats.totalMappings = gridSource.size() * gridTarget.size();
+        this->_stats.print();
     }
     grid_encode_data_t data() const {
         return _data;
@@ -74,6 +87,8 @@ private:
                     result.y = it->pos().y();
                     result.i = i;
                 }
+            } else {
+                this->_stats.rejectedMappings++;
             }
             ++i;
         }
@@ -118,6 +133,7 @@ private:
     std::shared_ptr<Metric> _metric;
     std::shared_ptr<ImageClassifier> _classifier;
     grid_encode_data_t _data;
+    mutable encode_stats_t _stats;
 };
 
 class Decoder {

@@ -6,8 +6,29 @@
 #include "buffer.hpp"
 #include "size.hpp"
 #include <cstring>
+#include <unordered_map>
 
 namespace Frac {
+
+//class ImageDataEntry
+
+class ImageData {
+public:
+    static const int KeyMean = 1;
+    static const int KeyVariance = 2;
+
+    void put(int key, double value) {
+        _data[key] = value;
+    }
+    double get(const int key, const double defaultValue = -1.0) const {
+        const auto it = _data.find(key);
+        if (it != _data.end())
+            return it->second;
+        return defaultValue;
+    }
+private:
+    std::unordered_map<int, double> _data;
+};
 
 class Image {
 public:
@@ -65,9 +86,20 @@ public:
             }
         }
     }
+    void map(const std::function<void(Image::Pixel)>& f) const {
+        for (uint32_t y = 0 ; y<this->height() ; ++y) {
+            for (uint32_t x = 0 ; x<this->width() ; ++x) {
+                f(this->_data->get()[x + y * stride()]);
+            }
+        }
+    }
+    ImageData& cache() const {
+        return _cache;
+    }
 private:
     AbstractBufferPtr<Pixel> _data;
     uint32_t _width = 0, _height = 0, _stride = 0;
+    mutable ImageData _cache;
 };
 
 
