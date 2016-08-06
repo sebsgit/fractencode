@@ -39,7 +39,7 @@ public:
         uint64_t totalMappings = 0;
 
         void print() {
-            std::cout << "classifier rejected " << rejectedMappings << " out of " << totalMappings << " comparisons.\n";
+            std::cout << "classifier rejected " << rejectedMappings << " out of " << totalMappings << " comparisons (" << (100.0*rejectedMappings) / totalMappings << ")%\n";
         }
     };
 
@@ -60,7 +60,7 @@ public:
             item_match_t match = this->matchItem(it, gridSource);
             std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
             std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
-            std::cout << "va, vb: " << _classifier->variance(it->image()) - _classifier->variance(gridSource.at(match.i)->image()) << "\n";
+            std::cout << "va, vb: " << ImageStatistics::variance(it->image()) - ImageStatistics::variance(gridSource.at(match.i)->image()) << "\n";
             _data.items.push_back(match);
             ++debug;
         }
@@ -101,14 +101,13 @@ private:
         do {
             score_t candidate;
             const double N = (double)(a->image().width()) * a->image().height();
-            double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
+            double sumA = ImageStatistics::sum(a->image()), sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
             for (uint32_t y = 0 ; y<a->image().height() ; ++y) {
                 for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
                     const auto srcY = (y * b->image().height()) / a->image().height();
                     const auto srcX = (x * b->image().width()) / a->image().width();
                     const double valA = convert<double, Image::Pixel>(a->image().data()->get()[x + y * a->image().stride()]);
                     const double valB = convert<double, Image::Pixel>(samplerB(srcX, srcY, t, b->image().size()));
-                    sumA += valA;
                     sumB += valB;
                     sumA2 += valA * valA;
                     sumB2 += valB * valB;
