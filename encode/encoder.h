@@ -4,6 +4,7 @@
 #include "image/partition.h"
 #include "image/transform.h"
 #include "image/sampler.h"
+#include "classifier.h"
 #include <iostream>
 #include <sstream>
 
@@ -36,6 +37,7 @@ public:
 public:
     Encoder(const Image& image, int gridSize = 16)
         : _metric(new RootMeanSquare)
+        , _classifier(new DummyClassifier)
     {
         const Size32u gridSizeSource(gridSize, gridSize);
         const Size32u gridOffset = gridSizeSource / 2;
@@ -64,12 +66,14 @@ private:
         item_match_t result;
         uint32_t i = 0;
         for (auto it : data) {
-            score_t score = this->matchTransform(a, it);
-            if (score.distance < result.score.distance) {
-                result.score = score;
-                result.x = it->pos().x();
-                result.y = it->pos().y();
-                result.i = i;
+            if (this->_classifier->compare(a->image(), it->image())) {
+                score_t score = this->matchTransform(a, it);
+                if (score.distance < result.score.distance) {
+                    result.score = score;
+                    result.x = it->pos().x();
+                    result.y = it->pos().y();
+                    result.i = i;
+                }
             }
             ++i;
         }
@@ -112,6 +116,7 @@ private:
     }
 private:
     std::shared_ptr<Metric> _metric;
+    std::shared_ptr<ImageClassifier> _classifier;
     grid_encode_data_t _data;
 };
 

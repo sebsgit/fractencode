@@ -26,7 +26,8 @@ HEADERS += \
     utils/point2d.hpp \
     image/partition.h \
     encode/encoder.h \
-    image/sampler.h
+    image/sampler.h \
+    encode/classifier.h
 
 DISTFILES += \
     ../tasks.todo
