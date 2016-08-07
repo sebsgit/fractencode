@@ -2,6 +2,8 @@
 #define CLASSIFIER_H
 
 #include "image.h"
+#include <memory>
+#include <vector>
 
 namespace Frac {
     class ImageClassifier {
@@ -10,9 +12,24 @@ namespace Frac {
         virtual bool compare(const Image& a, const Image& b) const = 0;
     };
 
+    class CombinedClassifier : public ImageClassifier {
+    public:
+        CombinedClassifier& add(std::shared_ptr<ImageClassifier> p) {
+            this->_classifiers.push_back(p);
+            return *this;
+        }
+        bool compare(const Image& a, const Image& b) const override {
+            for (const auto& p : _classifiers)
+                if (!p->compare(a, b))
+                    return false;
+            return true;
+        }
+    private:
+        std::vector<std::shared_ptr<ImageClassifier>> _classifiers;
+    };
+
     class DummyClassifier : public ImageClassifier {
     public:
-        ~DummyClassifier() {}
         bool compare(const Image&, const Image&) const override {
             return true;
         }
@@ -20,7 +37,6 @@ namespace Frac {
 
     class TextureClassifier : public ImageClassifier {
     public:
-        ~TextureClassifier() {}
         bool compare(const Image& a, const Image& b) const override {
             const auto va = ImageStatistics::variance(a);
             const auto vb = ImageStatistics::variance(b);

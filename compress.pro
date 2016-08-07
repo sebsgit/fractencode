@@ -1,9 +1,9 @@
 TEMPLATE = app
+TARGET = compress
 CONFIG += console c++14
 CONFIG -= app_bundle
 CONFIG -= qt
-
-QMAKE_CXXFLAGS += -pg -O1
+CONFIG += debug_and_release
 
 INCLUDEPATH += .    \
     utils   \
@@ -13,7 +13,8 @@ SOURCES += main.cpp \
     thirdparty/stb_image/stb_image_impl.c \
     image/sampler.cpp \
     image/transform.cpp \
-    utils/utils.cpp
+    utils/utils.cpp \
+    image/imageutils.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -33,3 +34,7 @@ DISTFILES += \
     ../tasks.todo
 
 OBJECTS_DIR = build
+
+
+QMAKE_CXXFLAGS_DEBUG *= -pg
+QMAKE_LFLAGS_DEBUG *= -pg
