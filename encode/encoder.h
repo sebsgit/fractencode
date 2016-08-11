@@ -34,6 +34,12 @@ public:
         Size32u offsetSize;
     };
 
+    struct encode_parameters_t {
+        int sourceGridSize = 16;
+        double rmsThreshold = 0.0;
+        double sMax = -1.0;
+    };
+
     struct encode_stats_t {
         uint64_t rejectedMappings = 0;
         uint64_t totalMappings = 0;
@@ -44,11 +50,12 @@ public:
     };
 
 public:
-    Encoder(const Image& image, int gridSize = 16)
+    Encoder(const Image& image, const encode_parameters_t& p)
         : _metric(new RootMeanSquare)
         , _classifier(new TextureClassifier)
+        , _encodeParameters(p)
     {
-        const Size32u gridSizeSource(gridSize, gridSize);
+        const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
         const Size32u gridOffset = gridSizeSource / 2;
         const Size32u gridSizeTarget = gridSizeSource / 2;
         GridPartition gridCreatorSource(gridSizeSource, gridOffset);
@@ -87,6 +94,8 @@ private:
                     result.y = it->pos().y();
                     result.i = i;
                 }
+                if (this->checkDistance(result.score.distance))
+                    break;
             } else {
                 this->_stats.rejectedMappings++;
             }
@@ -115,7 +124,7 @@ private:
                 }
             }
             const double tmp = (N * sumA2 - sumA * sumA);
-            const double s = (fabs(tmp) < 0.00001) ? 0.0 : (N * sumAB - sumA * sumB) / tmp;
+            const double s = this->truncateSMax( fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp );
             const double o = (sumB - s * sumA) / N;
             candidate.contrast = s;
             candidate.brightness = o;
@@ -125,13 +134,24 @@ private:
             if (candidate.distance <= result.distance) {
                 result = candidate;
             }
+            if (this->checkDistance(result.distance))
+                break;
         } while (t.next() != Transform::Id);
         return result;
+    }
+    double truncateSMax(const double s) const noexcept {
+        if (_encodeParameters.sMax > 0.0)
+            return s > _encodeParameters.sMax ? _encodeParameters.sMax : s;
+        return s;
+    }
+    bool checkDistance(const double d) const noexcept {
+        return d <= _encodeParameters.rmsThreshold;
     }
 private:
     std::shared_ptr<Metric> _metric;
     std::shared_ptr<ImageClassifier> _classifier;
     grid_encode_data_t _data;
+    const encode_parameters_t _encodeParameters;
     mutable encode_stats_t _stats;
 };
 

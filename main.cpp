@@ -10,7 +10,7 @@
 class CmdArgs {
 public:
     std::string inputPath;
-    int gridSize = 16;
+    Frac::Encoder::encode_parameters_t encoderParams;
     int decodeSteps = -1;
 
     CmdArgs(int argc, char** argv) {
@@ -27,7 +27,13 @@ private:
                 decodeSteps = atoi(s[index + 1]);
                 ++index;
             } else if (tmp == "--grid") {
-                gridSize = atoi(s[index + 1]);
+                encoderParams.sourceGridSize = atoi(s[index + 1]);
+                ++index;
+            } else if (tmp == "--rms") {
+                encoderParams.rmsThreshold = atof(s[index + 1]);
+                ++index;
+            } else if (tmp == "--smax") {
+                encoderParams.sMax = atof(s[index + 1]);
                 ++index;
             }
             ++index;
@@ -55,7 +61,7 @@ static void test_partition() {
 static void test_encoder(const CmdArgs& args) {
     using namespace Frac;
     Image image(args.inputPath.c_str());
-    Encoder encoder(image, args.gridSize);
+    Encoder encoder(image, args.encoderParams);
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
