@@ -141,7 +141,7 @@ private:
     }
     double truncateSMax(const double s) const noexcept {
         if (_encodeParameters.sMax > 0.0)
-            return s > _encodeParameters.sMax ? _encodeParameters.sMax : s;
+            return s > _encodeParameters.sMax ? _encodeParameters.sMax : (s < -_encodeParameters.sMax ? -_encodeParameters.sMax : s);
         return s;
     }
     bool checkDistance(const double d) const noexcept {
