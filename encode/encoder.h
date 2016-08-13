@@ -4,6 +4,7 @@
 #include "image/partition.h"
 #include "image/transform.h"
 #include "image/sampler.h"
+#include "transformmatcher.h"
 #include "classifier.h"
 #include <iostream>
 #include <sstream>
@@ -14,14 +15,8 @@ namespace Frac {
 
 class Encoder {
 public:
-    struct score_t {
-        double distance = 100000.0;
-        double contrast = 0.0;
-        double brightness = 0.0;
-        Transform::Type transform = Transform::Id;
-    };
     struct item_match_t {
-        score_t score;
+        TransformMatcher::score_t score;
         uint32_t x = 0;
         uint32_t y = 0;
 
@@ -54,6 +49,7 @@ public:
         : _metric(new RootMeanSquare)
         , _classifier(new TextureClassifier)
         , _encodeParameters(p)
+        , _matcher(*_metric, p.rmsThreshold, p.sMax)
     {
         const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
         const Size32u gridOffset = gridSizeSource / 2;
@@ -87,14 +83,14 @@ private:
         uint32_t i = 0;
         for (auto it : data) {
             if (this->_classifier->compare(a->image(), it->image())) {
-                score_t score = this->matchTransform(a, it);
+                auto score = this->_matcher.match(a, it);
                 if (score.distance < result.score.distance) {
                     result.score = score;
                     result.x = it->pos().x();
                     result.y = it->pos().y();
                     result.i = i;
                 }
-                if (this->checkDistance(result.score.distance))
+                if (this->_matcher.checkDistance(result.score.distance))
                     break;
             } else {
                 this->_stats.rejectedMappings++;
@@ -103,55 +99,12 @@ private:
         }
         return result;
     }
-    score_t matchTransform(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
-        score_t result;
-        Transform t(Transform::Id);
-        const SamplerBilinear samplerB(b->image());
-        do {
-            score_t candidate;
-            const double N = (double)(a->image().width()) * a->image().height();
-            double sumA = ImageStatistics::sum(a->image()), sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
-            for (uint32_t y = 0 ; y<a->image().height() ; ++y) {
-                for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
-                    const auto srcY = (y * b->image().height()) / a->image().height();
-                    const auto srcX = (x * b->image().width()) / a->image().width();
-                    const double valA = convert<double, Image::Pixel>(a->image().data()->get()[x + y * a->image().stride()]);
-                    const double valB = convert<double, Image::Pixel>(samplerB(srcX, srcY, t, b->image().size()));
-                    sumB += valB;
-                    sumA2 += valA * valA;
-                    sumB2 += valB * valB;
-                    sumAB += valA * valB;
-                }
-            }
-            const double tmp = (N * sumA2 - sumA * sumA);
-            const double s = this->truncateSMax( fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp );
-            const double o = (sumB - s * sumA) / N;
-            candidate.contrast = s;
-            candidate.brightness = o;
-            //auto D = (sumB2 + s * (s * sumA2 - 2 * sumAB + 2 * o * sumA) + o * ( N * o - 2 * sumB)) / N;//
-            candidate.distance = _metric->distance(a->image(), b->image(), t);
-            candidate.transform = t.type();
-            if (candidate.distance <= result.distance) {
-                result = candidate;
-            }
-            if (this->checkDistance(result.distance))
-                break;
-        } while (t.next() != Transform::Id);
-        return result;
-    }
-    double truncateSMax(const double s) const noexcept {
-        if (_encodeParameters.sMax > 0.0)
-            return s > _encodeParameters.sMax ? _encodeParameters.sMax : (s < -_encodeParameters.sMax ? -_encodeParameters.sMax : s);
-        return s;
-    }
-    bool checkDistance(const double d) const noexcept {
-        return d <= _encodeParameters.rmsThreshold;
-    }
 private:
     std::shared_ptr<Metric> _metric;
     std::shared_ptr<ImageClassifier> _classifier;
     grid_encode_data_t _data;
     const encode_parameters_t _encodeParameters;
+    const TransformMatcher _matcher;
     mutable encode_stats_t _stats;
 };
 

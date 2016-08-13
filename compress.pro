@@ -28,7 +28,8 @@ HEADERS += \
     image/partition.h \
     encode/encoder.h \
     image/sampler.h \
-    encode/classifier.h
+    encode/classifier.h \
+    encode/transformmatcher.h
 
 DISTFILES += \
     ../tasks.todo

@@ -36,7 +36,7 @@ namespace Frac {
             return _type;
         }
         Type next() {
-            if (_type == Flip_Rotate_270) {
+            if (_type == Rotate_270) {
                 _type = Id;
             } else {
                 _type = static_cast<Type>((int)(_type + 1));
