@@ -3,6 +3,7 @@
 #include "transform.h"
 #include "metrics.h"
 #include "partition.h"
+#include "utils/timer.h"
 #include <iostream>
 #include <cassert>
 #include <cstring>
@@ -62,15 +63,20 @@ static void test_encoder(const CmdArgs& args) {
     using namespace Frac;
     const Size32u gridSize(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
     const GridPartitionCreator targetCreator(gridSize / 2, gridSize / 2);
+    Timer timer;
     Image image(args.inputPath.c_str());
+    timer.start();
     Encoder encoder(image, args.encoderParams, targetCreator);
+    std::cout << "encoded in " << timer.elapsed() << " s.\n";
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
     buffer->memset(0);
     Image result = Image(buffer, w, h, w);
+    timer.start();
     Decoder decoder(result, args.decodeSteps);
     auto stats = decoder.decode(data);
+    std::cout << "decoded in " << timer.elapsed() << " s.\n";
     result.savePng("result.png");
     std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
 }
