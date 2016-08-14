@@ -31,7 +31,8 @@ HEADERS += \
     image/sampler.h \
     encode/classifier.h \
     encode/transformmatcher.h \
-    image/partition/gridpartition.h
+    image/partition/gridpartition.h \
+    encode/datatypes.h
 
 DISTFILES += \
     ../tasks.todo

@@ -5,16 +5,10 @@
 #include "transform.h"
 #include "metrics.h"
 #include "partition.h"
+#include "datatypes.h"
 
 namespace Frac {
 class TransformMatcher {
-public:
-    struct score_t {
-        double distance = 100000.0;
-        double contrast = 0.0;
-        double brightness = 0.0;
-        Transform::Type transform = Transform::Id;
-    };
 public:
     TransformMatcher(const Metric& metric, const double rmsThreshold, const double sMax)
         :_metric(metric)
@@ -23,12 +17,12 @@ public:
     {
 
     }
-    score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
-        score_t result;
+    transform_score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
+        transform_score_t result;
         Transform t(Transform::Id);
         const SamplerBilinear samplerB(b->image());
         do {
-            score_t candidate;
+            transform_score_t candidate;
             const double N = (double)(a->image().width()) * a->image().height();
             double sumA = ImageStatistics::sum(a->image()), sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
             for (uint32_t y = 0 ; y<a->image().height() ; ++y) {

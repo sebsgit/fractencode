@@ -41,7 +41,7 @@ public:
     ~GridPartitionCreator() {
 
     }
-    PartitionData create(const Image& image) override;
+    Partition create(const Image& image) const override;
 private:
     const Size32u _size;
     const Size32u _offset;

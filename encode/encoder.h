@@ -16,23 +16,9 @@ namespace Frac {
 
 class Encoder {
 public:
-    struct item_match_t {
-        TransformMatcher::score_t score;
-        uint32_t x = 0;
-        uint32_t y = 0;
-    };
-    struct encode_item_t {
-        uint32_t x, y, w, h;
-        item_match_t match;
-    };
-
-    struct grid_encode_data_t {
-        std::vector<encode_item_t> encoded;
-        Size32u sourceItemSize;
-    };
-
     struct encode_parameters_t {
         int sourceGridSize = 16;
+        int latticeSize = 2;
         double rmsThreshold = 0.0;
         double sMax = -1.0;
     };
@@ -47,61 +33,24 @@ public:
     };
 
 public:
-    Encoder(const Image& image, const encode_parameters_t& p)
+    Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& targetCreator)
         : _metric(new RootMeanSquare)
         , _classifier(new TextureClassifier)
         , _encodeParameters(p)
         , _matcher(*_metric, p.rmsThreshold, p.sMax)
     {
         const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
-        const Size32u gridOffset = gridSizeSource / 2;
-        const Size32u gridSizeTarget = gridSizeSource / 2;
+        const Size32u gridOffset = gridSizeSource / p.latticeSize;
         GridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
-        GridPartitionCreator gridCreatorTarget(gridSizeTarget, gridOffset);
-        PartitionData gridSource = gridCreatorSource.create(image);
-        PartitionData gridTarget = gridCreatorTarget.create(image);
-        int debug = 0;
-        for (auto it : gridTarget) {
-            item_match_t match = this->matchItem(it, gridSource);
-            std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
-            std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
-            encode_item_t enc;
-            enc.x = it->pos().x();
-            enc.y = it->pos().y();
-            enc.w = it->image().width();
-            enc.h = it->image().height();
-            enc.match = match;
-            _data.encoded.push_back(enc);
-            ++debug;
-        }
+        Partition gridSource = gridCreatorSource.create(image);
+        Partition gridTarget = targetCreator.create(image);
+        _data = gridTarget.estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);
         _data.sourceItemSize = gridSizeSource;
-
         this->_stats.totalMappings = gridSource.size() * gridTarget.size();
         this->_stats.print();
     }
     grid_encode_data_t data() const {
         return _data;
-    }
-private:
-    item_match_t matchItem(const PartitionItemPtr& a, const PartitionData& data) const {
-        item_match_t result;
-        uint32_t i = 0;
-        for (auto it : data) {
-            if (this->_classifier->compare(a->image(), it->image())) {
-                auto score = this->_matcher.match(a, it);
-                if (score.distance < result.score.distance) {
-                    result.score = score;
-                    result.x = it->pos().x();
-                    result.y = it->pos().y();
-                }
-                if (this->_matcher.checkDistance(result.score.distance))
-                    break;
-            } else {
-                this->_stats.rejectedMappings++;
-            }
-            ++i;
-        }
-        return result;
     }
 private:
     std::shared_ptr<Metric> _metric;
@@ -124,7 +73,7 @@ public:
         ,_rmsEpsilon(rmsEpsilon)
     {
     }
-    decode_stats_t decode(const Encoder::grid_encode_data_t& data) {
+    decode_stats_t decode(const grid_encode_data_t& data) {
         AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(_target.height() * _target.width());
         buffer->memset(100);
         Image source(buffer, _target.width(), _target.height(), _target.stride());
@@ -141,10 +90,10 @@ public:
         return { i, rms };
     }
 private:
-    void decodeStep(const Image& source, Image& target, const Encoder::grid_encode_data_t& data) const {
+    void decodeStep(const Image& source, Image& target, const grid_encode_data_t& data) const {
         for (uint32_t p = 0 ; p<data.encoded.size() ; ++p) {
-            const Encoder::encode_item_t enc = data.encoded.at(p);
-            const Encoder::item_match_t match = enc.match;
+            const encode_item_t enc = data.encoded.at(p);
+            const item_match_t match = enc.match;
             Image sourcePart = source.slice(match.x, match.y, data.sourceItemSize.x(), data.sourceItemSize.y());
             Image targetPart = target.slice(enc.x, enc.y, enc.w, enc.h);
             Transform t = Transform(match.score.transform);

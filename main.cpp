@@ -48,7 +48,7 @@ static void test_partition() {
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
     Image image = Image(buffer, w, h, w);
     GridPartitionCreator gridCreator(Size32u(gridSize, gridSize), Size32u(gridSize, gridSize));
-    PartitionData grid = gridCreator.create(image);
+    Partition grid = gridCreator.create(image);
     assert(grid.size() == (w * h) / (gridSize * gridSize));
     uint8_t color = 0;
     for (auto it : grid) {
@@ -60,8 +60,10 @@ static void test_partition() {
 
 static void test_encoder(const CmdArgs& args) {
     using namespace Frac;
+    const Size32u gridSize(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
+    const GridPartitionCreator targetCreator(gridSize / 2, gridSize / 2);
     Image image(args.inputPath.c_str());
-    Encoder encoder(image, args.encoderParams);
+    Encoder encoder(image, args.encoderParams, targetCreator);
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);

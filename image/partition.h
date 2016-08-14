@@ -4,9 +4,13 @@
 #include "image/image.h"
 #include "image/transform.h"
 #include "image/metrics.h"
+#include "encode/datatypes.h"
 #include <vector>
 
 namespace Frac {
+    class TransformMatcher;
+    class ImageClassifier;
+
     class PartitionItem {
     public:
         virtual ~PartitionItem() {}
@@ -17,9 +21,12 @@ namespace Frac {
     };
     using PartitionItemPtr = std::shared_ptr<PartitionItem>;
 
-    class PartitionData {
+    class Partition {
     public:
-        PartitionData() {
+        Partition() {
+
+        }
+        virtual ~Partition() {
 
         }
         const std::vector<PartitionItemPtr>::const_iterator begin() const {
@@ -40,18 +47,17 @@ namespace Frac {
         void push_back(const PartitionItemPtr& p) {
             this->_data.push_back(p);
         }
-        const PartitionItemPtr& at(const size_t i) const {
-            return _data.at(i);
-        }
-
-    private:
+        grid_encode_data_t estimateMapping(const Partition& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings);
+    protected:
+        item_match_t matchItem(const PartitionItemPtr& p, const Partition& source, const ImageClassifier&, const TransformMatcher&, uint64_t& rejectedMappings) const;
+    protected:
         std::vector<PartitionItemPtr> _data;
     };
 
     class PartitionCreator {
     public:
         virtual ~PartitionCreator() {}
-        virtual PartitionData create(const Image&) = 0;
+        virtual Partition create(const Image&) const = 0;
     };
 
 }
