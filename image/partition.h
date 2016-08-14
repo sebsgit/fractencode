@@ -16,72 +16,44 @@ namespace Frac {
         virtual const Point2du pos() const = 0;
     };
     using PartitionItemPtr = std::shared_ptr<PartitionItem>;
-    using PartitionData = std::vector<PartitionItemPtr>;
 
-    class Partition {
+    class PartitionData {
     public:
-        virtual ~Partition() {}
+        PartitionData() {
+
+        }
+        const std::vector<PartitionItemPtr>::const_iterator begin() const {
+            return _data.begin();
+        }
+        const std::vector<PartitionItemPtr>::const_iterator end() const {
+            return _data.end();
+        }
+        std::vector<PartitionItemPtr>::iterator begin() {
+            return _data.begin();
+        }
+        std::vector<PartitionItemPtr>::iterator end() {
+            return _data.end();
+        }
+        size_t size() const {
+            return _data.size();
+        }
+        void push_back(const PartitionItemPtr& p) {
+            this->_data.push_back(p);
+        }
+        const PartitionItemPtr& at(const size_t i) const {
+            return _data.at(i);
+        }
+
+    private:
+        std::vector<PartitionItemPtr> _data;
+    };
+
+    class PartitionCreator {
+    public:
+        virtual ~PartitionCreator() {}
         virtual PartitionData create(const Image&) = 0;
     };
 
-
-    class GridItem : public PartitionItem {
-    public:
-        GridItem(const Image& source, const uint32_t x, const uint32_t y, const Size32u& s)
-            :_pos(x, y)
-            ,_image(source.slice(x, y, s.x(), s.y()))
-        {
-        }
-        ~GridItem() {}
-        double distance(const PartitionItem& other, const Metric& m, const Transform& t) const override {
-            return m.distance(other.image(),this->image(),t);
-        }
-        Image& image() noexcept override {
-            return _image;
-        }
-        Image image() const noexcept override {
-            return _image;
-        }
-        const Point2du pos() const noexcept {
-            return _pos;
-        }
-    private:
-        const Point2du _pos;
-        Image _image;
-    };
-
-    class GridPartition : public Partition {
-    public:
-        GridPartition(const Size32u& itemSize, const Size32u& offset)
-            : _size(itemSize)
-            , _offset(offset)
-        {
-
-        }
-        ~GridPartition() {
-
-        }
-        PartitionData create(const Image& image) override {
-			assert(image.size().isAligned(_size.x(), _size.y()) && "can't create grid partition on unaligned image!");
-			assert(image.size().isAligned(_offset.x(), _offset.y()) && "can't create grid partition with unaligned offset!");
-            PartitionData result;
-            uint32_t x = 0, y = 0;
-            do {
-                result.push_back(PartitionItemPtr(new GridItem(image, x, y, _size)));
-                x += _offset.x();
-                if (x + _size.x() > image.width()) {
-                    x = 0;
-                    y += _offset.y();
-                    if (y + _size.y() > image.height())
-                        break;
-                }
-            } while (1);
-            return result;
-        }
-    private:
-        const Size32u _size;
-        const Size32u _offset;
-    };
 }
 
 #endif // PARTITION_H

@@ -47,7 +47,7 @@ static void test_partition() {
     const uint32_t gridSize = 8;
     AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
     Image image = Image(buffer, w, h, w);
-    GridPartition gridCreator = GridPartition(Size32u(gridSize, gridSize), Size32u(gridSize, gridSize));
+    GridPartitionCreator gridCreator(Size32u(gridSize, gridSize), Size32u(gridSize, gridSize));
     PartitionData grid = gridCreator.create(image);
     assert(grid.size() == (w * h) / (gridSize * gridSize));
     uint8_t color = 0;

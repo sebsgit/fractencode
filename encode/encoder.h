@@ -4,6 +4,7 @@
 #include "image/partition.h"
 #include "image/transform.h"
 #include "image/sampler.h"
+#include "image/partition/gridpartition.h"
 #include "transformmatcher.h"
 #include "classifier.h"
 #include <iostream>
@@ -19,8 +20,6 @@ public:
         TransformMatcher::score_t score;
         uint32_t x = 0;
         uint32_t y = 0;
-
-        uint32_t i = 0;
     };
     struct grid_encode_data_t {
         std::vector<item_match_t> items;
@@ -54,8 +53,8 @@ public:
         const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
         const Size32u gridOffset = gridSizeSource / 2;
         const Size32u gridSizeTarget = gridSizeSource / 2;
-        GridPartition gridCreatorSource(gridSizeSource, gridOffset);
-        GridPartition gridCreatorTarget(gridSizeTarget, gridOffset);
+        GridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
+        GridPartitionCreator gridCreatorTarget(gridSizeTarget, gridOffset);
         PartitionData gridSource = gridCreatorSource.create(image);
         PartitionData gridTarget = gridCreatorTarget.create(image);
         int debug = 0;
@@ -63,7 +62,6 @@ public:
             item_match_t match = this->matchItem(it, gridSource);
             std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
             std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
-            std::cout << "va, vb: " << ImageStatistics::variance(it->image()) - ImageStatistics::variance(gridSource.at(match.i)->image()) << "\n";
             _data.items.push_back(match);
             ++debug;
         }
@@ -88,7 +86,6 @@ private:
                     result.score = score;
                     result.x = it->pos().x();
                     result.y = it->pos().y();
-                    result.i = i;
                 }
                 if (this->_matcher.checkDistance(result.score.distance))
                     break;
@@ -138,12 +135,11 @@ public:
     }
 private:
     void decodeStep(const Image& source, Image& target, const Encoder::grid_encode_data_t& data) const {
-        GridPartition gridCreatorSource(data.sourceItemSize, data.offsetSize);
-        GridPartition gridCreatorTarget(data.targetItemSize, data.offsetSize);
-        PartitionData gridSource = gridCreatorSource.create(source);
+        GridPartitionCreator gridCreatorTarget(data.targetItemSize, data.offsetSize);
         PartitionData gridTarget = gridCreatorTarget.create(target);
         for (uint32_t p = 0 ; p<gridTarget.size() ; ++p) {
-            const Image& sourcePart = gridSource.at(data.items[p].i)->image();
+            const Encoder::item_match_t match = data.items[p];
+            Image sourcePart = source.slice(match.x, match.y, data.sourceItemSize.x(), data.sourceItemSize.y());
             Image& targetPart = gridTarget.at(p)->image();
             Transform t = Transform(data.items[p].score.transform);
             t.copy(sourcePart, targetPart, data.items[p].score.contrast, data.items[p].score.brightness);

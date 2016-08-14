@@ -47,6 +47,19 @@ namespace Frac {
             return var < 2500.0;
         }
     };
+
+    class ThresholdClassifier : public ImageClassifier {
+    public:
+        bool compare(const Image& a, const Image& b) const override {
+            const auto va = ImageStatistics::variance(a);
+            const auto vb = ImageStatistics::variance(b);
+            return this->category(va) == this->category(vb);
+        }
+    protected:
+        int category(const double var) const noexcept {
+            return var < 2500 ? 0 : var < 5000 ? 1 : var < 7500 ? 2 : 3;
+        }
+    };
 }
 
 #endif // CLASSIFIER_H

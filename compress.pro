@@ -14,7 +14,8 @@ SOURCES += main.cpp \
     image/sampler.cpp \
     image/transform.cpp \
     utils/utils.cpp \
-    image/imageutils.cpp
+    image/imageutils.cpp \
+    image/partition/gridpartition.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -29,7 +30,8 @@ HEADERS += \
     encode/encoder.h \
     image/sampler.h \
     encode/classifier.h \
-    encode/transformmatcher.h
+    encode/transformmatcher.h \
+    image/partition/gridpartition.h
 
 DISTFILES += \
     ../tasks.todo
