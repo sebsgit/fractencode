@@ -21,11 +21,14 @@ public:
         uint32_t x = 0;
         uint32_t y = 0;
     };
+    struct encode_item_t {
+        uint32_t x, y, w, h;
+        item_match_t match;
+    };
+
     struct grid_encode_data_t {
-        std::vector<item_match_t> items;
-        Size32u targetItemSize;
+        std::vector<encode_item_t> encoded;
         Size32u sourceItemSize;
-        Size32u offsetSize;
     };
 
     struct encode_parameters_t {
@@ -62,12 +65,16 @@ public:
             item_match_t match = this->matchItem(it, gridSource);
             std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
             std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
-            _data.items.push_back(match);
+            encode_item_t enc;
+            enc.x = it->pos().x();
+            enc.y = it->pos().y();
+            enc.w = it->image().width();
+            enc.h = it->image().height();
+            enc.match = match;
+            _data.encoded.push_back(enc);
             ++debug;
         }
         _data.sourceItemSize = gridSizeSource;
-        _data.targetItemSize = gridSizeTarget;
-        _data.offsetSize = gridOffset;
 
         this->_stats.totalMappings = gridSource.size() * gridTarget.size();
         this->_stats.print();
@@ -135,14 +142,13 @@ public:
     }
 private:
     void decodeStep(const Image& source, Image& target, const Encoder::grid_encode_data_t& data) const {
-        GridPartitionCreator gridCreatorTarget(data.targetItemSize, data.offsetSize);
-        PartitionData gridTarget = gridCreatorTarget.create(target);
-        for (uint32_t p = 0 ; p<gridTarget.size() ; ++p) {
-            const Encoder::item_match_t match = data.items[p];
+        for (uint32_t p = 0 ; p<data.encoded.size() ; ++p) {
+            const Encoder::encode_item_t enc = data.encoded.at(p);
+            const Encoder::item_match_t match = enc.match;
             Image sourcePart = source.slice(match.x, match.y, data.sourceItemSize.x(), data.sourceItemSize.y());
-            Image& targetPart = gridTarget.at(p)->image();
-            Transform t = Transform(data.items[p].score.transform);
-            t.copy(sourcePart, targetPart, data.items[p].score.contrast, data.items[p].score.brightness);
+            Image targetPart = target.slice(enc.x, enc.y, enc.w, enc.h);
+            Transform t = Transform(match.score.transform);
+            t.copy(sourcePart, targetPart, match.score.contrast, match.score.brightness);
         }
     }
 private:
