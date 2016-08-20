@@ -17,6 +17,7 @@ public:
     static const int KeySum = 0;
     static const int KeyMean = 1;
     static const int KeyVariance = 2;
+    static const int KeyBlockTypeBrightness = 3;
 
     void put(int key, double value) {
         _data[key] = value;
