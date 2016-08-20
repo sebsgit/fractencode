@@ -5,6 +5,7 @@ using namespace Frac;
 double ImageStatistics::sum(const Image& a) noexcept {
     double result = a.cache().get(ImageData::KeySum);
     if (result == -1.0) {
+        result = 0.0;
         a.map([&](Image::Pixel v) { result += v; });
         a.cache().put(ImageData::KeySum, result);
     }

@@ -34,7 +34,7 @@ private:
 
 class Image {
 public:
-    typedef uint16_t Pixel;
+    typedef uint8_t Pixel;
     Image(const char* fileName, const int channelCount = 1) {
         assert(channelCount == 1 && "multiple channels not implemented");
         int components = 0;
@@ -104,9 +104,10 @@ public:
         }
     }
     void map(const std::function<void(Image::Pixel)>& f) const {
+        auto ptr = this->_data->get();
         for (uint32_t y = 0 ; y<this->height() ; ++y) {
             for (uint32_t x = 0 ; x<this->width() ; ++x) {
-                f(this->_data->get()[x + y * stride()]);
+                f(ptr[x + y * stride()]);
             }
         }
     }

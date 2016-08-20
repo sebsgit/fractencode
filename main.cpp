@@ -81,8 +81,28 @@ static void test_encoder(const CmdArgs& args) {
     std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
 }
 
+static void test_statistics() {
+    using namespace Frac;
+    int w = 128;
+    int h = 128;
+    double imageSum = 0.0;
+    auto buffer = Buffer<Image::Pixel>::alloc(w * h);
+    for (int i=0 ; i<h ; ++i)
+        for (int j=0 ; j<w ; ++j) {
+            buffer->get()[j + h*i] = i + j;
+            imageSum += i + j;
+        }
+    Image image(buffer, w, h, w);
+    double testSum = ImageStatistics::sum(image);
+    if (fabs(testSum - imageSum) > 0.001) {
+        std::cout << "expected " << imageSum << ", actual " << testSum << '\n';
+        exit(0);
+    }
+}
+
 int main(int argc, char *argv[])
 {
+    test_statistics();
     test_partition();
     if (argc > 1) {
         Frac::Image image(argv[1]);

@@ -10,7 +10,7 @@ void Transform::copy(const Image& source, Image& target, const double contrast, 
         const uint32_t srcY = (y * source.height()) / targetSize.y();
         const uint32_t srcX = (x * source.width()) / targetSize.x();
         const double result = contrast * convert<double, Image::Pixel>(sourceSampler(srcX, srcY, *this, source.size())) + brightness;
-        targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (uint8_t)result;
+        targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (Image::Pixel)(result);
     });
 }
 

@@ -21,7 +21,7 @@ namespace Frac {
             if (a.size() == b.size()) {
                 a.map([&](uint32_t x, uint32_t y) {
                     const Point2du p = t.map(x, y, a.size());
-                    const double val = convert<double, Image::Pixel>(srcA[x + y * a.stride()]) - convert<double, Image::Pixel>(srcB[p.x() + p.y() * b.stride()]);
+                    const double val = convert<double>(srcA[x + y * a.stride()]) - convert<double>(srcB[p.x() + p.y() * b.stride()]);
                     sum += val * val;
                 });
             } else {
@@ -29,7 +29,7 @@ namespace Frac {
                 a.map([&](uint32_t x, uint32_t y) {
                     const uint32_t yB = (y * b.height()) / a.height();
                     const uint32_t xB = (x * b.width()) / a.width();
-                    const double val = convert<double, Image::Pixel>(srcA[x + y * a.stride()]) - convert<double, Image::Pixel>(samplerB(xB, yB, t, b.size()));
+                    const double val = convert<double>(srcA[x + y * a.stride()]) - convert<double>(samplerB(xB, yB, t, b.size()));
                     sum += val * val;
                 });
             }

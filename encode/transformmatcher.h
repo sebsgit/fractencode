@@ -29,15 +29,15 @@ public:
                 for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
                     const auto srcY = (y * b->image().height()) / a->image().height();
                     const auto srcX = (x * b->image().width()) / a->image().width();
-                    const double valA = convert<double, Image::Pixel>(a->image().data()->get()[x + y * a->image().stride()]);
-                    const double valB = convert<double, Image::Pixel>(samplerB(srcX, srcY, t, b->image().size()));
+                    const double valA = convert<double>(a->image().data()->get()[x + y * a->image().stride()]);
+                    const double valB = convert<double>(samplerB(srcX, srcY, t, b->image().size()));
                     sumB += valB;
                     sumA2 += valA * valA;
                     sumB2 += valB * valB;
                     sumAB += valA * valB;
                 }
             }
-            const double tmp = (N * sumA2 - sumA * sumA);
+            const double tmp = (N * sumA2 - (sumA - 1) * sumA);
             const double s = this->truncateSMax( fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp );
             const double o = (sumB - s * sumA) / N;
             candidate.contrast = s;
