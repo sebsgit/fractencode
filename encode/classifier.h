@@ -57,7 +57,7 @@ namespace Frac {
         }
     protected:
         int category(const double var) const noexcept {
-            return var < 2500 ? 0 : var < 5000 ? 1 : var < 7500 ? 2 : 3;
+            return var < 2000 ? 0 : var < 4000 ? 1 : var < 6000 ? 2 : 3;
         }
     };
 }

@@ -35,7 +35,7 @@ public:
 public:
     Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& targetCreator)
         : _metric(new RootMeanSquare)
-        , _classifier(new TextureClassifier)
+        , _classifier(new ThresholdClassifier)
         , _encodeParameters(p)
         , _matcher(*_metric, p.rmsThreshold, p.sMax)
     {
