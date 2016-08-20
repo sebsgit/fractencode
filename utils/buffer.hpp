@@ -100,6 +100,14 @@ private:
     size_t _size;
 };
 
+template <typename U, typename T>
+AbstractBufferPtr<U> convert(AbstractBufferPtr<T> source) {
+    auto result = Buffer<U>::alloc(source->size());
+    for (size_t i=0 ; i<source->size() ; ++i)
+        result->get()[i] = convert<T, U>(source->get()[i]);
+    return result;
+}
+
 }
 
 #endif // FRAC_BUFFER_HPP

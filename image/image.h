@@ -34,7 +34,7 @@ private:
 
 class Image {
 public:
-    typedef uint8_t Pixel;
+    typedef uint16_t Pixel;
     Image(const char* fileName, const int channelCount = 1) {
         assert(channelCount == 1 && "multiple channels not implemented");
         int components = 0;
@@ -44,7 +44,17 @@ public:
             _width = w;
             _height = h;
             _stride = _width * channelCount;
-            _data.reset(new Buffer<Pixel>(data, _height * _stride));
+            if (sizeof(Pixel) > 1) {
+                Pixel* buffer = (Pixel*)malloc(sizeof(Pixel) * _height * _stride);
+                try {
+                    for (size_t i=0 ; i<_height * _stride ; ++i) {
+                        buffer[i] = convert<Pixel>(data[i]);
+                    }
+                } catch (...) {}
+                free(data);
+                data = (unsigned char*)buffer;
+            }
+            _data.reset(new Buffer<Pixel>((Pixel*)data, _height * _stride * sizeof(Pixel)));
         }
     }
     Image(AbstractBufferPtr<Pixel> data, uint32_t width, uint32_t height, uint32_t stride)
@@ -79,7 +89,12 @@ public:
         return Image(this->_data->clone() , width(), height(), stride());
     }
     void savePng(const char* path) const {
-        stbi_write_png(path, _width, _height, 1, _data->get(), _stride);
+        if (sizeof(Pixel) == 1)
+            stbi_write_png(path, _width, _height, 1, _data->get(), _stride);
+        else {
+            auto buffer = convert<uint8_t>(_data);
+            stbi_write_png(path, _width, _height, 1, buffer->get(), _stride);
+        }
     }
     void map(const std::function<void(uint32_t, uint32_t)>& f) const {
         for (uint32_t y = 0 ; y<this->height() ; ++y) {

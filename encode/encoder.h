@@ -74,7 +74,7 @@ public:
     {
     }
     decode_stats_t decode(const grid_encode_data_t& data) {
-        AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(_target.height() * _target.width());
+        AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(_target.height() * _target.width());
         buffer->memset(100);
         Image source(buffer, _target.width(), _target.height(), _target.stride());
         RootMeanSquare metric;

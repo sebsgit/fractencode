@@ -46,7 +46,7 @@ static void test_partition() {
     using namespace Frac;
     const uint32_t w = 128, h = 128;
     const uint32_t gridSize = 8;
-    AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
+    AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
     Image image = Image(buffer, w, h, w);
     GridPartitionCreator gridCreator(Size32u(gridSize, gridSize), Size32u(gridSize, gridSize));
     Partition grid = gridCreator.create(image);
@@ -70,7 +70,7 @@ static void test_encoder(const CmdArgs& args) {
     std::cout << "encoded in " << timer.elapsed() << " s.\n";
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();
-    AbstractBufferPtr<uint8_t> buffer = Buffer<uint8_t>::alloc(w * h);
+    AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
     buffer->memset(0);
     Image result = Image(buffer, w, h, w);
     timer.start();
