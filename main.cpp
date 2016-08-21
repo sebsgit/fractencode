@@ -111,19 +111,33 @@ static void test_encoder(const CmdArgs& args) {
 
 static void test_statistics() {
     using namespace Frac;
-    int w = 128;
-    int h = 128;
+    int w = 64;
+    int h = 64;
     double imageSum = 0.0;
-    auto buffer = Buffer<Image::Pixel>::alloc(w * h);
+    uint32_t stride = w + 64;
+    auto buffer = Buffer<Image::Pixel>::alloc(stride * h);
     for (int i=0 ; i<h ; ++i)
         for (int j=0 ; j<w ; ++j) {
-            buffer->get()[j + h*i] = i + j;
+            buffer->get()[j + stride*i] = i + j;
             imageSum += i + j;
         }
-    Image image(buffer, w, h, w);
-    double testSum = ImageStatistics::sum(image);
+    const double mean = imageSum / (w * h);
+    double variance = 0.0;
+    for (int i=0 ; i<h ; ++i)
+        for (int j=0 ; j<w ; ++j) {
+            const auto p = buffer->get()[j + stride*i];
+            variance += (p - mean) * (p - mean);
+        }
+    variance /= (w * h);
+    Image image(buffer, w, h, stride);
+    const double testSum = ImageStatistics::sum(image);
     if (fabs(testSum - imageSum) > 0.001) {
-        std::cout << "expected " << imageSum << ", actual " << testSum << '\n';
+        std::cout << "expected sum " << imageSum << ", actual " << testSum << '\n';
+        exit(0);
+    }
+    const double testVariance = ImageStatistics::variance(image);
+    if (fabs(testVariance - variance) > 0.001) {
+        std::cout << "expected variance " << variance << ", actual " << testVariance << '\n';
         exit(0);
     }
 }

@@ -34,7 +34,7 @@ private:
 
 class Image {
 public:
-    typedef uint16_t Pixel;
+    typedef uint8_t Pixel;
     Image(const char* fileName, const int channelCount = 1) {
         assert(channelCount == 1 && "multiple channels not implemented");
         int components = 0;

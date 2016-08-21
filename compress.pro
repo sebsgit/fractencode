@@ -5,6 +5,8 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += debug_and_release
 
+QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
+
 INCLUDEPATH += .    \
     utils   \
     image
@@ -39,6 +41,8 @@ DISTFILES += \
     ../tasks.todo
 
 OBJECTS_DIR = build
+
+DEFINES += FRAC_WITH_AVX
 
 
 QMAKE_CXXFLAGS_DEBUG *= -pg
