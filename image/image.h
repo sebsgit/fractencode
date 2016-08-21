@@ -34,7 +34,7 @@ private:
 
 class Image {
 public:
-    typedef uint8_t Pixel;
+    typedef uint16_t Pixel;
     Image(const char* fileName, const int channelCount = 1) {
         assert(channelCount == 1 && "multiple channels not implemented");
         int components = 0;
@@ -151,9 +151,11 @@ public:
     }
 private:
     void unpackRgb(const unsigned char* rgb, uint32_t width, uint32_t height, uint32_t stride) {
-        auto yBuff = Buffer<Image::Pixel>::alloc(width * height);
-        auto uBuff = Buffer<Image::Pixel>::alloc((width * height) / 4);
-        auto vBuff = Buffer<Image::Pixel>::alloc((width * height) / 4);
+        const uint32_t yStride = width + 64;
+        const uint32_t uvStride = (width / 2) + 64;
+        auto yBuff = Buffer<Image::Pixel>::alloc(yStride * height);
+        auto uBuff = Buffer<Image::Pixel>::alloc((uvStride * height) / 2);
+        auto vBuff = Buffer<Image::Pixel>::alloc((uvStride * height) / 2);
         for (size_t y=0 ; y<height ; ++y) {
             for (size_t x=0 ; x<width ; ++x) {
                 auto r = rgb[x * 3 + y * stride + 0];
@@ -162,14 +164,14 @@ private:
                 auto yp = 0.299 * r + 0.587 * g + 0.114 * b;
                 auto up = -0.169 * r - 0.331 * g + 0.499 * b + 128;
                 auto vp = 0.499 * r - 0.418 * g - 0.0813 * b + 128;
-                yBuff->get()[x + y * width] = clamp(yp);
-                uBuff->get()[(x / 2) + ((y / 2)  * (width / 2))] = clamp(up);
-                vBuff->get()[(x / 2) + ((y / 2) * (width / 2))] = clamp(vp);
+                yBuff->get()[x + y * yStride] = clamp(yp);
+                uBuff->get()[(x / 2) + ((y / 2)  * uvStride)] = clamp(up);
+                vBuff->get()[(x / 2) + ((y / 2) * uvStride)] = clamp(vp);
             }
         }
-        _y = Image(yBuff, width, height, width);
-        _u = Image(uBuff, width / 2, height / 2, width / 2);
-        _v = Image(vBuff, width / 2, height / 2, width / 2);
+        _y = Image(yBuff, width, height, yStride);
+        _u = Image(uBuff, width / 2, height / 2, uvStride);
+        _v = Image(vBuff, width / 2, height / 2, uvStride);
     }
     void packToRgb(unsigned char* rgb) const {
         for (size_t y = 0 ; y<_y.height() ; ++y) {
@@ -184,7 +186,7 @@ private:
             }
         }
     }
-    uint8_t clamp(double x) const noexcept {
+    uint8_t clamp(const double x) const noexcept {
         return x < 0.0 ? 0 : x > 255 ? 255 : (uint8_t)x;
     }
 private:
