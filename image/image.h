@@ -65,6 +65,7 @@ public:
     {
 
     }
+    Image() {}
 
     uint32_t width() const { return _width; }
     uint32_t height() const { return _height; }
@@ -118,6 +119,76 @@ private:
     AbstractBufferPtr<Pixel> _data;
     uint32_t _width = 0, _height = 0, _stride = 0;
     mutable ImageData _cache;
+};
+
+class PlanarImage {
+public:
+    PlanarImage(const char* path) {
+        int components = 0;
+        int w, h;
+        unsigned char* data = stbi_load(path, &w, &h, &components, 3);
+        unpackRgb(data, w, h, w * 3);
+        free(data);
+    }
+    PlanarImage(Image x, Image y, Image z)
+        :_y(x), _u(y), _v(z)
+    {
+
+    }
+    Image y() const noexcept {
+        return _y;
+    }
+    Image u() const noexcept {
+        return _u;
+    }
+    Image v() const noexcept {
+        return _v;
+    }
+    void savePng(const char* path) {
+        auto buffer = Buffer<uint8_t>::alloc(_y.width() * _y.height() * 3);
+        this->packToRgb(buffer->get());
+        stbi_write_png(path, _y.width(), _y.height(), 3, buffer->get(), _y.width() * 3);
+    }
+private:
+    void unpackRgb(const unsigned char* rgb, uint32_t width, uint32_t height, uint32_t stride) {
+        auto yBuff = Buffer<Image::Pixel>::alloc(width * height);
+        auto uBuff = Buffer<Image::Pixel>::alloc((width * height) / 4);
+        auto vBuff = Buffer<Image::Pixel>::alloc((width * height) / 4);
+        for (size_t y=0 ; y<height ; ++y) {
+            for (size_t x=0 ; x<width ; ++x) {
+                auto r = rgb[x * 3 + y * stride + 0];
+                auto g = rgb[x * 3 + y * stride + 1];
+                auto b = rgb[x * 3 + y * stride + 2];
+                auto yp = 0.299 * r + 0.587 * g + 0.114 * b;
+                auto up = -0.169 * r - 0.331 * g + 0.499 * b + 128;
+                auto vp = 0.499 * r - 0.418 * g - 0.0813 * b + 128;
+                yBuff->get()[x + y * width] = clamp(yp);
+                uBuff->get()[(x / 2) + ((y / 2)  * (width / 2))] = clamp(up);
+                vBuff->get()[(x / 2) + ((y / 2) * (width / 2))] = clamp(vp);
+            }
+        }
+        _y = Image(yBuff, width, height, width);
+        _u = Image(uBuff, width / 2, height / 2, width / 2);
+        _v = Image(vBuff, width / 2, height / 2, width / 2);
+    }
+    void packToRgb(unsigned char* rgb) const {
+        for (size_t y = 0 ; y<_y.height() ; ++y) {
+            for (size_t x=0 ; x<_y.width() ; ++x) {
+                unsigned char* ptr = rgb + (x * 3 + y * _y.stride() * 3);
+                double yp = _y.data()->get()[x + y * _y.stride()];
+                double up = _u.data()->get()[(x / 2) + (y / 2) * _u.stride()];
+                double vp = _v.data()->get()[(x / 2) + (y / 2) * _v.stride()];
+                ptr[0] = clamp(yp + 1.402 * (vp - 128));
+                ptr[1] = clamp(yp - 0.344 * (up - 128) - 0.714 * (vp - 128));
+                ptr[2] = clamp(yp + 1.772 * (up - 128));
+            }
+        }
+    }
+    uint8_t clamp(double x) const noexcept {
+        return x < 0.0 ? 0 : x > 255 ? 255 : (uint8_t)x;
+    }
+private:
+    Image _y, _u, _v;
 };
 
 class ImageStatistics {

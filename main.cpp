@@ -13,6 +13,7 @@ public:
     std::string inputPath;
     Frac::Encoder::encode_parameters_t encoderParams;
     int decodeSteps = -1;
+    bool color = false;
 
     CmdArgs(int argc, char** argv) {
         assert(argc > 1);
@@ -36,6 +37,8 @@ private:
             } else if (tmp == "--smax") {
                 encoderParams.sMax = atof(s[index + 1]);
                 ++index;
+            } else if (tmp == "--color") {
+                color = true;
             }
             ++index;
         }
@@ -59,12 +62,11 @@ static void test_partition() {
     //image.savePng("grid.png");
 }
 
-static void test_encoder(const CmdArgs& args) {
+static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
     using namespace Frac;
     const Size32u gridSize(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
     const GridPartitionCreator targetCreator(gridSize / 2, gridSize / 2);
     Timer timer;
-    Image image(args.inputPath.c_str());
     timer.start();
     Encoder encoder(image, args.encoderParams, targetCreator);
     std::cout << "encoded in " << timer.elapsed() << " s.\n";
@@ -77,8 +79,24 @@ static void test_encoder(const CmdArgs& args) {
     Decoder decoder(result, args.decodeSteps);
     auto stats = decoder.decode(data);
     std::cout << "decoded in " << timer.elapsed() << " s.\n";
-    result.savePng("result.png");
     std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
+    return result;
+}
+
+static void test_encoder(const CmdArgs& args) {
+    using namespace Frac;
+    if (args.color == false) {
+        Image image(args.inputPath.c_str());
+        Image result = encode_image(args, image);
+        result.savePng("result.png");
+    } else {
+        PlanarImage image(args.inputPath.c_str());
+        Image y = encode_image(args, image.y());
+        Image u = encode_image(args, image.u());
+        Image v = encode_image(args, image.v());
+        PlanarImage result(y, u, v);
+        result.savePng("result.png");
+    }
 }
 
 static void test_statistics() {
@@ -108,16 +126,6 @@ int main(int argc, char *argv[])
         Frac::Image image(argv[1]);
         if (image.data()) {
             test_encoder(CmdArgs(argc, argv));
-            Frac::Image corner = image.slice(image.width() / 2, image.height() / 2, image.width() / 2, image.height() / 2);
-            Frac::Painter painter(corner);
-            for (uint32_t i=0 ; i<corner.height() ; ++i)
-                painter.set(i, i, 255);
-            //corner.savePng("test.png");
-            Frac::Transform t;
-            t.setType(Frac::Transform::Flip_Rotate_270);
-           // t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::NearestNeighbor).savePng("resNN.png");
-           // t.resize(corner, t.map(Frac::Size32u(corner.width() * 2, corner.height() * 2)), Frac::Transform::Bilinear).savePng("resBI.png");
-            std::cout << Frac::RootMeanSquare().distance(image, image) << '\n';
         }
     }
     return 0;
