@@ -30,14 +30,16 @@ PartitionPtr AdaptativeGridPartitionCreator::create(const Image& image) const {
     PartitionPtr textureRegions(new GridPartition);
     uint32_t x = 0, y = 0;
     TextureClassifier classifier;
+    const auto size2 = _size / 2;
     do {
-        if (classifier.isFlat(ImageStatistics::variance(image.slice(x, y, _size.x(), _size.y())))) {
-            result->push_back(PartitionItemPtr(new GridItem(image, x, y, _size)));
+        auto patch = image.slice(x, y, _size.x(), _size.y());
+        if (classifier.isFlat(patch)) {
+            result->push_back(PartitionItemPtr(new GridItem(patch, x, y)));
         } else {
-            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x, y, _size / 2)));
-            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x + _size.x() / 2, y, _size / 2)));
-            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x, y + _size.y() / 2, _size / 2)));
-            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x + _size.x() / 2, y + _size.y() / 2, _size / 2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x, y, size2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x + size2.x(), y, size2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x, y + size2.y(), size2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x + size2.x(), y + size2.y(), size2)));
             x += _offset.x();
         }
         x += _offset.x();
@@ -71,22 +73,22 @@ grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, co
 
 item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t &rejectedMappings) const {
     item_match_t result;
-    uint32_t i = 0;
     for (auto it : source->_data) {
-        if (classifier.compare(a->image(), it->image())) {
-            auto score = matcher.match(a, it);
-            if (score.distance < result.score.distance) {
-                result.score = score;
-                result.x = it->pos().x();
-                result.y = it->pos().y();
-                result.sourceItemSize = it->image().size();
+        if (it->width() > a->width() && it->height() > a->height()) {
+            if (classifier.compare(a->image(), it->image())) {
+                auto score = matcher.match(a, it);
+                if (score.distance < result.score.distance) {
+                    result.score = score;
+                    result.x = it->pos().x();
+                    result.y = it->pos().y();
+                    result.sourceItemSize = it->image().size();
+                }
+                if (matcher.checkDistance(result.score.distance))
+                    break;
+            } else {
+                rejectedMappings++;
             }
-            if (matcher.checkDistance(result.score.distance))
-                break;
-        } else {
-            rejectedMappings++;
         }
-        ++i;
     }
     return result;
 }

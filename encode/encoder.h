@@ -18,6 +18,7 @@ class Encoder {
 public:
     struct encode_parameters_t {
         int sourceGridSize = 16;
+        int targetGridSize = 8;
         int latticeSize = 2;
         double rmsThreshold = 0.0;
         double sMax = -1.0;
@@ -41,7 +42,7 @@ public:
     {
         const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
         const Size32u gridOffset = gridSizeSource / p.latticeSize;
-        GridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
+        AdaptativeGridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
         PartitionPtr gridSource = gridCreatorSource.create(image);
         PartitionPtr gridTarget = targetCreator.create(image);
         _data = gridTarget->estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);

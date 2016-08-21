@@ -12,6 +12,11 @@ public:
         ,_image(source.slice(x, y, s.x(), s.y()))
     {
     }
+    GridItem(const Image& source, const uint32_t x, const uint32_t y)
+        :_pos(x, y)
+        ,_image(source)
+    {
+    }
     ~GridItem() {}
     double distance(const PartitionItem& other, const Metric& m, const Transform& t) const override {
         return m.distance(other.image(),this->image(),t);

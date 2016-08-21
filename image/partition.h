@@ -18,6 +18,12 @@ namespace Frac {
         virtual Image image() const noexcept = 0;
         virtual double distance(const PartitionItem& other, const Metric& m, const Transform& t) const = 0;
         virtual const Point2du pos() const = 0;
+        uint32_t width() const noexcept {
+            return image().width();
+        }
+        uint32_t height() const noexcept {
+            return image().height();
+        }
     };
     using PartitionItemPtr = std::shared_ptr<PartitionItem>;
     class Partition;

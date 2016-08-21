@@ -28,8 +28,11 @@ private:
             if (tmp == "--decode") {
                 decodeSteps = atoi(s[index + 1]);
                 ++index;
-            } else if (tmp == "--grid") {
+            } else if (tmp == "--source") {
                 encoderParams.sourceGridSize = atoi(s[index + 1]);
+                ++index;
+            } else if (tmp == "--target") {
+                encoderParams.targetGridSize = atoi(s[index + 1]);
                 ++index;
             } else if (tmp == "--rms") {
                 encoderParams.rmsThreshold = atof(s[index + 1]);
@@ -41,6 +44,10 @@ private:
                 color = true;
             }
             ++index;
+        }
+        if (encoderParams.targetGridSize >= encoderParams.sourceGridSize || encoderParams.targetGridSize < 2 || encoderParams.sourceGridSize < 2) {
+            std::cout << "invalid source / target size\n";
+            throw std::exception();
         }
     }
 };
@@ -64,8 +71,8 @@ static void test_partition() {
 
 static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
     using namespace Frac;
-    const Size32u gridSize(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
-    const GridPartitionCreator targetCreator(gridSize / 2, gridSize / 2);
+    const Size32u gridSize(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
+    const GridPartitionCreator targetCreator(gridSize, gridSize);
     Timer timer;
     timer.start();
     Encoder encoder(image, args.encoderParams, targetCreator);
