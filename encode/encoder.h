@@ -42,11 +42,11 @@ public:
         const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
         const Size32u gridOffset = gridSizeSource / p.latticeSize;
         GridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
-        Partition gridSource = gridCreatorSource.create(image);
-        Partition gridTarget = targetCreator.create(image);
-        _data = gridTarget.estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);
+        PartitionPtr gridSource = gridCreatorSource.create(image);
+        PartitionPtr gridTarget = targetCreator.create(image);
+        _data = gridTarget->estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);
         _data.sourceItemSize = gridSizeSource;
-        this->_stats.totalMappings = gridSource.size() * gridTarget.size();
+        this->_stats.totalMappings = gridSource->size() * gridTarget->size();
         this->_stats.print();
     }
     grid_encode_data_t data() const {

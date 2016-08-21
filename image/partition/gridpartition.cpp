@@ -5,13 +5,13 @@
 
 using namespace Frac;
 
-Partition GridPartitionCreator::create(const Image& image) const {
+PartitionPtr GridPartitionCreator::create(const Image& image) const {
     assert(image.size().isAligned(_size.x(), _size.y()) && "can't create grid partition on unaligned image!");
     assert(image.size().isAligned(_offset.x(), _offset.y()) && "can't create grid partition with unaligned offset!");
-    Partition result;
+    PartitionPtr result(new GridPartition);
     uint32_t x = 0, y = 0;
     do {
-        result.push_back(PartitionItemPtr(new GridItem(image, x, y, _size)));
+        result->push_back(PartitionItemPtr(new GridItem(image, x, y, _size)));
         x += _offset.x();
         if (x + _size.x() > image.width()) {
             x = 0;
@@ -23,7 +23,7 @@ Partition GridPartitionCreator::create(const Image& image) const {
     return result;
 }
 
-grid_encode_data_t Partition::estimateMapping(const Partition& source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t& rejectedMappings) {
+grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t& rejectedMappings) {
     grid_encode_data_t result;
     for (auto it : this->_data) {
         item_match_t match = this->matchItem(it, source, classifier, matcher, rejectedMappings);
@@ -40,10 +40,10 @@ grid_encode_data_t Partition::estimateMapping(const Partition& source, const Ima
     return result;
 }
 
-item_match_t Partition::matchItem(const PartitionItemPtr& a, const Partition& source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t &rejectedMappings) const {
+item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t &rejectedMappings) const {
     item_match_t result;
     uint32_t i = 0;
-    for (auto it : source._data) {
+    for (auto it : source->_data) {
         if (classifier.compare(a->image(), it->image())) {
             auto score = matcher.match(a, it);
             if (score.distance < result.score.distance) {

@@ -52,10 +52,10 @@ static void test_partition() {
     AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
     Image image = Image(buffer, w, h, w);
     GridPartitionCreator gridCreator(Size32u(gridSize, gridSize), Size32u(gridSize, gridSize));
-    Partition grid = gridCreator.create(image);
-    assert(grid.size() == (w * h) / (gridSize * gridSize));
+    PartitionPtr grid = gridCreator.create(image);
+    assert(grid->size() == (w * h) / (gridSize * gridSize));
     uint8_t color = 0;
-    for (auto it : grid) {
+    for (auto it : *grid) {
         Painter p(it->image());
         p.fill(color++);
     }

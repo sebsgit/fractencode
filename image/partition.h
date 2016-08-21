@@ -20,6 +20,8 @@ namespace Frac {
         virtual const Point2du pos() const = 0;
     };
     using PartitionItemPtr = std::shared_ptr<PartitionItem>;
+    class Partition;
+    using PartitionPtr = std::shared_ptr<Partition>;
 
     class Partition {
     public:
@@ -47,9 +49,9 @@ namespace Frac {
         void push_back(const PartitionItemPtr& p) {
             this->_data.push_back(p);
         }
-        grid_encode_data_t estimateMapping(const Partition& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings);
+        virtual grid_encode_data_t estimateMapping(const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings) = 0;
     protected:
-        item_match_t matchItem(const PartitionItemPtr& p, const Partition& source, const ImageClassifier&, const TransformMatcher&, uint64_t& rejectedMappings) const;
+        virtual item_match_t matchItem(const PartitionItemPtr& p, const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t& rejectedMappings) const;
     protected:
         std::vector<PartitionItemPtr> _data;
     };
@@ -57,7 +59,7 @@ namespace Frac {
     class PartitionCreator {
     public:
         virtual ~PartitionCreator() {}
-        virtual Partition create(const Image&) const = 0;
+        virtual PartitionPtr create(const Image&) const = 0;
     };
 
 }

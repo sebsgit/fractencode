@@ -30,6 +30,11 @@ private:
     Image _image;
 };
 
+class GridPartition : public Partition {
+public:
+    grid_encode_data_t estimateMapping(const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings) override;
+};
+
 class GridPartitionCreator : public PartitionCreator {
 public:
     GridPartitionCreator(const Size32u& itemSize, const Size32u& offset)
@@ -41,7 +46,7 @@ public:
     ~GridPartitionCreator() {
 
     }
-    Partition create(const Image& image) const override;
+    PartitionPtr create(const Image& image) const override;
 private:
     const Size32u _size;
     const Size32u _offset;
