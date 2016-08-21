@@ -57,7 +57,6 @@ namespace Frac {
             const auto vb = ImageStatistics::variance(b);
             return this->isFlat(va) == this->isFlat(vb);
         }
-    protected:
         bool isFlat(const double var) const noexcept {
             return var < 2500.0;
         }

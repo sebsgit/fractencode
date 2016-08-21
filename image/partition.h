@@ -49,6 +49,10 @@ namespace Frac {
         void push_back(const PartitionItemPtr& p) {
             this->_data.push_back(p);
         }
+        void merge(const PartitionPtr& other) {
+            _data.insert(end(), other->begin(), other->end());
+        }
+
         virtual grid_encode_data_t estimateMapping(const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings) = 0;
     protected:
         virtual item_match_t matchItem(const PartitionItemPtr& p, const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t& rejectedMappings) const;

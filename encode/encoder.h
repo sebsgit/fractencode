@@ -45,7 +45,6 @@ public:
         PartitionPtr gridSource = gridCreatorSource.create(image);
         PartitionPtr gridTarget = targetCreator.create(image);
         _data = gridTarget->estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);
-        _data.sourceItemSize = gridSizeSource;
         this->_stats.totalMappings = gridSource->size() * gridTarget->size();
         this->_stats.print();
     }
@@ -94,7 +93,7 @@ private:
         for (uint32_t p = 0 ; p<data.encoded.size() ; ++p) {
             const encode_item_t enc = data.encoded.at(p);
             const item_match_t match = enc.match;
-            Image sourcePart = source.slice(match.x, match.y, data.sourceItemSize.x(), data.sourceItemSize.y());
+            Image sourcePart = source.slice(match.x, match.y, match.sourceItemSize.x(), match.sourceItemSize.y());
             Image targetPart = target.slice(enc.x, enc.y, enc.w, enc.h);
             Transform t = Transform(match.score.transform);
             t.copy(sourcePart, targetPart, match.score.contrast, match.score.brightness);

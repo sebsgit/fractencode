@@ -15,6 +15,7 @@ namespace Frac {
         transform_score_t score;
         uint32_t x = 0;
         uint32_t y = 0;
+        Size32u sourceItemSize;
     };
     struct encode_item_t {
         uint32_t x, y, w, h;
@@ -22,7 +23,6 @@ namespace Frac {
     };
     struct grid_encode_data_t {
         std::vector<encode_item_t> encoded;
-        Size32u sourceItemSize;
     };
 }
 

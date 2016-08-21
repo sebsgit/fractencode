@@ -47,9 +47,19 @@ public:
 
     }
     PartitionPtr create(const Image& image) const override;
-private:
+protected:
     const Size32u _size;
     const Size32u _offset;
+};
+
+class AdaptativeGridPartitionCreator : public GridPartitionCreator {
+public:
+    AdaptativeGridPartitionCreator(const Size32u& baseSize, const Size32u& offset)
+        :GridPartitionCreator(baseSize, offset)
+    {
+
+    }
+    PartitionPtr create(const Image& image) const override;
 };
 
 }

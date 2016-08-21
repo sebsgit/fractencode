@@ -23,6 +23,35 @@ PartitionPtr GridPartitionCreator::create(const Image& image) const {
     return result;
 }
 
+PartitionPtr AdaptativeGridPartitionCreator::create(const Image& image) const {
+    assert(image.size().isAligned(_size.x(), _size.y()) && "can't create grid partition on unaligned image!");
+    assert(image.size().isAligned(_offset.x(), _offset.y()) && "can't create grid partition with unaligned offset!");
+    PartitionPtr result(new GridPartition);
+    PartitionPtr textureRegions(new GridPartition);
+    uint32_t x = 0, y = 0;
+    TextureClassifier classifier;
+    do {
+        if (classifier.isFlat(ImageStatistics::variance(image.slice(x, y, _size.x(), _size.y())))) {
+            result->push_back(PartitionItemPtr(new GridItem(image, x, y, _size)));
+        } else {
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x, y, _size / 2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x + _size.x() / 2, y, _size / 2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x, y + _size.y() / 2, _size / 2)));
+            textureRegions->push_back(PartitionItemPtr(new GridItem(image, x + _size.x() / 2, y + _size.y() / 2, _size / 2)));
+            x += _offset.x();
+        }
+        x += _offset.x();
+        if (x + _size.x() > image.width()) {
+            x = 0;
+            y += _offset.y();
+            if (y + _size.y() > image.height())
+                break;
+        }
+    } while (1);
+    result->merge(textureRegions);
+    return result;
+}
+
 grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t& rejectedMappings) {
     grid_encode_data_t result;
     for (auto it : this->_data) {
@@ -50,6 +79,7 @@ item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr 
                 result.score = score;
                 result.x = it->pos().x();
                 result.y = it->pos().y();
+                result.sourceItemSize = it->image().size();
             }
             if (matcher.checkDistance(result.score.distance))
                 break;
