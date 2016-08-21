@@ -85,6 +85,8 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 
 static void test_encoder(const CmdArgs& args) {
     using namespace Frac;
+    Timer timer;
+    timer.start();
     if (args.color == false) {
         Image image(args.inputPath.c_str());
         Image result = encode_image(args, image);
@@ -97,6 +99,7 @@ static void test_encoder(const CmdArgs& args) {
         PlanarImage result(y, u, v);
         result.savePng("result.png");
     }
+    std::cout << "total time: " << timer.elapsed() << " s.\n";
 }
 
 static void test_statistics() {
