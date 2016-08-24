@@ -90,24 +90,25 @@ namespace Frac {
                 return s;
             }
         }
-        Point2du map(uint32_t x, uint32_t y, const Size32u& s) const noexcept {
+        template <typename T>
+        Point2d<T> map(const T x, const T y, const Size32u& s) const noexcept {
             switch(_type) {
             case Rotate_90:
-                return Point2du(y, s.x() - x);
+                return Point2d<T>(y, s.x() - x);
             case Rotate_180:
-                return Point2du(s.x() - x, s.y() - y);
+                return Point2d<T>(s.x() - x, s.y() - y);
             case Rotate_270:
-                return Point2du(s.y() - y, x);
+                return Point2d<T>(s.y() - y, x);
             case Flip:
-                return Point2du(x, s.y() - y);
+                return Point2d<T>(x, s.y() - y);
             case Flip_Rotate_90:
-                return Point2du(y, x);
+                return Point2d<T>(y, x);
             case Flip_Rotate_180:
-                return Point2du(s.x() - x, y);
+                return Point2d<T>(s.x() - x, y);
             case Flip_Rotate_270:
-                return Point2du(s.y() - y, s.x() - x);
+                return Point2d<T>(s.y() - y, s.x() - x);
             default:
-                return Point2du(x, y);
+                return Point2d<T>(x, y);
             }
         }
         void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const;
