@@ -17,7 +17,8 @@ SOURCES += main.cpp \
     image/transform.cpp \
     utils/utils.cpp \
     image/imageutils.cpp \
-    image/partition/gridpartition.cpp
+    image/partition/gridpartition.cpp \
+    image/partition/quadtreepartition.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -35,7 +36,8 @@ HEADERS += \
     encode/transformmatcher.h \
     image/partition/gridpartition.h \
     encode/datatypes.h \
-    utils/timer.h
+    utils/timer.h \
+    image/partition/quadtreepartition.h
 
 DISTFILES += \
     ../tasks.todo

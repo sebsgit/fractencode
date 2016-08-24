@@ -3,6 +3,7 @@
 #include "transform.h"
 #include "metrics.h"
 #include "partition.h"
+#include "partition/quadtreepartition.h"
 #include "utils/timer.h"
 #include <iostream>
 #include <cassert>
@@ -14,6 +15,7 @@ public:
     Frac::Encoder::encode_parameters_t encoderParams;
     int decodeSteps = -1;
     bool color = false;
+    bool useQuadtree = false;
 
     CmdArgs(int argc, char** argv) {
         assert(argc > 1);
@@ -42,6 +44,8 @@ private:
                 ++index;
             } else if (tmp == "--color") {
                 color = true;
+            } else if (tmp == "--quadtree") {
+                useQuadtree = true;
             }
             ++index;
         }
@@ -72,10 +76,14 @@ static void test_partition() {
 static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
     using namespace Frac;
     const Size32u gridSize(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
-    const GridPartitionCreator targetCreator(gridSize, gridSize);
+    std::unique_ptr<PartitionCreator> targetCreator;
+    if (args.useQuadtree)
+        targetCreator.reset(new QuadtreePartitionCreator(Size32u(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize) / 2, gridSize));
+    else
+        targetCreator.reset(new GridPartitionCreator(gridSize, gridSize));
     Timer timer;
     timer.start();
-    Encoder encoder(image, args.encoderParams, targetCreator);
+    Encoder encoder(image, args.encoderParams, *targetCreator);
     std::cout << "encoded in " << timer.elapsed() << " s.\n";
     auto data = encoder.data();
     uint32_t w = image.width(), h = image.height();

@@ -42,7 +42,7 @@ public:
     {
         const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
         const Size32u gridOffset = gridSizeSource / p.latticeSize;
-        AdaptativeGridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
+        GridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
         PartitionPtr gridSource = gridCreatorSource.create(image);
         PartitionPtr gridTarget = targetCreator.create(image);
         _data = gridTarget->estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);

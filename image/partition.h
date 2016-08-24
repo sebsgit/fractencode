@@ -24,10 +24,43 @@ namespace Frac {
         uint32_t height() const noexcept {
             return image().height();
         }
+        Size32u size() const noexcept {
+            return image().size();
+        }
     };
     using PartitionItemPtr = std::shared_ptr<PartitionItem>;
     class Partition;
     using PartitionPtr = std::shared_ptr<Partition>;
+
+    class GridItem : public PartitionItem {
+    public:
+        GridItem(const Image& source, const uint32_t x, const uint32_t y, const Size32u& s)
+            :_pos(x, y)
+            ,_image(source.slice(x, y, s.x(), s.y()))
+        {
+        }
+        GridItem(const Image& source, const uint32_t x, const uint32_t y)
+            :_pos(x, y)
+            ,_image(source)
+        {
+        }
+        ~GridItem() {}
+        double distance(const PartitionItem& other, const Metric& m, const Transform& t) const override {
+            return m.distance(other.image(),this->image(),t);
+        }
+        Image& image() noexcept override {
+            return _image;
+        }
+        Image image() const noexcept override {
+            return _image;
+        }
+        const Point2du pos() const noexcept {
+            return _pos;
+        }
+    private:
+        const Point2du _pos;
+        Image _image;
+    };
 
     class Partition {
     public:
