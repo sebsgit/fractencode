@@ -151,17 +151,57 @@ static void test_statistics() {
     }
 }
 
+static void test_blur() {
+    using namespace Frac;
+    const uint8_t expected[] = {
+        0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9, 7,
+        1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 13, 10,
+        1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 14, 11,
+        2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 15, 12,
+        3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 16, 12,
+        3, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 17, 13,
+        4, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 18, 14,
+        5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 19, 14,
+        5, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 20, 15,
+        6, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 21, 16,
+        7, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 22, 17,
+        8, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 23, 17,
+        8, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 24, 18,
+        9, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 25, 19,
+        9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 24, 18,
+        7, 10, 11, 12, 12, 13, 14, 14, 15, 16, 17, 17, 18, 19, 18, 13
+    };
+
+    const int w = 16;
+    const int h = 16;
+    const uint32_t stride = w + 64;
+    auto buffer = Buffer<Image::Pixel>::alloc(stride * h);
+    for (int i=0 ; i<h ; ++i)
+        for (int j=0 ; j<w ; ++j) {
+            buffer->get()[j + stride*i] = i + j;
+        }
+    Image image(buffer, w, h, stride);
+    GaussianBlur5x5 blur;
+    auto blurred = blur.process(image);
+    int k = 0;
+    for (int i=0 ; i<h ; ++i) {
+        for (int j=0 ; j<w ; ++j) {
+            if (blurred.data()->get()[j + stride*i] != expected[k]) {
+                std::cout << "gaussian blur error: " << j << ' ' << i << " - "<< (int)blurred.data()->get()[j + stride*i] << "!=" << (int)expected[k];
+                exit(0);
+            }
+            ++k;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     test_statistics();
     test_partition();
+    test_blur();
     if (argc > 1) {
         Frac::Image image(argv[1]);
-        Frac::GaussianBlur5x5 blur;
-        auto t = blur.process(image);
-        t = blur.process(t);
-        t = blur.process(t);
-        t.savePng("blur.png");
         if (image.data()) {
             test_encoder(CmdArgs(argc, argv));
         }
