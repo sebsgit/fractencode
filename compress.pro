@@ -9,7 +9,8 @@ QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
 
 INCLUDEPATH += .    \
     utils   \
-    image
+    image   \
+    process
 
 SOURCES += main.cpp \
     thirdparty/stb_image/stb_image_impl.c \
@@ -18,7 +19,8 @@ SOURCES += main.cpp \
     utils/utils.cpp \
     image/imageutils.cpp \
     image/partition/gridpartition.cpp \
-    image/partition/quadtreepartition.cpp
+    image/partition/quadtreepartition.cpp \
+    process/gaussian5x5.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -37,15 +39,12 @@ HEADERS += \
     image/partition/gridpartition.h \
     encode/datatypes.h \
     utils/timer.h \
-    image/partition/quadtreepartition.h
-
-DISTFILES += \
-    ../tasks.todo
+    image/partition/quadtreepartition.h \
+    process/gaussian5x5.h
 
 OBJECTS_DIR = build
 
 DEFINES += FRAC_WITH_AVX
-
 
 QMAKE_CXXFLAGS_DEBUG *= -pg
 QMAKE_LFLAGS_DEBUG *= -pg

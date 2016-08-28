@@ -5,6 +5,7 @@
 #include "partition.h"
 #include "partition/quadtreepartition.h"
 #include "utils/timer.h"
+#include "process/gaussian5x5.h"
 #include <iostream>
 #include <cassert>
 #include <cstring>
@@ -156,6 +157,11 @@ int main(int argc, char *argv[])
     test_partition();
     if (argc > 1) {
         Frac::Image image(argv[1]);
+        Frac::GaussianBlur5x5 blur;
+        auto t = blur.process(image);
+        t = blur.process(t);
+        t = blur.process(t);
+        t.savePng("blur.png");
         if (image.data()) {
             test_encoder(CmdArgs(argc, argv));
         }
