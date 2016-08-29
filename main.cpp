@@ -6,6 +6,7 @@
 #include "partition/quadtreepartition.h"
 #include "utils/timer.h"
 #include "process/gaussian5x5.h"
+#include "process/sobel.h"
 #include <iostream>
 #include <cassert>
 #include <cstring>
@@ -203,6 +204,10 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         Frac::Image image(argv[1]);
         if (image.data()) {
+
+            Frac::Image test = Frac::SobelOperator().process(image);
+            test.savePng("sobel.png");
+
             test_encoder(CmdArgs(argc, argv));
         }
     }

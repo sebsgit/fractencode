@@ -20,7 +20,8 @@ SOURCES += main.cpp \
     image/imageutils.cpp \
     image/partition/gridpartition.cpp \
     image/partition/quadtreepartition.cpp \
-    process/gaussian5x5.cpp
+    process/gaussian5x5.cpp \
+    process/sobel.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -40,7 +41,9 @@ HEADERS += \
     encode/datatypes.h \
     utils/timer.h \
     image/partition/quadtreepartition.h \
-    process/gaussian5x5.h
+    process/gaussian5x5.h \
+    process/abstractprocessor.h \
+    process/sobel.h
 
 OBJECTS_DIR = build
 
