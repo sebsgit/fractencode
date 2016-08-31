@@ -19,8 +19,8 @@ static const int _kernel_y[] = {
 };
 
 #ifdef FRAC_WITH_AVX
-static const int16_t kernel_x_simd[] __attribute__ ((aligned (16))) = { -1, 1, -2, 2, -1, 1, 0, 0 };
 static const int16_t kernel_y_simd[] __attribute__ ((aligned (16))) = { -1, -2, -1, 1, 2, 1, 0, 0 };
+static const int16_t kernel_x_simd[] __attribute__ ((aligned (16))) = { -1, -2, 1, 2, -1, 0, 1, 0 };
 #endif
 
 Image SobelOperator::process(const Image &image) const {
@@ -60,24 +60,32 @@ AbstractBufferPtr<SobelOperator::result_t> SobelOperator::calculate(const Image 
                     }
                 }
             } else {
-                const uint8_t a = image.data()->get()[(x - 1) + (y - 1) * image.stride()];
-                const uint8_t c = image.data()->get()[(x + 1) + (y - 1) * image.stride()];
-                const uint8_t d = image.data()->get()[(x - 1) + (y) * image.stride()];
-                const uint8_t e = image.data()->get()[(x + 1) + (y) * image.stride()];
-                const uint8_t f = image.data()->get()[(x - 1) + (y + 1) * image.stride()];
-                const uint8_t h = image.data()->get()[(x + 1) + (y + 1) * image.stride()];
-                __m128i data_x = _mm_set_epi16(0, 0, h, f, e, d, c, a);
-                data_x = _mm_mullo_epi16(data_x, kernel_x128i);
                 __m128i row0 = _mm_loadu_si128((const __m128i*)(image.data()->get() + x - 1 + (y - 1) * image.stride()));
+                __m128i row1 = _mm_loadu_si128((const __m128i*)(image.data()->get() + x - 1 + (y) * image.stride()));
                 __m128i row2 = _mm_loadu_si128((const __m128i*)(image.data()->get() + x - 1 + (y + 1) * image.stride()));
+
                 row0 = _mm_unpacklo_epi8(row0, _mm_setzero_si128());
+                row1 = _mm_unpacklo_epi8(row1, _mm_setzero_si128());
                 row2 = _mm_unpacklo_epi8(row2, _mm_setzero_si128());
+
+                __m128i mask_x = _mm_set_epi16(0, 0, 0, 0, 0, 1, 0, 1);
+                __m128i row0_x = _mm_mullo_epi16(row0, mask_x);
+                __m128i row1_x = _mm_mullo_epi16(row1, mask_x);
+                __m128i row2_x = _mm_mullo_epi16(row2, mask_x);
+
+                row1_x = _mm_bslli_si128(row1_x, 2);
+                row2_x = _mm_bslli_si128(row2_x, 8);
+                row0_x = _mm_add_epi16(row0_x, row1_x);
+                row0_x = _mm_add_epi16(row0_x, row2_x);
+                __m128i data_x = _mm_mullo_epi16(row0_x, kernel_x128i);
+
                 row2 = _mm_bslli_si128(row2, 6);
                 row0 = _mm_mullo_epi16(row0, _mm_set_epi16(0, 0, 0, 0, 0, 1, 1, 1));
                 __m128i data_y = _mm_mullo_epi16(_mm_add_epi16(row0, row2), kernel_y128i);
+
                 int16_t tmp[8];
                 _mm_storeu_si128((__m128i*)tmp, data_x);
-                derivative.dx = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5];
+                derivative.dx = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6];
                 _mm_storeu_si128((__m128i*)tmp, data_y);
                 derivative.dy = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5];
             }
