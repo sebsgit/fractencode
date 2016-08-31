@@ -61,17 +61,20 @@ AbstractBufferPtr<SobelOperator::result_t> SobelOperator::calculate(const Image 
                 }
             } else {
                 const uint8_t a = image.data()->get()[(x - 1) + (y - 1) * image.stride()];
-                const uint8_t b = image.data()->get()[(x) + (y - 1) * image.stride()];
                 const uint8_t c = image.data()->get()[(x + 1) + (y - 1) * image.stride()];
                 const uint8_t d = image.data()->get()[(x - 1) + (y) * image.stride()];
                 const uint8_t e = image.data()->get()[(x + 1) + (y) * image.stride()];
                 const uint8_t f = image.data()->get()[(x - 1) + (y + 1) * image.stride()];
-                const uint8_t g = image.data()->get()[(x) + (y + 1) * image.stride()];
                 const uint8_t h = image.data()->get()[(x + 1) + (y + 1) * image.stride()];
                 __m128i data_x = _mm_set_epi16(0, 0, h, f, e, d, c, a);
-                __m128i data_y = _mm_set_epi16(0, 0, h, g, f, c, b, a);
                 data_x = _mm_mullo_epi16(data_x, kernel_x128i);
-                data_y = _mm_mullo_epi16(data_y, kernel_y128i);
+                __m128i row0 = _mm_loadu_si128((const __m128i*)(image.data()->get() + x - 1 + (y - 1) * image.stride()));
+                __m128i row2 = _mm_loadu_si128((const __m128i*)(image.data()->get() + x - 1 + (y + 1) * image.stride()));
+                row0 = _mm_unpacklo_epi8(row0, _mm_setzero_si128());
+                row2 = _mm_unpacklo_epi8(row2, _mm_setzero_si128());
+                row2 = _mm_bslli_si128(row2, 6);
+                row0 = _mm_mullo_epi16(row0, _mm_set_epi16(0, 0, 0, 0, 0, 1, 1, 1));
+                __m128i data_y = _mm_mullo_epi16(_mm_add_epi16(row0, row2), kernel_y128i);
                 int16_t tmp[8];
                 _mm_storeu_si128((__m128i*)tmp, data_x);
                 derivative.dx = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5];
