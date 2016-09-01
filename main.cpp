@@ -268,6 +268,8 @@ int main(int argc, char *argv[])
 
             Frac::Image test = Frac::SobelOperator().process(image);
             test.savePng("sobel.png");
+            test = Frac::NonMaximumSuppressionOperator().edgeImage(Frac::SobelOperator().calculate(image), image.width(), image.height());
+            test.savePng("sobel_nonmax.png");
 
             test_encoder(CmdArgs(argc, argv));
         }

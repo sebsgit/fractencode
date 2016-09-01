@@ -107,3 +107,55 @@ AbstractBufferPtr<SobelOperator::result_t> SobelOperator::calculate(const Image 
     }
     return result;
 }
+
+
+Image NonMaximumSuppressionOperator::edgeImage(AbstractBufferPtr<SobelOperator::result_t> gradients, uint32_t imageWidth, uint32_t imageHeight) const {
+    uint32_t resultStride = imageWidth + 64;
+    AbstractBufferPtr<Image::Pixel> resultBuffer = Buffer<Image::Pixel>::alloc(resultStride * imageHeight);
+    resultBuffer->memset(0);
+    Image result(resultBuffer, imageWidth, imageHeight, resultStride);
+    auto oldCallback = this->_pixelCallback;
+    this->_pixelCallback = [&](uint32_t x, uint32_t y, bool isStrongEdge) {
+        resultBuffer->get()[x + y * resultStride] = isStrongEdge ? 255 : 100;
+    };
+    this->process(gradients, imageWidth, imageHeight);
+    this->_pixelCallback = oldCallback;
+    return result;
+}
+
+void NonMaximumSuppressionOperator::process(AbstractBufferPtr<SobelOperator::result_t> gradients, uint32_t imageWidth, uint32_t imageHeight) const {
+    static const auto halfQuarter = 22.5f;
+    for (uint32_t y=1 ; y<imageHeight - 1 ; ++y) {
+        for (uint32_t x=1 ; x<imageWidth - 1 ; ++x) {
+            const auto g = gradients->get()[x + y * imageWidth];
+            const auto magnitude_xy = sqrt(g.dx * g.dx + g.dy * g.dy);
+            if (magnitude_xy > this->_loCutoff) {
+                const auto angle_xy = ((atan2(g.dy, g.dx) * 180) / 3.14) + 180;
+                uint32_t x01 = x, x11 = x, y01 = y, y11 = y;
+                if (abs(angle_xy - 0) < halfQuarter || abs(angle_xy - 180) < halfQuarter || abs(angle_xy - 360) < halfQuarter) {
+                    y01++;
+                    y11--;
+                } else if ((abs(angle_xy - 45) < halfQuarter) || abs(angle_xy - 225) < halfQuarter) {
+                    x01--;
+                    y01++;
+                    x11++;
+                    y11--;
+                } else if ((abs(angle_xy - 90) < halfQuarter) || abs(angle_xy - 270) < halfQuarter) {
+                   x01++;
+                   x11--;
+                } else {
+                   x01++;
+                   y01++;
+                   x11--;
+                   y11--;
+                }
+                const auto g01 = gradients->get()[x01 + y01 * imageWidth];
+                const auto g11 = gradients->get()[x11 + y11 * imageWidth];
+                const auto magnitude_01 = sqrt(g01.dx*g01.dx + g01.dy*g01.dy);
+                const auto magnitude_11 = sqrt(g11.dx*g11.dx + g11.dy*g11.dy);
+                if (magnitude_xy > magnitude_01 && magnitude_xy > magnitude_11)
+                    this->_pixelCallback(x, y, magnitude_xy > _hiCutoff);
+            }
+        }
+    }
+}
