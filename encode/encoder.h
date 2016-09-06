@@ -7,6 +7,7 @@
 #include "image/partition/gridpartition.h"
 #include "transformmatcher.h"
 #include "classifier.h"
+#include "edgeclassifier.h"
 #include <iostream>
 #include <sstream>
 

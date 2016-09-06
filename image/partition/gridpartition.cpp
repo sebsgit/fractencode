@@ -75,7 +75,7 @@ item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr 
     item_match_t result;
     for (auto it : source->_data) {
         if (it->width() > a->width() && it->height() > a->height()) {
-            if (classifier.compare(a->image(), it->image())) {
+            if (classifier.compare(a, it)) {
                 auto score = matcher.match(a, it);
                 if (score.distance < result.score.distance) {
                     result.score = score;

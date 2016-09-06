@@ -2,6 +2,7 @@
 #define CLASSIFIER_H
 
 #include "image.h"
+#include "partition.h"
 #include <memory>
 #include <vector>
 
@@ -9,6 +10,9 @@ namespace Frac {
     class ImageClassifier {
     public:
         virtual ~ImageClassifier() {}
+        virtual bool compare(const PartitionItemPtr& targetItem, const PartitionItemPtr& sourceItem) const {
+            return this->compare(targetItem->image(), sourceItem->image());
+        }
         virtual bool compare(const Image& a, const Image& b) const = 0;
     };
 
@@ -32,6 +36,12 @@ namespace Frac {
         CombinedClassifier& add(std::shared_ptr<ImageClassifier> p) {
             this->_classifiers.push_back(p);
             return *this;
+        }
+        bool compare(const PartitionItemPtr& a, const PartitionItemPtr& b) const override {
+            for (const auto& p : _classifiers)
+                if (!p->compare(a, b))
+                    return false;
+            return true;
         }
         bool compare(const Image& a, const Image& b) const override {
             for (const auto& p : _classifiers)

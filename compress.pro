@@ -21,7 +21,8 @@ SOURCES += main.cpp \
     image/partition/gridpartition.cpp \
     image/partition/quadtreepartition.cpp \
     process/gaussian5x5.cpp \
-    process/sobel.cpp
+    process/sobel.cpp \
+    encode/edgeclassifier.cpp
 
 HEADERS += \
     thirdparty/stb_image/stb_image.h \
@@ -43,7 +44,8 @@ HEADERS += \
     image/partition/quadtreepartition.h \
     process/gaussian5x5.h \
     process/abstractprocessor.h \
-    process/sobel.h
+    process/sobel.h \
+    encode/edgeclassifier.h
 
 OBJECTS_DIR = build
 
