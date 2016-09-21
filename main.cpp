@@ -260,7 +260,9 @@ int main(int argc, char *argv[])
 {
     test_statistics();
     test_partition();
+#ifndef WIN32
     test_blur();
+#endif
     test_sobel();
     if (argc > 1) {
         Frac::Image image(argv[1]);

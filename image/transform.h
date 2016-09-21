@@ -73,10 +73,11 @@ namespace Frac {
             const auto* sourcePtr = source.data()->get();
             auto* targetPtr = buffer->get();
             Image result(buffer, targetSize.x(), targetSize.y(), targetSize.x());
-            result.map([&](uint32_t x, uint32_t y) {
+			for (uint32_t y = 0; y < result.height(); ++y)
+			for (uint32_t x = 0; x < result.width(); ++x) {
                 const Point2du p = this->map(x, y, targetSize);
                 targetPtr[x + y * targetSize.x()] = sourcePtr[p.x() + p.y() * source.stride()];
-            });
+            }
             return result;
         }
         Size32u map(const Size32u& s) const noexcept {

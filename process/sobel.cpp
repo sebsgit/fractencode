@@ -3,6 +3,7 @@
 #include <immintrin.h>
 #endif
 #include <cmath>
+#include <inttypes.h>
 
 using namespace Frac;
 
@@ -18,9 +19,19 @@ static const int _kernel_y[] = {
     1, 2, 1
 };
 
+#ifdef _MSC_VER
+#define ALIGN_SPEC __declspec(align(16))
+#define ALIGN_ATTR
+#define byteshift_left _mm_slli_si128
+#else
+#define ALIGN_SPEC
+#define ALIGN_ATTR __attribute__ ((aligned (16)))
+#define byteshift_left _mm_bslli_si128
+#endif
+
 #ifdef FRAC_WITH_AVX
-static const int16_t kernel_y_simd[] __attribute__ ((aligned (16))) = { -1, -2, -1, 1, 2, 1, 0, 0 };
-static const int16_t kernel_x_simd[] __attribute__ ((aligned (16))) = { -1, -2, 1, 2, -1, 0, 1, 0 };
+ALIGN_SPEC static const int16_t kernel_y_simd[] ALIGN_ATTR = { -1, -2, -1, 1, 2, 1, 0, 0 };
+ALIGN_SPEC static const int16_t kernel_x_simd[] ALIGN_ATTR = { -1, -2, 1, 2, -1, 0, 1, 0 };
 #endif
 
 Image SobelOperator::process(const Image &image) const {
@@ -73,21 +84,21 @@ AbstractBufferPtr<SobelOperator::result_t> SobelOperator::calculate(const Image 
                 __m128i row1_x = _mm_mullo_epi16(row1, mask_x);
                 __m128i row2_x = _mm_mullo_epi16(row2, mask_x);
 
-                row1_x = _mm_bslli_si128(row1_x, 2);
-                row2_x = _mm_bslli_si128(row2_x, 8);
+                row1_x = byteshift_left(row1_x, 2);
+                row2_x = byteshift_left(row2_x, 8);
                 row0_x = _mm_add_epi16(row0_x, row1_x);
                 row0_x = _mm_add_epi16(row0_x, row2_x);
                 __m128i data_x = _mm_mullo_epi16(row0_x, kernel_x128i);
 
-                row2 = _mm_bslli_si128(row2, 6);
+                row2 = byteshift_left(row2, 6);
                 row0 = _mm_mullo_epi16(row0, _mm_set_epi16(0, 0, 0, 0, 0, 1, 1, 1));
                 __m128i data_y = _mm_mullo_epi16(_mm_add_epi16(row0, row2), kernel_y128i);
 
                 int16_t tmp[8];
                 _mm_storeu_si128((__m128i*)tmp, data_x);
-                derivative.dx = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6];
+                derivative.dx = (float)tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6];
                 _mm_storeu_si128((__m128i*)tmp, data_y);
-                derivative.dy = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5];
+                derivative.dy = (float)tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5];
             }
 #else
             for (int i=-1 ; i<=1 ; ++i) {
