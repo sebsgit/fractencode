@@ -93,24 +93,18 @@ namespace Frac {
         }
         template <typename T>
         Point2d<T> map(const T x, const T y, const Size32u& s) const noexcept {
-            switch(_type) {
-            case Rotate_90:
-                return Point2d<T>(y, s.x() - x);
-            case Rotate_180:
-                return Point2d<T>(s.x() - x, s.y() - y);
-            case Rotate_270:
-                return Point2d<T>(s.y() - y, x);
-            case Flip:
-                return Point2d<T>(x, s.y() - y);
-            case Flip_Rotate_90:
-                return Point2d<T>(y, x);
-            case Flip_Rotate_180:
-                return Point2d<T>(s.x() - x, y);
-            case Flip_Rotate_270:
-                return Point2d<T>(s.y() - y, s.x() - x);
-            default:
-                return Point2d<T>(x, y);
-            }
+			static const int __map_lookup[8][8] = {
+		/*ID*/		{ 1, 0, 0, 0,  0, 1, 0, 0 },
+		/*90*/		{0, 1, 0, 0,  -1, 0, 1, 0},
+		/*180*/		{-1, 0, 1, 0,  0, -1, 0, 1},
+		/*270*/		{0, -1, 0, 1,  1, 0, 0, 0},
+		/*flip*/	{1, 0, 0, 0,   0, -1, 0, 1},
+		/*fl 90*/	{0, 1, 0, 0,   1, 0, 0, 0},
+		/*fl 180*/	{-1, 0, 1, 0,  0, 1, 0, 0},
+		/*fl 270*/	{0, -1, 0, 1, -1, 0, 1, 0}
+			};
+			return Point2d<T>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * s.x() + __map_lookup[_type][3] * s.y(),
+				__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * s.x() + __map_lookup[_type][7] * s.y());
         }
         void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const;
     private:
