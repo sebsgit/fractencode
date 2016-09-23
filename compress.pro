@@ -10,7 +10,8 @@ QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
 INCLUDEPATH += .    \
     utils   \
     image   \
-    process
+    process	\
+	schedule
 
 SOURCES += main.cpp \
     thirdparty/stb_image/stb_image_impl.c \
@@ -45,7 +46,11 @@ HEADERS += \
     process/gaussian5x5.h \
     process/abstractprocessor.h \
     process/sobel.h \
-    encode/edgeclassifier.h
+    encode/edgeclassifier.h	\
+	schedule/scheduler.h	\
+	schedule/schedulerfactory.hpp \
+	schedule/sequentialscheduler.hpp \
+	schedule/threadedscheduler.hpp
 
 OBJECTS_DIR = build
 

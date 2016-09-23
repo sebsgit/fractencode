@@ -24,6 +24,9 @@ public:
         this->inputPath = argv[1];
         this->_parse(argv + 2, argc - 2);
     }
+	CmdArgs(const std::string& path) {
+		this->inputPath = path;
+	}
 private:
     void _parse(char** s, const int count) {
         int index = 0;
@@ -264,6 +267,7 @@ int main(int argc, char *argv[])
     test_blur();
 #endif
     test_sobel();
+
     if (argc > 1) {
         Frac::Image image(argv[1]);
         if (image.data()) {
@@ -275,6 +279,9 @@ int main(int argc, char *argv[])
 
             test_encoder(CmdArgs(argc, argv));
         }
-    }
+	}
+	else {
+		test_encoder(CmdArgs("small.png"));
+	}
     return 0;
 }

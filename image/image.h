@@ -7,6 +7,7 @@
 #include "size.hpp"
 #include <cstring>
 #include <unordered_map>
+#include <mutex>
 
 namespace Frac {
 
@@ -19,10 +20,14 @@ public:
     static const int KeyVariance = 2;
     static const int KeyBlockTypeBrightness = 3;
 
+	ImageData() {}
+
     void put(int key, double value) {
+		std::unique_lock<std::mutex> lock(_mutex);
         _data[key] = value;
     }
     double get(const int key, const double defaultValue = -1.0) const {
+		std::unique_lock<std::mutex> lock(_mutex);
         const auto it = _data.find(key);
         if (it != _data.end())
             return it->second;
@@ -30,6 +35,7 @@ public:
     }
 private:
     std::unordered_map<int, double> _data;
+	mutable std::mutex _mutex;
 };
 
 class Image {
@@ -106,12 +112,12 @@ public:
         }
     }
     ImageData& cache() const {
-        return _cache;
+        return *_cache;
     }
 private:
     AbstractBufferPtr<Pixel> _data;
     uint32_t _width = 0, _height = 0, _stride = 0;
-    mutable ImageData _cache;
+    mutable std::shared_ptr<ImageData> _cache = std::shared_ptr<ImageData>(new ImageData);
 };
 
 class PlanarImage {

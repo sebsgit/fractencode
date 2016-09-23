@@ -55,20 +55,23 @@ PartitionPtr AdaptativeGridPartitionCreator::create(const Image& image) const {
 }
 
 grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t& rejectedMappings) {
-    grid_encode_data_t result;
     for (auto it : this->_data) {
-        item_match_t match = this->matchItem(it, source, classifier, matcher, rejectedMappings);
-        encode_item_t enc;
-        enc.x = it->pos().x();
-        enc.y = it->pos().y();
-        enc.w = it->image().width();
-        enc.h = it->image().height();
-        enc.match = match;
-        result.encoded.push_back(enc);
-        std::cout << it->pos().x() << ", " << it->pos().y() << " --> " << match.x << ',' << match.y << " d: " << match.score.distance << "\n";
-        std::cout << "s, o: " << match.score.contrast << ' ' << match.score.brightness << "\n";
+		auto fn = [this, it, &source, &classifier, &matcher, &rejectedMappings]() {
+			item_match_t match = this->matchItem(it, source, classifier, matcher, rejectedMappings);
+			encode_item_t enc;
+			enc.x = it->pos().x();
+			enc.y = it->pos().y();
+			enc.w = it->image().width();
+			enc.h = it->image().height();
+			enc.match = match;
+		//	std::cout << enc.x << ", " << enc.y << " --> " << enc.match.x << ',' << enc.match.y << " d: " << enc.match.score.distance << "\n";
+		//	std::cout << "s, o: " << enc.match.score.contrast << ' ' << enc.match.score.brightness << "\n";
+			return enc;
+		};
+		this->_jobPool->addTask(new LambdaTask<encode_item_t>(fn));
     }
-    return result;
+	this->_jobPool->waitForAll();
+	return grid_encode_data_t({ _jobPool->allResults() });
 }
 
 item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t &rejectedMappings) const {
