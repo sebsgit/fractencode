@@ -7,6 +7,10 @@ CONFIG += debug_and_release
 
 QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
 
+unix {
+    DEFINES += FRAC_NO_THREADS
+}
+
 INCLUDEPATH += .    \
     utils   \
     image   \

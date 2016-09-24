@@ -37,10 +37,10 @@ namespace Frac {
         const Point2du pos() const noexcept {
             return _pos;
         }
-		const uint32_t width() const noexcept {
+		uint32_t width() const noexcept {
 			return _image.width();
 		}
-		const uint32_t height() const noexcept {
+		uint32_t height() const noexcept {
 			return _image.height();
 		}
 		const Size32u size() const noexcept {

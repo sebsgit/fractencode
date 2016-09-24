@@ -1,10 +1,13 @@
 #pragma once
+
+#ifndef FRAC_NO_THREADS
 #include "scheduler.h"
 #include "sequentialscheduler.hpp"
 #include <thread>
 #include <mutex>
 #include <deque>
 #include <iterator>
+#include <condition_variable>
 
 namespace Frac {
 
@@ -188,3 +191,5 @@ private:
 	bool _threadsStarted = false;
 };
 }
+
+#endif

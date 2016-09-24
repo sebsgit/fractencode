@@ -7,11 +7,11 @@
 #include "size.hpp"
 #include <cstring>
 #include <unordered_map>
+#ifndef FRAC_NO_THREADS
 #include <mutex>
+#endif
 
 namespace Frac {
-
-//class ImageDataEntry
 
 class ImageData {
 public:
@@ -23,18 +23,24 @@ public:
 	ImageData() {}
 
     void put(int key, double value) {
+#ifndef FRAC_NO_THREADS
 		std::unique_lock<std::mutex> lock(_mutex);
-        _data[key] = value;
+#endif
+		_data[key] = value;
     }
     double get(const int key, const double defaultValue = -1.0) const {
+#ifndef FRAC_NO_THREADS
 		std::unique_lock<std::mutex> lock(_mutex);
+#endif
 		if (_data[key] != -1)
 			return _data[key];
         return defaultValue;
     }
 private:
 	double _data[KeyBlockTypeBrightness + 1] = {-1, -1, -1, -1};
+#ifndef FRAC_NO_THREADS
 	mutable std::mutex _mutex;
+#endif
 };
 
 class Image {
