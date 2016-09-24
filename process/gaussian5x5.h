@@ -7,7 +7,7 @@ namespace Frac {
 
 class GaussianBlur5x5 : public AbstractProcessor {
 public:
-    Image process(const Image& image) const override;
+	Image process(const Image& image) const override;
 };
 }
 

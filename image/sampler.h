@@ -10,23 +10,23 @@ class Transform;
 
 class SamplerLinear {
 public:
-    explicit SamplerLinear(const Image& source);
-    Image::Pixel operator() (uint32_t x, uint32_t y) const;
+	explicit SamplerLinear(const Image& source);
+	Image::Pixel operator() (uint32_t x, uint32_t y) const;
 private:
-    const Image::Pixel* _source;
-    const uint32_t _stride;
+	const Image::Pixel* _source;
+	const uint32_t _stride;
 };
 
 class SamplerBilinear {
 public:
-    explicit SamplerBilinear(const Image& source);
-    Image::Pixel operator() (uint32_t x, uint32_t y) const;
-    Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const Size32u& s) const;
+	explicit SamplerBilinear(const Image& source);
+	Image::Pixel operator() (uint32_t x, uint32_t y) const;
+	Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const Size32u& s) const;
 private:
-    const Image::Pixel* _source;
-    const uint32_t _stride;
-    const uint32_t _width;
-    const uint32_t _height;
+	const Image::Pixel* _source;
+	const uint32_t _stride;
+	const uint32_t _width;
+	const uint32_t _height;
 };
 }
 
