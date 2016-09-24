@@ -10,12 +10,9 @@
 namespace Frac {
 
 template <typename T, typename U>
-T convert(const U u) {
+const T convert(const U u) {
     return static_cast<T>(u);
 }
-
-template <> double convert<double, uint8_t>(uint8_t u);
-template <> float convert<float, uint8_t>(uint8_t u);
 
 template <typename T>
 class AbstractBuffer {

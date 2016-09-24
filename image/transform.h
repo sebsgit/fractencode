@@ -5,6 +5,7 @@
 #include "utils/size.hpp"
 #include "utils/point2d.hpp"
 #include "image/sampler.h"
+#include <iostream>
 
 namespace Frac {
     class Transform {

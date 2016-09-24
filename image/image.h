@@ -28,13 +28,12 @@ public:
     }
     double get(const int key, const double defaultValue = -1.0) const {
 		std::unique_lock<std::mutex> lock(_mutex);
-        const auto it = _data.find(key);
-        if (it != _data.end())
-            return it->second;
+		if (_data[key] != -1)
+			return _data[key];
         return defaultValue;
     }
 private:
-    std::unordered_map<int, double> _data;
+	double _data[KeyBlockTypeBrightness + 1] = {-1, -1, -1, -1};
 	mutable std::mutex _mutex;
 };
 
