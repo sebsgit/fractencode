@@ -28,9 +28,6 @@ namespace Frac {
         {
         }
         ~GridItem() {}
-        double distance(const GridItem& other, const Metric& m, const Transform& t) const {
-            return m.distance(other.image(),this->image(),t);
-        }
         Image& image() noexcept {
             return _image;
         }
