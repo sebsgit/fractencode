@@ -12,28 +12,10 @@ namespace Frac {
     class TransformMatcher;
     class ImageClassifier;
 
-    class PartitionItem {
-    public:
-        virtual ~PartitionItem() {}
-        virtual Image& image() noexcept = 0;
-        virtual Image image() const noexcept = 0;
-        virtual double distance(const PartitionItem& other, const Metric& m, const Transform& t) const = 0;
-        virtual const Point2du pos() const = 0;
-        uint32_t width() const noexcept {
-            return image().width();
-        }
-        uint32_t height() const noexcept {
-            return image().height();
-        }
-        Size32u size() const noexcept {
-            return image().size();
-        }
-    };
-    using PartitionItemPtr = std::shared_ptr<PartitionItem>;
     class Partition;
     using PartitionPtr = std::shared_ptr<Partition>;
 
-    class GridItem : public PartitionItem {
+    class GridItem {
     public:
         GridItem(const Image& source, const uint32_t x, const uint32_t y, const Size32u& s)
             :_pos(x, y)
@@ -46,22 +28,33 @@ namespace Frac {
         {
         }
         ~GridItem() {}
-        double distance(const PartitionItem& other, const Metric& m, const Transform& t) const override {
+        double distance(const GridItem& other, const Metric& m, const Transform& t) const {
             return m.distance(other.image(),this->image(),t);
         }
-        Image& image() noexcept override {
+        Image& image() noexcept {
             return _image;
         }
-        Image image() const noexcept override {
+        Image image() const noexcept {
             return _image;
         }
         const Point2du pos() const noexcept {
             return _pos;
         }
+		const uint32_t width() const noexcept {
+			return _image.width();
+		}
+		const uint32_t height() const noexcept {
+			return _image.height();
+		}
+		const Size32u size() const noexcept {
+			return _image.size();
+		}
     private:
         const Point2du _pos;
         Image _image;
     };
+
+	using PartitionItemPtr = std::shared_ptr<GridItem>;
 
     class Partition {
     public:
