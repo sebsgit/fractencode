@@ -131,7 +131,7 @@ private:
 template <typename Result>
 class ThreadedScheduler : public AbstractScheduler<Result> {
 public:
-	ThreadedScheduler(const size_t numThreads) {
+	explicit ThreadedScheduler(const size_t numThreads) {
 		for (size_t i = 0; i < numThreads; ++i) {
 			std::shared_ptr<_ThreadSchedulerHelper<Result>> scheduler(new _ThreadSchedulerHelper<Result>());
 			_threadQueue.push_back(scheduler);

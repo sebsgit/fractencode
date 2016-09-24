@@ -21,7 +21,7 @@ namespace Frac {
         CombinedClassifier() {
 
         }
-        CombinedClassifier(ImageClassifier* c1) {
+        explicit CombinedClassifier(ImageClassifier* c1) {
             _classifiers.push_back(std::shared_ptr<ImageClassifier>(c1));
         }
         CombinedClassifier(ImageClassifier* c1, ImageClassifier* c2) {
@@ -95,11 +95,11 @@ namespace Frac {
 			int typeA = (int)a.cache().get(ImageData::KeyBlockTypeBrightness, -1);
 			int typeB = (int)b.cache().get(ImageData::KeyBlockTypeBrightness, -1);
             if (typeA == -1) {
-                typeA = getCategory(a);
+                typeA = BrightnessBlockClassifier::getCategory(a);
                 a.cache().put(ImageData::KeyBlockTypeBrightness, typeA);
             }
             if (typeB == -1) {
-                typeB = getCategory(b);
+                typeB = BrightnessBlockClassifier::getCategory(b);
                 b.cache().put(ImageData::KeyBlockTypeBrightness, typeB);
             }
             return typeA == typeB;

@@ -25,7 +25,7 @@ namespace Frac {
             Bilinear
         };
 
-        Transform(Type t = Id) noexcept
+        explicit Transform(Type t = Id) noexcept
             : _type(t)
         {
 
@@ -104,8 +104,8 @@ namespace Frac {
 		/*fl 180*/	{-1, 0, 1, 0,  0, 1, 0, 0},
 		/*fl 270*/	{0, -1, 0, 1, -1, 0, 1, 0}
 			};
-			return Point2d<T>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * s.x() + __map_lookup[_type][3] * s.y(),
-				__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * s.x() + __map_lookup[_type][7] * s.y());
+			return Point2d<T>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (s.x() - 1) + __map_lookup[_type][3] * (s.y() - 1),
+				__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (s.x() - 1) + __map_lookup[_type][7] * (s.y() - 1));
         }
         void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const;
     private:

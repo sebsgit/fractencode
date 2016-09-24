@@ -76,6 +76,15 @@ public:
     {
 
     }
+	Image(uint32_t width, uint32_t height, uint32_t stride)
+		:_data(Buffer<Pixel>::alloc(height * stride))
+		,_width(width)
+		,_height(height)
+		,_stride(stride)
+	{
+
+	}
+
     Image() {}
 
     uint32_t width() const { return _width; }
@@ -127,7 +136,7 @@ private:
 
 class PlanarImage {
 public:
-    PlanarImage(const char* path) {
+    explicit PlanarImage(const char* path) {
         int components = 0;
         int w, h;
         unsigned char* data = stbi_load(path, &w, &h, &components, 3);
@@ -206,7 +215,7 @@ public:
 
 class Painter {
 public:
-    Painter(Image& image)
+    explicit Painter(Image& image)
         :_image(image)
     {
 

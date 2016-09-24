@@ -9,7 +9,7 @@ namespace Frac {
 class EdgeClassifier : public ImageClassifier {
     class Data;
 public:
-    EdgeClassifier(Image image);
+    explicit EdgeClassifier(Image image);
     ~EdgeClassifier();
     bool compare(const PartitionItemPtr& targetItem, const PartitionItemPtr& sourceItem) const override;
     bool compare(const Image& a, const Image& b) const override;

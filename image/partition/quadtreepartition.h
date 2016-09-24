@@ -18,7 +18,7 @@ private:
 
 class QuadtreePartition : public Partition {
 public:
-    QuadtreePartition(const Size32u& minSize) : _minSize(minSize) {
+    explicit QuadtreePartition(const Size32u& minSize) : _minSize(minSize) {
 
     }
     grid_encode_data_t estimateMapping(const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings) override;

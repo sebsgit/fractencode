@@ -17,7 +17,7 @@ public:
 template <typename Result>
 class LambdaTask : public AbstractTask<Result> {
 public:
-	LambdaTask(std::function<Result(void)> fn) 
+	explicit LambdaTask(std::function<Result(void)> fn) 
 		:_task(fn)
 	{}
 	void run() override {

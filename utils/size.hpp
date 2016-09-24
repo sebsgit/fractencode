@@ -43,7 +43,7 @@ namespace Frac {
         Size align(const T x, const T y) const {
             const T rx = _x % x;
             const T ry = _y % y;
-            return Size(_x + rx ? (x - rx) : 0, _y + ry ? (y - ry) : 0);
+			return Size(_x + (rx ? (x - rx) : 0), _y + (ry ? (y - ry) : 0));
         }
         const T area() const {
             return _x * _y;

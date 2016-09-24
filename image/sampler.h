@@ -10,7 +10,7 @@ class Transform;
 
 class SamplerLinear {
 public:
-    SamplerLinear(const Image& source);
+    explicit SamplerLinear(const Image& source);
     Image::Pixel operator() (uint32_t x, uint32_t y) const;
 private:
     const Image::Pixel* _source;
@@ -19,7 +19,7 @@ private:
 
 class SamplerBilinear {
 public:
-    SamplerBilinear(const Image& source);
+    explicit SamplerBilinear(const Image& source);
     Image::Pixel operator() (uint32_t x, uint32_t y) const;
     Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const Size32u& s) const;
 private:

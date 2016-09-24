@@ -20,7 +20,7 @@ public:
     // callback for edge pixel: (x, y, isStrongEdge)
     typedef std::function<void(uint32_t, uint32_t, bool)> pixel_callback_t;
 
-    NonMaximumSuppressionOperator(pixel_callback_t cb = [](uint32_t, uint32_t, bool){ }) : _pixelCallback(cb) {
+    explicit NonMaximumSuppressionOperator(pixel_callback_t cb = [](uint32_t, uint32_t, bool){ }) : _pixelCallback(cb) {
 
     }
     Image edgeImage(AbstractBufferPtr<SobelOperator::result_t> gradients, uint32_t imageWidth, uint32_t imageHeight) const;

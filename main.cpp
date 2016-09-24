@@ -24,8 +24,9 @@ public:
         this->inputPath = argv[1];
         this->_parse(argv + 2, argc - 2);
     }
-	CmdArgs(const std::string& path) {
-		this->inputPath = path;
+	explicit CmdArgs(const std::string& path)
+	:inputPath(path)
+ 	{
 	}
 private:
     void _parse(char** s, const int count) {
@@ -259,14 +260,41 @@ static void test_sobel() {
     }
 }
 
+static void test_sampler() {
+	using namespace Frac;
+	const Size32u size(8, 8);
+	const size_t stride = 64;
+	Image image(size.x(), size.y(), stride);
+	for (uint32_t y=0 ; y<size.y() ; ++y) {
+		for (uint32_t x=0 ; x<size.x() ; ++x) {
+			image.data()->get()[x + y * stride] = 4;
+		}
+	}
+	SamplerBilinear sampler(image);
+	Transform t;
+	while (1) {
+		for (uint32_t y=0 ; y<size.y() ; ++y) {
+			for (uint32_t x=0 ; x<size.x() ; ++x) {
+				if(sampler(x, y, t, size) != 4) {
+					std::cout << "sampler error\n";
+					exit(0);
+				}
+			}
+		}
+		if(t.next() == Transform::Id)
+			break;
+	}
+}
+
 int main(int argc, char *argv[])
 {
-    test_statistics();
-    test_partition();
+	test_statistics();
+	test_partition();
 #ifndef WIN32
-    test_blur();
+	test_blur();
 #endif
-    test_sobel();
+	test_sobel();
+	test_sampler();
 
     if (argc > 1) {
         Frac::Image image(argv[1]);
