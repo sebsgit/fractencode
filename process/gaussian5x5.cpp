@@ -38,7 +38,7 @@ Image GaussianBlur5x5::process(const Image &image) const {
             if (x<2 || y<2 || x>=w-2 || y>=h-2) {
                 for (int k=-2; k<=2 ; ++k) {
                     for (int j=-2; j<=2 ; ++j) {
-                        const float p = (x+k<0 || x+k>=w || y+j<0 || y+j>=h) ? 0.0 : (1.0f*_kernel[k+2+(j+2)*5]*sampler(x+k, (y+j)));
+                        const float p = (x+k<0 || x+k>=w || y+j<0 || y+j>=h) ? 0.0f : (1.0f*_kernel[k+2+(j+2)*5]*sampler(x+k, (y+j)));
                         sum += p;
                     }
                 }

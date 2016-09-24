@@ -17,6 +17,7 @@ public:
         image = GaussianBlur5x5().process(image);
         auto sobelData = SobelOperator().calculate(image);
         NonMaximumSuppressionOperator([&](uint32_t x, uint32_t y, bool isStrongEdge) {
+			(void)isStrongEdge;
             x /= _patchSize;
             y /= _patchSize;
             _data->get()[x + y * _stride] = 1;

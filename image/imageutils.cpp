@@ -59,7 +59,7 @@ double ImageStatistics::variance(const Image& image) noexcept {
 #ifdef FRAC_WITH_AVX
         if (image.width() % 8 == 0) {
             __m128 total = _mm_set1_ps(0.0f);
-            __m128 mean128 = _mm_set1_ps(av);
+            __m128 mean128 = _mm_set1_ps((float)av);
             for (uint32_t y=0 ; y<image.height() ; ++y) {
                 uint32_t column = 0;
                 const Image::Pixel* data = image.data()->get() + y * image.stride();
