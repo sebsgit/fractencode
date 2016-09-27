@@ -1,6 +1,7 @@
 #include "gridpartition.h"
 #include "encode/classifier.h"
 #include "encode/transformmatcher.h"
+#include "schedule/schedulerfactory.hpp"
 #include <iostream>
 
 using namespace Frac;
@@ -55,6 +56,7 @@ PartitionPtr AdaptativeGridPartitionCreator::create(const Image& image) const {
 }
 
 grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t& rejectedMappings) {
+	auto jobPool = SchedulerFactory<encode_item_t>::create();
 	for (auto it : this->_data) {
 		auto fn = [this, it, &source, &classifier, &matcher, &rejectedMappings]() {
 			item_match_t match = this->matchItem(it, source, classifier, matcher, rejectedMappings);
@@ -68,10 +70,10 @@ grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, co
 		//	std::cout << "s, o: " << enc.match.score.contrast << ' ' << enc.match.score.brightness << "\n";
 			return enc;
 		};
-		this->_jobPool->addTask(new LambdaTask<encode_item_t>(fn));
+		jobPool->addTask(new LambdaTask<encode_item_t>(fn));
 	}
-	this->_jobPool->waitForAll();
-	return grid_encode_data_t({ _jobPool->allResults() });
+	jobPool->waitForAll();
+	return grid_encode_data_t({ jobPool->allResults() });
 }
 
 item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t &rejectedMappings) const {

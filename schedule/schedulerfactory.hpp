@@ -1,16 +1,17 @@
 #pragma once
 #include "sequentialscheduler.hpp"
 #include "threadedscheduler.hpp"
+#include <memory>
 
 namespace Frac {
 template <typename Result>
 class SchedulerFactory {
 public:
-	static AbstractScheduler<Result>* create() {
+	static std::unique_ptr<AbstractScheduler<Result>> create() {
 #ifdef FRAC_NO_THREADS
-		return new SequentialScheduler<Result>();
+		return std::make_unique<SequentialScheduler<Result>>();
 #else
-		return new ThreadedScheduler<Result>(std::thread::hardware_concurrency() - 1);
+		return std::make_unique<ThreadedScheduler<Result>>(std::thread::hardware_concurrency() - 1);
 #endif
 	}
 };

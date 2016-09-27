@@ -5,7 +5,6 @@
 #include "image/transform.h"
 #include "image/metrics.h"
 #include "encode/datatypes.h"
-#include "schedule/schedulerfactory.hpp"
 #include <vector>
 
 namespace Frac {
@@ -55,7 +54,7 @@ namespace Frac {
 
 	class Partition {
 	public:
-		Partition() : _jobPool(SchedulerFactory<encode_item_t>::create()) {
+		Partition() {
 
 		}
 		virtual ~Partition() {
@@ -88,7 +87,6 @@ namespace Frac {
 		virtual item_match_t matchItem(const PartitionItemPtr& p, const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t& rejectedMappings) const;
 	protected:
 		std::vector<PartitionItemPtr> _data;
-		std::unique_ptr<AbstractScheduler<encode_item_t>> _jobPool;
 	};
 
 	class PartitionCreator {
