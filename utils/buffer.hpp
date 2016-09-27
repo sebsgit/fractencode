@@ -15,6 +15,23 @@ const T convert(const U u) {
 }
 
 template <typename T>
+class NewAllocator {
+public:
+	static T* acquire(const size_t n) {
+		return new T[n];
+	}
+	static void release(T* ptr) {
+		delete[] ptr;
+	}
+	static void memset(T* ptr, const int value, const size_t size) {
+		::memset(ptr, value, size);
+	}
+	static void memcpy(T* dest, const T* src, const size_t size) {
+		std::copy(src, src + size, dest);
+	}
+};
+
+template <typename T, template <typename> typename Allocator = NewAllocator>
 class AbstractBuffer {
 public:
 	virtual ~AbstractBuffer() {}
@@ -25,17 +42,17 @@ public:
 	void memset(const uint8_t value, size_t size = 0) noexcept {
 		if (size == 0)
 			size = this->size();
-		::memset(this->get(), value, size);
+		Allocator<T>::memset(this->get(), value, size);
 	}
 };
 
-template <typename T>
-using AbstractBufferPtr = std::shared_ptr<AbstractBuffer<T>>;
+template <typename T, template <typename> typename Allocator = NewAllocator>
+using AbstractBufferPtr = std::shared_ptr<AbstractBuffer<T, Allocator>>;
 
-template <typename T>
-class Buffer : public AbstractBuffer<T> {
+template <typename T, template <typename> typename Allocator = NewAllocator>
+class Buffer : public AbstractBuffer<T, Allocator> {
 public:
-	Buffer(T* data, const size_t size, std::function<void(T*)> deleter = [](T* d){ delete[] d; })
+	Buffer(T* data, const size_t size, std::function<void(T*)> deleter = Allocator<T>::release)
 		:_data(data, deleter)
 		,_size(size)
 	{
@@ -51,23 +68,23 @@ public:
 	virtual size_t size() const override {
 		return _size;
 	}
-	virtual AbstractBufferPtr<T> clone() const override {
+	virtual AbstractBufferPtr<T, Allocator> clone() const override {
 		auto result = alloc(this->size());
-		std::copy(this->get(), this->get() + this->size() , result->get());
+		Allocator<T>::memcpy(result->get(), this->get(), this->size());
 		return result;
 	}
-	static AbstractBufferPtr<T> alloc(const uint64_t size) {
-		return AbstractBufferPtr<T>(new Buffer<T>(new T[size], size));
+	static AbstractBufferPtr<T, Allocator> alloc(const uint64_t size) {
+		return AbstractBufferPtr<T, Allocator>(new Buffer<T, Allocator>(Allocator<T>::acquire(size), size));
 	}
 private:
 	std::shared_ptr<T> _data;
 	size_t _size;
 };
 
-template <typename T>
-class BufferSlice : public AbstractBuffer<T> {
+template <typename T, template <typename> typename Allocator = NewAllocator>
+class BufferSlice : public AbstractBuffer<T, Allocator> {
 public:
-	BufferSlice(AbstractBufferPtr<T> source, const uint64_t offset, const size_t size)
+	BufferSlice(AbstractBufferPtr<T, Allocator> source, const uint64_t offset, const size_t size)
 		:_source(source)
 		,_offset(offset)
 		,_size(size)
@@ -83,23 +100,23 @@ public:
 	size_t size() const override {
 		return _size;
 	}
-	virtual AbstractBufferPtr<T> clone() const override {
-		auto result = Buffer<T>::alloc(this->size());
-		std::copy(this->get(), this->get() + this->size() , result->get());
+	virtual AbstractBufferPtr<T, Allocator> clone() const override {
+		auto result = Buffer<T, Allocator>::alloc(this->size());
+		Allocator<T>::memcpy(result->get(), this->get(), this->size());
 		return result;
 	}
-	static AbstractBufferPtr<T> slice(AbstractBufferPtr<T> source, uint64_t offset, size_t size) {
-		return AbstractBufferPtr<T>(new BufferSlice<T>(source, offset, size));
+	static AbstractBufferPtr<T, Allocator> slice(AbstractBufferPtr<T, Allocator> source, uint64_t offset, size_t size) {
+		return AbstractBufferPtr<T, Allocator>(new BufferSlice<T, Allocator>(source, offset, size));
 	}
 private:
-	AbstractBufferPtr<T> _source;
+	AbstractBufferPtr<T, Allocator> _source;
 	uint64_t _offset;
 	size_t _size;
 };
 
-template <typename U, typename T>
-AbstractBufferPtr<U> convert(AbstractBufferPtr<T> source) {
-	auto result = Buffer<U>::alloc(source->size());
+template <typename U, typename T, template <typename> typename AllocatorSource = NewAllocator, template <typename> typename AllocatorResult = NewAllocator>
+AbstractBufferPtr<U, AllocatorResult> convert(AbstractBufferPtr<T, AllocatorSource> source) {
+	auto result = Buffer<U, AllocatorResult>::alloc(source->size());
 	for (size_t i=0 ; i<source->size() ; ++i)
 		result->get()[i] = convert<T, U>(source->get()[i]);
 	return result;
