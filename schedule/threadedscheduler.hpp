@@ -77,8 +77,13 @@ public:
 		return _pending.size() + _processing;
 	}
 	void finish() {
-		std::lock_guard<std::mutex> lock(_runMutex);
-		_done = true;
+		{
+			std::lock_guard<std::mutex> lock(_runMutex);
+			_done = true;
+		}
+		std::unique_lock<std::mutex> lock(_pendingMutex);
+		_taskDoneFlag.notify_one();
+		_waitForTaskFlag.notify_one();
 	}
 	void threadFunc() {
 		while (1) {
