@@ -65,7 +65,7 @@ public:
 				free(data);
 				data = (unsigned char*)buffer;
 			}
-			_data.reset(new Buffer<Pixel>((Pixel*)data, _height * _stride * sizeof(Pixel)));
+			_data.reset(new Buffer<Pixel>((Pixel*)data, _height * _stride * sizeof(Pixel), [](uint8_t* ptr) { ::free(ptr); }));
 		}
 	}
 	Image(AbstractBufferPtr<Pixel> data, uint32_t width, uint32_t height, uint32_t stride)

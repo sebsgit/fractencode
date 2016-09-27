@@ -35,7 +35,7 @@ using AbstractBufferPtr = std::shared_ptr<AbstractBuffer<T>>;
 template <typename T>
 class Buffer : public AbstractBuffer<T> {
 public:
-	Buffer(T* data, const size_t size, std::function<void(T*)> deleter = [](T* d){ free(d); })
+	Buffer(T* data, const size_t size, std::function<void(T*)> deleter = [](T* d){ delete[] d; })
 		:_data(data, deleter)
 		,_size(size)
 	{
@@ -57,7 +57,7 @@ public:
 		return result;
 	}
 	static AbstractBufferPtr<T> alloc(const uint64_t size) {
-		return AbstractBufferPtr<T>(new Buffer<T>(new T[size], size, [](T* d){ delete [] d; }));
+		return AbstractBufferPtr<T>(new Buffer<T>(new T[size], size));
 	}
 private:
 	std::shared_ptr<T> _data;
