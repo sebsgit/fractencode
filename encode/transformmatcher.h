@@ -6,6 +6,11 @@
 #include "metrics.h"
 #include "partition.h"
 #include "datatypes.h"
+#include <iostream>
+
+#ifdef FRAC_WITH_AVX
+#include "immintrin.h"
+#endif
 
 namespace Frac {
 class TransformMatcher {
@@ -33,6 +38,7 @@ public:
 		};
 
 		Transform t(Transform::Id);
+		__m128i ab_ratio_sse = _mm_set1_epi16(b->width() / a->width());
 		do {
 			transform_score_t candidate;
 			candidate.distance = _metric.distance(a->image(), b->image(), t);
@@ -44,6 +50,25 @@ public:
 				const auto stride_b = b->image().stride();
 				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
 				const auto height_offset = __map_lookup[t.type()][6] * (b->width() - 1) + __map_lookup[t.type()][7] * (b->height() - 1);
+				
+				__m128i sumA_sse = _mm_setzero_si128();
+				__m128i x_increase_sse = _mm_set_epi16(7, 6, 5, 4, 3, 2, 1, 0);
+				__m128i map_x0_sse = _mm_set1_epi16(__map_lookup[t.type()][0]);
+				__m128i map_x1_sse = _mm_set1_epi16(__map_lookup[t.type()][4]);
+				__m128i b_stride_sse = _mm_set1_epi16(b->image().stride());
+
+				uint16_t tmp_sse[8] = { 0 };
+				uint16_t tl_store[8];
+				uint16_t tr_store[8];
+				uint16_t bl_store[8];
+				uint16_t br_store[8];
+				Image::Pixel sample_b_sse[8];
+				double sumA_total_sse = 0.0;
+				double sumB_total_sse = 0.0;
+				double sumA2_total_sse = 0.0;
+				double sumB2_total_sse = 0.0;
+				double sumAB_total_sse = 0.0;
+				
 				for (uint32_t y = 0; y<a->image().height(); ++y) {
 					const auto srcY = (y * b->image().height()) / a->image().height();
 					auto ys = srcY;
@@ -58,10 +83,73 @@ public:
 					const auto map_x1 = __map_lookup[t.type()][4];
 					const auto y_off = y * a->image().stride();
 
+					__m128i y_w_off_sse = _mm_set1_epi16(y_width_offset);
+					__m128i y_h_off_sse = _mm_set1_epi16(y_height_offset);
+					__m128i y_w_off_sse_1 = _mm_set1_epi16(y_width_offset_1);
+					__m128i y_h_off_sse_1 = _mm_set1_epi16(y_height_offset_1);
+
+					for (uint32_t x = 0; x<a->image().width(); x += 8) {
+						auto src_data = (a->image().data()->get() + x + y_off);
+						__m128i x_sse = _mm_cvtsi64_si128(*(uint64_t*)src_data);
+						x_sse = _mm_unpacklo_epi8(x_sse, _mm_setzero_si128());
+						sumA_sse = _mm_add_epi16(x_sse, sumA_sse);
+						x_sse = _mm_mullo_epi16(x_sse, x_sse);
+						_mm_storeu_si128((__m128i*)tmp_sse, x_sse);
+						sumA2_total_sse += tmp_sse[0] + tmp_sse[1] + tmp_sse[2] + tmp_sse[3] + tmp_sse[4] + tmp_sse[5] + tmp_sse[6] + tmp_sse[7];
+
+						x_sse = _mm_set1_epi16(x);
+						x_sse = _mm_add_epi16(x_sse, x_increase_sse);
+
+						__m128i srcX_sse = _mm_mullo_epi16(x_sse, ab_ratio_sse);
+						srcX_sse = _mm_sub_epi16(srcX_sse, _mm_set_epi16(x+8 == b->width() ? 1 : 0, 0, 0, 0, 0, 0, 0, 0));
+					
+						__m128i xsx_sse = _mm_mullo_epi16(map_x0_sse, srcX_sse);
+						__m128i xsy_sse = _mm_mullo_epi16(map_x1_sse, srcX_sse);
+						__m128i xsx_sse_1 = _mm_mullo_epi16(map_x0_sse, _mm_add_epi16(srcX_sse, _mm_set1_epi16(1)));
+						__m128i xsy_sse_1 = _mm_mullo_epi16(map_x1_sse, _mm_add_epi16(srcX_sse, _mm_set1_epi16(1)));
+						
+						__m128i tl_x = _mm_add_epi16(xsx_sse, y_w_off_sse);
+						__m128i tl_y = _mm_add_epi16(xsy_sse, y_h_off_sse);
+						tl_y = _mm_mullo_epi16(tl_y, b_stride_sse);
+						tl_x = _mm_add_epi16(tl_x, tl_y);
+
+						__m128i tr_x = _mm_add_epi16(xsx_sse_1, y_w_off_sse);
+						__m128i tr_y = _mm_add_epi16(xsy_sse_1, y_h_off_sse);
+						tr_y = _mm_mullo_epi16(tr_y, b_stride_sse);
+						tr_x = _mm_add_epi16(tr_x, tr_y);
+
+						__m128i bl_x = _mm_add_epi16(xsx_sse, y_w_off_sse_1);
+						__m128i bl_y = _mm_add_epi16(xsy_sse, y_h_off_sse_1);
+						bl_y = _mm_mullo_epi16(bl_y, b_stride_sse);
+						bl_x = _mm_add_epi16(bl_x, bl_y);
+
+						__m128i br_x = _mm_add_epi16(xsx_sse_1, y_w_off_sse_1);
+						__m128i br_y = _mm_add_epi16(xsy_sse_1, y_h_off_sse_1);
+						br_y = _mm_mullo_epi16(br_y, b_stride_sse);
+						br_x = _mm_add_epi16(br_x, br_y);
+
+						_mm_storeu_si128((__m128i*)tl_store, tl_x);
+						_mm_storeu_si128((__m128i*)tr_store, tr_x);
+						_mm_storeu_si128((__m128i*)bl_store, bl_x);
+						_mm_storeu_si128((__m128i*)br_store, br_x);
+
+						for (int i = 0; i < 8; ++i) {
+							const int total = (int)source_b[tl_store[i]]
+								+ (int)source_b[tr_store[i]]
+								+ (int)source_b[bl_store[i]]
+								+ (int)source_b[br_store[i]];
+							sample_b_sse[i] = (total / 4);
+							sumAB_total_sse += convert<double>(total / 4) * src_data[i];
+							sumB2_total_sse += convert<double>(total / 4) * convert<double>(total / 4);
+							sumB_total_sse += convert<double>(total / 4);
+						}
+					}
+					/*
 					for (uint32_t x = 0; x<a->image().width(); ++x) {
 
 						// mm_loadu_128(a->data() + y_off + x)
 						const double valA = convert<double>(a->image().data()->get()[x + y_off]);
+
 						
 						// A = [ x, x+1, x+2, ..., x+7 ] = [ x, x, x, ..., x ] + [0, 1, 2, 3, 4, ..., 7]
 						// B = [ b / a, ..., b / a ]
@@ -107,8 +195,42 @@ public:
 						sumA2 += valA * valA;
 						sumB2 += valB * valB;
 						sumAB += valA * valB;
-					}
+					}*/
 				}
+
+				_mm_storeu_si128((__m128i*)tmp_sse, sumA_sse);
+				sumA_total_sse = tmp_sse[0] + tmp_sse[1] + tmp_sse[2] + tmp_sse[3] + tmp_sse[4] + tmp_sse[5] + tmp_sse[6] + tmp_sse[7];
+
+				sumA = sumA_total_sse;
+				sumB = sumB_total_sse;
+				sumA2 = sumA2_total_sse;
+				sumB2 = sumB2_total_sse;
+				sumAB = sumAB_total_sse;
+				/*if (sumA != sumA_total_sse) {
+					std::cout << sumA << ' ' << sumA_total_sse << '\n';
+					exit(0);
+				}
+
+				if (sumB != sumB_total_sse) {
+					std::cout << "sumB" << sumB << ' ' << sumB_total_sse << '\n';
+					exit(0);
+				}
+
+				if (sumA2 != sumA2_total_sse) {
+					std::cout << "sumA2" << sumA2 << ' ' << sumA2_total_sse << '\n';
+					exit(0);
+				}
+
+				if (sumB2 != sumB2_total_sse) {
+					std::cout << "sumB2" << sumB2 << ' ' << sumB2_total_sse << '\n';
+					exit(0);
+				}
+
+				if (sumAB != sumAB_total_sse) {
+					std::cout << "sumAB" << sumAB << ' ' << sumAB_total_sse << '\n';
+					exit(0);
+				}*/
+
 				const double tmp = (N * sumA2 - (sumA - 1) * sumA);
 				const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
 				const double o = (sumB - s * sumA) / N;
