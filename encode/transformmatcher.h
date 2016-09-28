@@ -53,27 +53,52 @@ public:
 					const auto y_height_offset = __map_lookup[t.type()][5] * ys + height_offset;
 					const auto y_width_offset_1 = __map_lookup[t.type()][1] * (ys + 1) + width_offset;
 					const auto y_height_offset_1 = __map_lookup[t.type()][5] * (ys + 1) + height_offset;
+
+					const auto map_x0 = __map_lookup[t.type()][0];
+					const auto map_x1 = __map_lookup[t.type()][4];
+					const auto y_off = y * a->image().stride();
+
 					for (uint32_t x = 0; x<a->image().width(); ++x) {
-						const double valA = convert<double>(a->image().data()->get()[x + y * a->image().stride()]);
+
+						// mm_loadu_128(a->data() + y_off + x)
+						const double valA = convert<double>(a->image().data()->get()[x + y_off]);
+						
+						// A = [ x, x+1, x+2, ..., x+7 ] = [ x, x, x, ..., x ] + [0, 1, 2, 3, 4, ..., 7]
+						// B = [ b / a, ..., b / a ]
+						// A * B
 						auto srcX = (x * b->image().width()) / a->image().width();
 
+						// A = [0, ..., 1]
+						// mask = [0, ..., x+8 == b->w]
+						// r = r - A * mask
 						auto xs = srcX;
 						if (xs == b->width() - 1)
 							--xs;
 
-						auto tl = Point2d<uint32_t>(__map_lookup[t.type()][0] * xs + y_width_offset,
-							__map_lookup[t.type()][4] * xs + y_height_offset);
+						// M0 = [ map_x0, ..., map_x0 ]
+						// M1 = [map_x1, ..., map_x1]
+						// _1 = [1, ..., 1]
+						
+						// XS_X = M0 * r
+						const auto xs_x = map_x0 * xs;
+						// XS_Y = M1 * r
+						const auto xs_y = map_x1 * xs;
+						// XS_X_1 = M0 * (r + _1)
+						const auto xs_x_1 = map_x0 * (xs + 1);
+						// XS_Y_1 = M1 * (r + 1)
+						const auto xs_y_1 = map_x1 * (xs + 1);
 
-						auto tr = Point2d<uint32_t>(__map_lookup[t.type()][0] * (xs + 1) + y_width_offset,
-							__map_lookup[t.type()][4] * (xs + 1) + y_height_offset);
+						// TL_X = XSX + [Y_W_OFF]
+						// TL_Y = (XSY + [Y_H_OFF]) * B_STRIDE
+						auto tl = Point2d<uint32_t>(xs_x + y_width_offset, xs_y + y_height_offset);
+						auto tr = Point2d<uint32_t>(xs_x_1 + y_width_offset, xs_y_1 + y_height_offset);
+						auto bl = Point2d<uint32_t>(xs_x + y_width_offset_1, xs_y + y_height_offset_1);
+						auto br = Point2d<uint32_t>(xs_x_1 + y_width_offset_1, xs_y_1 + y_height_offset_1);
 
-						auto bl = Point2d<uint32_t>(__map_lookup[t.type()][0] * xs + y_width_offset_1,
-							__map_lookup[t.type()][4] * xs + y_height_offset_1);
-
-						auto br = Point2d<uint32_t>(__map_lookup[t.type()][0] * (xs + 1) + y_width_offset_1,
-							__map_lookup[t.type()][4] * (xs + 1) + y_height_offset_1);
-
-						const int total = (int)source_b[tl.x() + tl.y() * stride_b] + (int)source_b[tr.x() + tr.y() * stride_b] + (int)source_b[bl.x() + bl.y() * stride_b] + (int)source_b[br.x() + br.y() * stride_b];
+						const int total = (int)source_b[tl.x() + tl.y() * stride_b] 
+										+ (int)source_b[tr.x() + tr.y() * stride_b] 
+										+ (int)source_b[bl.x() + bl.y() * stride_b] 
+										+ (int)source_b[br.x() + br.y() * stride_b];
 						const Image::Pixel sample_b = (total / 4);
 		
 						const double valB = convert<double>(sample_b);
