@@ -17,9 +17,10 @@ public:
 	{
 
 	}
-
+	transform_score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
+		transform_score_t result;
 #ifdef FRAC_WITH_AVX
-	static Image::Pixel sample_helper (uint32_t x, uint32_t y, const uint8_t* source,  const int type, const Size32u& size, const size_t stride) {
+
 		static const int __map_lookup[8][8] = {
 			/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
 			/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
@@ -31,31 +32,6 @@ public:
 			/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
 		};
 
-		if (x == size.x() - 1)
-			--x;
-		if (y == size.y() - 1)
-			--y;
-
-		auto tl = Point2d<uint32_t>(__map_lookup[type][0] * x + __map_lookup[type][1] * y + __map_lookup[type][2] * (size.x() - 1) + __map_lookup[type][3] * (size.y() - 1),
-			__map_lookup[type][4] * x + __map_lookup[type][5] * y + __map_lookup[type][6] * (size.x() - 1) + __map_lookup[type][7] * (size.y() - 1));
-
-		auto tr = Point2d<uint32_t>(__map_lookup[type][0] * (x + 1) + __map_lookup[type][1] * y + __map_lookup[type][2] * (size.x() - 1) + __map_lookup[type][3] * (size.y() - 1),
-			__map_lookup[type][4] * (x + 1) + __map_lookup[type][5] * y + __map_lookup[type][6] * (size.x() - 1) + __map_lookup[type][7] * (size.y() - 1));
-
-		auto bl = Point2d<uint32_t>(__map_lookup[type][0] * x + __map_lookup[type][1] * (y + 1) + __map_lookup[type][2] * (size.x() - 1) + __map_lookup[type][3] * (size.y() - 1),
-			__map_lookup[type][4] * x + __map_lookup[type][5] * (y + 1) + __map_lookup[type][6] * (size.x() - 1) + __map_lookup[type][7] * (size.y() - 1));
-
-		auto br = Point2d<uint32_t>(__map_lookup[type][0] * (x + 1) + __map_lookup[type][1] * (y + 1) + __map_lookup[type][2] * (size.x() - 1) + __map_lookup[type][3] * (size.y() - 1),
-			__map_lookup[type][4] * (x + 1) + __map_lookup[type][5] * (y + 1) + __map_lookup[type][6] * (size.x() - 1) + __map_lookup[type][7] * (size.y() - 1));
-
-		const int total = (int)source[tl.x() + tl.y() * stride] + (int)source[tr.x() + tr.y() * stride] + (int)source[bl.x() + bl.y() * stride] + (int)source[br.x() + br.y() * stride];
-		return (Image::Pixel)(total / 4);
-	}
-#endif
-
-	transform_score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
-		transform_score_t result;
-#ifdef FRAC_WITH_AVX
 		Transform t(Transform::Id);
 		do {
 			transform_score_t candidate;
@@ -64,12 +40,39 @@ public:
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
 				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
+				const Image::Pixel* source_b = b->image().data()->get();
+				const auto stride_b = b->image().stride();
+				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
+				const auto height_offset = __map_lookup[t.type()][6] * (b->width() - 1) + __map_lookup[t.type()][7] * (b->height() - 1);
 				for (uint32_t y = 0; y<a->image().height(); ++y) {
 					const auto srcY = (y * b->image().height()) / a->image().height();
+					auto ys = srcY;
+					if (ys == b->height() - 1)
+						--ys;
 					for (uint32_t x = 0; x<a->image().width(); ++x) {
-						const auto srcX = (x * b->image().width()) / a->image().width();
 						const double valA = convert<double>(a->image().data()->get()[x + y * a->image().stride()]);
-						const double valB = convert<double>(sample_helper(srcX, srcY, b->image().data()->get(), t.type(), b->image().size(), b->image().stride()));
+						auto srcX = (x * b->image().width()) / a->image().width();
+
+						auto xs = srcX;
+						if (xs == b->width() - 1)
+							--xs;
+
+						auto tl = Point2d<uint32_t>(__map_lookup[t.type()][0] * xs + __map_lookup[t.type()][1] * ys + width_offset,
+							__map_lookup[t.type()][4] * xs + __map_lookup[t.type()][5] * ys + height_offset);
+
+						auto tr = Point2d<uint32_t>(__map_lookup[t.type()][0] * (xs + 1) + __map_lookup[t.type()][1] * ys + width_offset,
+							__map_lookup[t.type()][4] * (xs + 1) + __map_lookup[t.type()][5] * ys + height_offset);
+
+						auto bl = Point2d<uint32_t>(__map_lookup[t.type()][0] * xs + __map_lookup[t.type()][1] * (ys + 1) + width_offset,
+							__map_lookup[t.type()][4] * xs + __map_lookup[t.type()][5] * (ys + 1) + height_offset);
+
+						auto br = Point2d<uint32_t>(__map_lookup[t.type()][0] * (xs + 1) + __map_lookup[t.type()][1] * (ys + 1) + width_offset,
+							__map_lookup[t.type()][4] * (xs + 1) + __map_lookup[t.type()][5] * (ys + 1) + height_offset);
+
+						const int total = (int)source_b[tl.x() + tl.y() * stride_b] + (int)source_b[tr.x() + tr.y() * stride_b] + (int)source_b[bl.x() + bl.y() * stride_b] + (int)source_b[br.x() + br.y() * stride_b];
+						const Image::Pixel sample_b = (total / 4);
+		
+						const double valB = convert<double>(sample_b);
 						sumA += valA;
 						sumB += valB;
 						sumA2 += valA * valA;
