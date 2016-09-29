@@ -39,7 +39,10 @@ public:
 
 		Transform t(Transform::Id);
 
+		const auto stride_b = b->image().stride();
+
 		__m128i offset_01 = _mm_set_epi16(1, 1, 1, 1, 0, 0, 0, 0);
+		__m128i b_stride_sse = _mm_set_epi16(stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1);
 
 		do {
 			transform_score_t candidate;
@@ -54,10 +57,12 @@ public:
 				const double N = 4.0;
 				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
 				const Image::Pixel* source_b = b->image().data()->get();
-				const auto stride_b = b->image().stride();
 				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
 				const auto height_offset = __map_lookup[t.type()][6] * (b->width() - 1) + __map_lookup[t.type()][7] * (b->height() - 1);
-				for (uint32_t y = 0; y<2; ++y) {
+				uint16_t top_coords_sse_store[8];
+				uint16_t bottom_coords_sse_store[8];
+
+				for (uint32_t y = 0; y < 2; ++y) {
 					const auto ys = (y * b->image().height()) / 2;
 					const auto y_width_offset = __map_lookup[t.type()][1] * ys + width_offset;
 					const auto y_height_offset = __map_lookup[t.type()][5] * ys + height_offset;
@@ -111,15 +116,24 @@ public:
 
 					assert_sse_m128_epi16(top_coords_sse, tr_1_y, tr_1_x, tr_0_y, tr_0_x, tl_1_y, tl_1_x, tl_0_y, tl_0_x);
 					assert_sse_m128_epi16(bottom_coords_sse, br_1_y, br_1_x, br_0_y, br_0_x, bl_1_y, bl_1_x, bl_0_y, bl_0_x);
-					
-					const int total_0 = (int)source_b[tl_0_x + tl_0_y * stride_b]
-						+ (int)source_b[tr_0_x + tr_0_y * stride_b]
-						+ (int)source_b[bl_0_x + bl_0_y * stride_b]
-						+ (int)source_b[br_0_x + br_0_y * stride_b];
-					const int total_1 = (int)source_b[tl_1_x + tl_1_y * stride_b]
-						+ (int)source_b[tr_1_x + tr_1_y * stride_b]
-						+ (int)source_b[bl_1_x + bl_1_y * stride_b]
-						+ (int)source_b[br_1_x + br_1_y * stride_b];
+
+					top_coords_sse = _mm_mullo_epi16(top_coords_sse, b_stride_sse);
+					bottom_coords_sse = _mm_mullo_epi16(bottom_coords_sse, b_stride_sse);
+
+					assert_sse_m128_epi16(top_coords_sse, tr_1_y * stride_b, tr_1_x, tr_0_y* stride_b, tr_0_x, tl_1_y* stride_b, tl_1_x, tl_0_y* stride_b, tl_0_x);
+					assert_sse_m128_epi16(bottom_coords_sse, br_1_y * stride_b, br_1_x, br_0_y* stride_b, br_0_x, bl_1_y* stride_b, bl_1_x, bl_0_y* stride_b, bl_0_x);
+
+					_mm_storeu_si128((__m128i*)top_coords_sse_store, top_coords_sse);
+					_mm_storeu_si128((__m128i*)bottom_coords_sse_store, bottom_coords_sse);
+
+					const int total_0 = (int)source_b[top_coords_sse_store[0] + top_coords_sse_store[1]]
+						+ (int)source_b[top_coords_sse_store[4] + top_coords_sse_store[5]]
+						+ (int)source_b[bottom_coords_sse_store[0] + bottom_coords_sse_store[1]]
+						+ (int)source_b[bottom_coords_sse_store[4] + bottom_coords_sse_store[5]];
+					const int total_1 = (int)source_b[top_coords_sse_store[2] + top_coords_sse_store[3]]
+						+ (int)source_b[top_coords_sse_store[6] + top_coords_sse_store[7]]
+						+ (int)source_b[bottom_coords_sse_store[2] + bottom_coords_sse_store[3]]
+						+ (int)source_b[bottom_coords_sse_store[6] + bottom_coords_sse_store[7]];
 
 					const double valB_0 = convert<double>(total_0 / 4);
 					const double valB_1 = convert<double>(total_1 / 4);
