@@ -9,7 +9,8 @@
 #include <iostream>
 
 #ifdef FRAC_WITH_AVX
-#include "immintrin.h"
+#include "sse_debug.h"
+#include <immintrin.h>
 #endif
 
 namespace Frac {
@@ -37,11 +38,19 @@ public:
 		transform_score_t result;
 
 		Transform t(Transform::Id);
+
+		__m128i offset_01 = _mm_set_epi16(1, 1, 1, 1, 0, 0, 0, 0);
+
 		do {
 			transform_score_t candidate;
 			candidate.distance = _metric.distance(a->image(), b->image(), t);
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
+
+				const auto map_x0 = __map_lookup[t.type()][0];
+				const auto map_x1 = __map_lookup[t.type()][4];
+				__m128i map_x_01_sse = _mm_set_epi16(map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0);
+
 				const double N = 4.0;
 				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
 				const Image::Pixel* source_b = b->image().data()->get();
@@ -52,11 +61,9 @@ public:
 					const auto ys = (y * b->image().height()) / 2;
 					const auto y_width_offset = __map_lookup[t.type()][1] * ys + width_offset;
 					const auto y_height_offset = __map_lookup[t.type()][5] * ys + height_offset;
-					const auto y_width_offset_1 = __map_lookup[t.type()][1] * (ys + 1) + width_offset;
-					const auto y_height_offset_1 = __map_lookup[t.type()][5] * (ys + 1) + height_offset;
+					const auto y_width_offset_1 = __map_lookup[t.type()][1] * ys + __map_lookup[t.type()][1] + width_offset;
+					const auto y_height_offset_1 = __map_lookup[t.type()][5] * ys + __map_lookup[t.type()][5] + height_offset;
 
-					const auto map_x0 = __map_lookup[t.type()][0];
-					const auto map_x1 = __map_lookup[t.type()][4];
 					const auto y_off = y * a->image().stride();
 
 					const double valA_0 = convert<double>(a->image().data()->get()[0 + y_off]);
@@ -64,6 +71,11 @@ public:
 
 					const auto xs_0 = 0;
 					const auto xs_1 = (b->image().width()) / 2;
+
+					__m128i xs_01_sse = _mm_set_epi16(xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0);
+					__m128i xs_sse = _mm_add_epi16(xs_01_sse, offset_01);
+					xs_sse = _mm_mullo_epi16(xs_sse, map_x_01_sse);
+
 					const auto xs_x_0 = map_x0 * xs_0;
 					const auto xs_y_0 = map_x1 * xs_0;
 					const auto xs_x_1 = map_x0 * xs_1;
@@ -73,23 +85,32 @@ public:
 					const auto xs_x_1_1 = map_x0 * (xs_1 + 1);
 					const auto xs_y_1_1 = map_x1 * (xs_1 + 1);
 
-					int tl_0_x = xs_x_0 + y_width_offset;
-					int tr_0_x = xs_x_1_0 + y_width_offset;
-					int bl_0_x = 0 + y_width_offset_1;
-					int br_0_x = xs_x_1_0 + y_width_offset_1;
-					int tl_1_x = xs_x_1 + y_width_offset;
-					int tr_1_x = xs_x_1_1 + y_width_offset;
-					int bl_1_x = xs_x_1 + y_width_offset_1;
-					int br_1_x = xs_x_1_1 + y_width_offset_1;
+					assert_sse_m128_epi16(xs_sse, xs_y_1_1, xs_x_1_1, xs_y_1_0, xs_x_1_0, xs_y_1, xs_x_1, xs_y_0, xs_x_0);
+					__m128i offset_0_sse = _mm_set_epi16(y_height_offset, y_width_offset, y_height_offset, y_width_offset, y_height_offset, y_width_offset, y_height_offset, y_width_offset);
+					__m128i offset_1_sse = _mm_set_epi16(y_height_offset_1, y_width_offset_1, y_height_offset_1, y_width_offset_1, y_height_offset_1, y_width_offset_1, y_height_offset_1, y_width_offset_1);
+					__m128i top_coords_sse = _mm_add_epi16(xs_sse, offset_0_sse);
+					__m128i bottom_coords_sse = _mm_add_epi16(xs_sse, offset_1_sse);
 
+					int tl_0_x = xs_x_0 + y_width_offset;
 					int tl_0_y = xs_y_0 + y_height_offset;
-					int tr_0_y = xs_y_1_0 + y_height_offset;
-					int bl_0_y = xs_y_0 + y_height_offset_1;
-					int br_0_y = xs_y_1_0 + y_height_offset_1;
+					int tl_1_x = xs_x_1 + y_width_offset;
 					int tl_1_y = xs_y_1 + y_height_offset;
+					int tr_0_x = xs_x_1_0 + y_width_offset;
+					int tr_0_y = xs_y_1_0 + y_height_offset;
+					int tr_1_x = xs_x_1_1 + y_width_offset;
 					int tr_1_y = xs_y_1_1 + y_height_offset;
+
+					int bl_0_x = xs_x_0 + y_width_offset_1;
+					int bl_0_y = xs_y_0 + y_height_offset_1;
+					int bl_1_x = xs_x_1 + y_width_offset_1;
 					int bl_1_y = xs_y_1 + y_height_offset_1;
+					int br_0_x = xs_x_1_0 + y_width_offset_1;
+					int br_0_y = xs_y_1_0 + y_height_offset_1;
+					int br_1_x = xs_x_1_1 + y_width_offset_1;
 					int br_1_y = xs_y_1_1 + y_height_offset_1;
+
+					assert_sse_m128_epi16(top_coords_sse, tr_1_y, tr_1_x, tr_0_y, tr_0_x, tl_1_y, tl_1_x, tl_0_y, tl_0_x);
+					assert_sse_m128_epi16(bottom_coords_sse, br_1_y, br_1_x, br_0_y, br_0_x, bl_1_y, bl_1_x, bl_0_y, bl_0_x);
 					
 					const int total_0 = (int)source_b[tl_0_x + tl_0_y * stride_b]
 						+ (int)source_b[tr_0_x + tr_0_y * stride_b]
