@@ -23,9 +23,7 @@ public:
 
 	}
 #ifdef FRAC_WITH_AVX
-
-	template <typename T>
-	Point2d<T> map_helper(const T x, const T y, const Size32u& s, const int _type) const noexcept {
+	Image::Pixel sampler_helper (uint32_t x, uint32_t y, const int _type, const Size32u& size, const uint32_t _stride, const Image::Pixel* _source) const {
 		static const int __map_lookup[8][8] = {
 			/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
 			/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
@@ -36,19 +34,21 @@ public:
 			/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
 			/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
 		};
-		return Point2d<T>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (s.x() - 1) + __map_lookup[_type][3] * (s.y() - 1),
-			__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (s.x() - 1) + __map_lookup[_type][7] * (s.y() - 1));
-	}
 
-	Image::Pixel sampler_helper (uint32_t x, uint32_t y, const int type, const Size32u& size, const uint32_t _stride, const Image::Pixel* _source) const {
 		if (x == size.x() - 1)
 			--x;
 		if (y == size.y() - 1)
 			--y;
-		auto tl = map_helper(x, y, size, type);
-		auto tr = map_helper(x + 1, y, size, type);
-		auto bl = map_helper(x, y + 1, size, type);
-		auto br = map_helper(x + 1, y + 1, size, type);
+
+		auto tl = Point2d<uint32_t>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (size.x() - 1) + __map_lookup[_type][3] * (size.y() - 1),
+			__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (size.x() - 1) + __map_lookup[_type][7] * (size.y() - 1));
+		auto tr = Point2d<uint32_t>(__map_lookup[_type][0] * (x + 1) + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (size.x() - 1) + __map_lookup[_type][3] * (size.y() - 1),
+			__map_lookup[_type][4] * (x + 1) + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (size.x() - 1) + __map_lookup[_type][7] * (size.y() - 1));
+		auto bl = Point2d<uint32_t>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * (y + 1) + __map_lookup[_type][2] * (size.x() - 1) + __map_lookup[_type][3] * (size.y() - 1),
+			__map_lookup[_type][4] * x + __map_lookup[_type][5] * (y + 1) + __map_lookup[_type][6] * (size.x() - 1) + __map_lookup[_type][7] * (size.y() - 1));
+		auto br = Point2d<uint32_t>(__map_lookup[_type][0] * (x + 1) + __map_lookup[_type][1] * (y + 1) + __map_lookup[_type][2] * (size.x() - 1) + __map_lookup[_type][3] * (size.y() - 1),
+			__map_lookup[_type][4] * (x + 1) + __map_lookup[_type][5] * (y + 1) + __map_lookup[_type][6] * (size.x() - 1) + __map_lookup[_type][7] * (size.y() - 1));
+
 		const int total = (int)_source[tl.x() + tl.y() * _stride] + (int)_source[tr.x() + tr.y() * _stride] + (int)_source[bl.x() + bl.y() * _stride] + (int)_source[br.x() + br.y() * _stride];
 		return (Image::Pixel)(total / 4);
 	}
