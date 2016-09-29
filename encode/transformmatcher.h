@@ -61,10 +61,11 @@ public:
 
 					{
 						const double valA = convert<double>(a->image().data()->get()[0 + y_off]);
-						auto xs = 0;
-						const auto xs_y = 0;
-						const auto xs_x_1 = map_x0;
-						const auto xs_y_1 = map_x1;
+						const auto xs = 0;
+						const auto xs_x = map_x0 * xs;
+						const auto xs_y = map_x1 * xs;
+						const auto xs_x_1 = map_x0 * (xs + 1);
+						const auto xs_y_1 = map_x1 * (xs + 1);
 						auto tl = Point2d<uint32_t>(0 + y_width_offset, xs_y + y_height_offset);
 						auto tr = Point2d<uint32_t>(xs_x_1 + y_width_offset, xs_y_1 + y_height_offset);
 						auto bl = Point2d<uint32_t>(0 + y_width_offset_1, xs_y + y_height_offset_1);
