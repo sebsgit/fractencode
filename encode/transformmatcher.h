@@ -73,19 +73,23 @@ public:
 					const auto xs_x_1_1 = map_x0 * (xs_1 + 1);
 					const auto xs_y_1_1 = map_x1 * (xs_1 + 1);
 
-					auto tl_0 = Point2d<uint32_t>(xs_x_0 + y_width_offset, xs_y_0 + y_height_offset);
-					auto tr_0 = Point2d<uint32_t>(xs_x_1_0 + y_width_offset, xs_y_1_0 + y_height_offset);
-					auto bl_0 = Point2d<uint32_t>(0 + y_width_offset_1, xs_y_0 + y_height_offset_1);
-					auto br_0 = Point2d<uint32_t>(xs_x_1_0 + y_width_offset_1, xs_y_1_0 + y_height_offset_1);
+					int tl_0_x = xs_x_0 + y_width_offset;
+					int tl_0_y = xs_y_0 + y_height_offset;
+					int tr_0_x = xs_x_1_0 + y_width_offset;
+					int tr_0_y = xs_y_1_0 + y_height_offset;
+					int bl_0_x = 0 + y_width_offset_1;
+					int bl_0_y = xs_y_0 + y_height_offset_1;
+					int br_0_x = xs_x_1_0 + y_width_offset_1;
+					int br_0_y = xs_y_1_0 + y_height_offset_1;
 					auto tl_1 = Point2d<uint32_t>(xs_x_1 + y_width_offset, xs_y_1 + y_height_offset);
 					auto tr_1 = Point2d<uint32_t>(xs_x_1_1 + y_width_offset, xs_y_1_1 + y_height_offset);
 					auto bl_1 = Point2d<uint32_t>(xs_x_1 + y_width_offset_1, xs_y_1 + y_height_offset_1);
 					auto br_1 = Point2d<uint32_t>(xs_x_1_1 + y_width_offset_1, xs_y_1_1 + y_height_offset_1);
 					
-					const int total_0 = (int)source_b[tl_0.x() + tl_0.y() * stride_b]
-						+ (int)source_b[tr_0.x() + tr_0.y() * stride_b]
-						+ (int)source_b[bl_0.x() + bl_0.y() * stride_b]
-						+ (int)source_b[br_0.x() + br_0.y() * stride_b];
+					const int total_0 = (int)source_b[tl_0_x + tl_0_y * stride_b]
+						+ (int)source_b[tr_0_x + tr_0_y * stride_b]
+						+ (int)source_b[bl_0_x + bl_0_y * stride_b]
+						+ (int)source_b[br_0_x + br_0_y * stride_b];
 					const int total_1 = (int)source_b[tl_1.x() + tl_1.y() * stride_b]
 						+ (int)source_b[tr_1.x() + tr_1.y() * stride_b]
 						+ (int)source_b[bl_1.x() + bl_1.y() * stride_b]
