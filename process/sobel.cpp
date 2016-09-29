@@ -1,6 +1,7 @@
 #include "process/sobel.h"
 #ifdef FRAC_WITH_AVX
 #include <immintrin.h>
+#include "sse_debug.h"
 #endif
 #include <cmath>
 #include <inttypes.h>
@@ -18,16 +19,6 @@ static const int _kernel_y[] = {
 	0, 0, 0,
 	1, 2, 1
 };
-
-#ifdef _MSC_VER
-#define ALIGN_SPEC __declspec(align(16))
-#define ALIGN_ATTR
-#define byteshift_left _mm_slli_si128
-#else
-#define ALIGN_SPEC
-#define ALIGN_ATTR __attribute__ ((aligned (16)))
-#define byteshift_left _mm_bslli_si128
-#endif
 
 #ifdef FRAC_WITH_AVX
 ALIGN_SPEC static const int16_t kernel_y_simd[] ALIGN_ATTR = { -1, -2, -1, 1, 2, 1, 0, 0 };
