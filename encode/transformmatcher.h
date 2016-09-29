@@ -60,41 +60,46 @@ public:
 					const auto y_off = y * a->image().stride();
 
 					const double valA_0 = convert<double>(a->image().data()->get()[0 + y_off]);
+					const double valA_1 = convert<double>(a->image().data()->get()[1 + y_off]);
+
 					const auto xs_0 = 0;
+					const auto xs_1 = (b->image().width()) / 2;
 					const auto xs_x_0 = map_x0 * xs_0;
 					const auto xs_y_0 = map_x1 * xs_0;
+					const auto xs_x_1 = map_x0 * xs_1;
+					const auto xs_y_1 = map_x1 * xs_1;
 					const auto xs_x_1_0 = map_x0 * (xs_0 + 1);
 					const auto xs_y_1_0 = map_x1 * (xs_0 + 1);
+					const auto xs_x_1_1 = map_x0 * (xs_1 + 1);
+					const auto xs_y_1_1 = map_x1 * (xs_1 + 1);
+
 					auto tl_0 = Point2d<uint32_t>(xs_x_0 + y_width_offset, xs_y_0 + y_height_offset);
 					auto tr_0 = Point2d<uint32_t>(xs_x_1_0 + y_width_offset, xs_y_1_0 + y_height_offset);
 					auto bl_0 = Point2d<uint32_t>(0 + y_width_offset_1, xs_y_0 + y_height_offset_1);
 					auto br_0 = Point2d<uint32_t>(xs_x_1_0 + y_width_offset_1, xs_y_1_0 + y_height_offset_1);
+					auto tl_1 = Point2d<uint32_t>(xs_x_1 + y_width_offset, xs_y_1 + y_height_offset);
+					auto tr_1 = Point2d<uint32_t>(xs_x_1_1 + y_width_offset, xs_y_1_1 + y_height_offset);
+					auto bl_1 = Point2d<uint32_t>(xs_x_1 + y_width_offset_1, xs_y_1 + y_height_offset_1);
+					auto br_1 = Point2d<uint32_t>(xs_x_1_1 + y_width_offset_1, xs_y_1_1 + y_height_offset_1);
+					
 					const int total_0 = (int)source_b[tl_0.x() + tl_0.y() * stride_b]
 						+ (int)source_b[tr_0.x() + tr_0.y() * stride_b]
 						+ (int)source_b[bl_0.x() + bl_0.y() * stride_b]
 						+ (int)source_b[br_0.x() + br_0.y() * stride_b];
+					const int total_1 = (int)source_b[tl_1.x() + tl_1.y() * stride_b]
+						+ (int)source_b[tr_1.x() + tr_1.y() * stride_b]
+						+ (int)source_b[bl_1.x() + bl_1.y() * stride_b]
+						+ (int)source_b[br_1.x() + br_1.y() * stride_b];
+
 					const double valB_0 = convert<double>(total_0 / 4);
+					const double valB_1 = convert<double>(total_1 / 4);
+					
 					sumA += valA_0;
 					sumB += valB_0;
 					sumA2 += valA_0 * valA_0;
 					sumB2 += valB_0 * valB_0;
 					sumAB += valA_0 * valB_0;
-
-					const double valA_1 = convert<double>(a->image().data()->get()[1 + y_off]);
-					auto xs_1 = (b->image().width()) / 2;
-					const auto xs_x_1 = map_x0 * xs_1;
-					const auto xs_y_1 = map_x1 * xs_1;
-					const auto xs_x_1_1 = map_x0 * (xs_1 + 1);
-					const auto xs_y_1_1 = map_x1 * (xs_1 + 1);
-					auto tl_1 = Point2d<uint32_t>(xs_x_1 + y_width_offset, xs_y_1 + y_height_offset);
-					auto tr_1 = Point2d<uint32_t>(xs_x_1_1 + y_width_offset, xs_y_1_1 + y_height_offset);
-					auto bl_1 = Point2d<uint32_t>(xs_x_1 + y_width_offset_1, xs_y_1 + y_height_offset_1);
-					auto br_1 = Point2d<uint32_t>(xs_x_1_1 + y_width_offset_1, xs_y_1_1 + y_height_offset_1);
-					const int total_1 = (int)source_b[tl_1.x() + tl_1.y() * stride_b]
-						+ (int)source_b[tr_1.x() + tr_1.y() * stride_b]
-						+ (int)source_b[bl_1.x() + bl_1.y() * stride_b]
-						+ (int)source_b[br_1.x() + br_1.y() * stride_b];
-					const double valB_1 = convert<double>(total_1 / 4);
+					
 					sumA += valA_1;
 					sumB += valB_1;
 					sumA2 += valA_1 * valA_1;
