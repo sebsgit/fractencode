@@ -59,9 +59,32 @@ public:
 					const auto map_x1 = __map_lookup[t.type()][4];
 					const auto y_off = y * a->image().stride();
 
-					for (uint32_t x = 0; x<2; ++x) {
-						const double valA = convert<double>(a->image().data()->get()[x + y_off]);
-						auto xs = (x * b->image().width()) / 2;
+					{
+						const double valA = convert<double>(a->image().data()->get()[0 + y_off]);
+						auto xs = 0;
+						const auto xs_y = 0;
+						const auto xs_x_1 = map_x0;
+						const auto xs_y_1 = map_x1;
+						auto tl = Point2d<uint32_t>(0 + y_width_offset, xs_y + y_height_offset);
+						auto tr = Point2d<uint32_t>(xs_x_1 + y_width_offset, xs_y_1 + y_height_offset);
+						auto bl = Point2d<uint32_t>(0 + y_width_offset_1, xs_y + y_height_offset_1);
+						auto br = Point2d<uint32_t>(xs_x_1 + y_width_offset_1, xs_y_1 + y_height_offset_1);
+						const int total = (int)source_b[tl.x() + tl.y() * stride_b]
+							+ (int)source_b[tr.x() + tr.y() * stride_b]
+							+ (int)source_b[bl.x() + bl.y() * stride_b]
+							+ (int)source_b[br.x() + br.y() * stride_b];
+						const Image::Pixel sample_b = (total / 4);
+
+						const double valB = convert<double>(sample_b);
+						sumA += valA;
+						sumB += valB;
+						sumA2 += valA * valA;
+						sumB2 += valB * valB;
+						sumAB += valA * valB;
+					}
+					{
+						const double valA = convert<double>(a->image().data()->get()[1 + y_off]);
+						auto xs = (b->image().width()) / 2;
 						const auto xs_x = map_x0 * xs;
 						const auto xs_y = map_x1 * xs;
 						const auto xs_x_1 = map_x0 * (xs + 1);
