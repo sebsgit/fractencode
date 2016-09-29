@@ -23,6 +23,72 @@ public:
 
 	}
 #ifdef FRAC_WITH_AVX
+
+	template <typename T>
+	Point2d<T> map_helper(const T x, const T y, const Size32u& s, const int _type) const noexcept {
+		static const int __map_lookup[8][8] = {
+			/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
+			/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
+			/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
+			/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
+			/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
+			/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
+			/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
+			/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
+		};
+		return Point2d<T>(__map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (s.x() - 1) + __map_lookup[_type][3] * (s.y() - 1),
+			__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (s.x() - 1) + __map_lookup[_type][7] * (s.y() - 1));
+	}
+
+	Image::Pixel sampler_helper (uint32_t x, uint32_t y, const int type, const Size32u& size, const uint32_t _stride, const Image::Pixel* _source) const {
+		if (x == size.x() - 1)
+			--x;
+		if (y == size.y() - 1)
+			--y;
+		auto tl = map_helper(x, y, size, type);
+		auto tr = map_helper(x + 1, y, size, type);
+		auto bl = map_helper(x, y + 1, size, type);
+		auto br = map_helper(x + 1, y + 1, size, type);
+		const int total = (int)_source[tl.x() + tl.y() * _stride] + (int)_source[tr.x() + tr.y() * _stride] + (int)_source[bl.x() + bl.y() * _stride] + (int)_source[br.x() + br.y() * _stride];
+		return (Image::Pixel)(total / 4);
+	}
+
+	transform_score_t match_sse_2x2(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
+		transform_score_t result;
+		Transform t(Transform::Id);
+		do {
+			transform_score_t candidate;
+			candidate.distance = _metric.distance(a->image(), b->image(), t);
+			candidate.transform = t.type();
+			if (candidate.distance <= result.distance) {
+				const double N = 4.0;
+				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
+				for (uint32_t y = 0; y<2; ++y) {
+					for (uint32_t x = 0; x<2; ++x) {
+						const auto srcY = (y * b->image().height()) / 2;
+						const auto srcX = (x * b->image().width()) / 2;
+						const double valA = convert<double>(a->image().data()->get()[x + y * a->image().stride()]);
+						const double valB = convert<double>(sampler_helper(srcX, srcY, t.type(), b->image().size(), b->image().stride(), b->image().data()->get()));
+						sumA += valA;
+						sumB += valB;
+						sumA2 += valA * valA;
+						sumB2 += valB * valB;
+						sumAB += valA * valB;
+					}
+				}
+				const double tmp = (N * sumA2 - (sumA - 1) * sumA);
+				const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
+				const double o = (sumB - s * sumA) / N;
+				candidate.contrast = s;
+				candidate.brightness = o;
+				result = candidate;
+			}
+			if (this->checkDistance(result.distance))
+				break;
+		} while (t.next() != Transform::Id);
+		return result;
+	}
+
 	transform_score_t match_sse_8x8(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
 		transform_score_t result;
 		static const int __map_lookup[8][8] = {
@@ -35,7 +101,6 @@ public:
 			/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
 			/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
 		};
-
 		Transform t(Transform::Id);
 		__m128i ab_ratio_sse = _mm_set1_epi16(b->width() / a->width());
 		do {
@@ -192,7 +257,9 @@ public:
 	}
 	inline transform_score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
 #ifdef FRAC_WITH_AVX
-		if (a->width() == 8)
+		if (a->width() == 2)
+			return this->match_sse_2x2(a, b);
+		else if (a->width() == 8)
 			return this->match_sse_8x8(a, b);
 		return this->match_default(a, b);
 #else
