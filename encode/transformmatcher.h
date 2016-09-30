@@ -41,7 +41,10 @@ public:
 
 		const auto stride_b = b->image().stride();
 		const __m256i offset_01_avx = _mm256_set_epi16(1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0);
-		const __m256i b_stride_avx = _mm256_set_epi16(stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1);
+		const __m256i b_stride_avx = frac_m256_interleave2_epi16(stride_b, 1);
+		const double N = 4.0;
+		const Image::Pixel* source_b = b->image().data()->get();
+		
 		ALIGN_SPEC uint16_t top_coords_avx_store[16] ALIGN_ATTR;
 		ALIGN_SPEC uint16_t bottom_coords_avx_store[16] ALIGN_ATTR;
 
@@ -54,15 +57,13 @@ public:
 				const auto map_x0 = __map_lookup[t.type()][0];
 				const auto map_x1 = __map_lookup[t.type()][4];
 				
-				const __m256i map_x_01_avx = _mm256_set_epi16(map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0);
-				const __m256i map_lookup_5_1_avx = _mm256_set_epi16(__map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1]);
+				const __m256i map_x_01_avx = frac_m256_interleave2_epi16(map_x1, map_x0);
+				const __m256i map_lookup_5_1_avx = frac_m256_interleave2_epi16(__map_lookup[t.type()][5], __map_lookup[t.type()][1]);
 
-				const double N = 4.0;
-				const Image::Pixel* source_b = b->image().data()->get();
 				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
 				const auto height_offset = __map_lookup[t.type()][6] * (b->width() - 1) + __map_lookup[t.type()][7] * (b->height() - 1);
 				
-				const __m256i wh_offset_avx = _mm256_set_epi16(height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset);
+				const __m256i wh_offset_avx = frac_m256_interleave2_epi16(height_offset, width_offset);
 				const __m256i ys_avx = _mm256_set_m128i(_mm_set1_epi16(b->image().height() / 2), _mm_setzero_si128());
 				__m256i y_wh_offset_avx = _mm256_mullo_epi16(ys_avx, map_lookup_5_1_avx);
 				y_wh_offset_avx = _mm256_add_epi16(y_wh_offset_avx, wh_offset_avx);
@@ -70,7 +71,7 @@ public:
 				const auto xs_0 = 0;
 				const auto xs_1 = (b->image().width()) / 2;
 
-				const __m256i xs_01_avx = _mm256_set_epi16(xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0);
+				const __m256i xs_01_avx = frac_m256_interleave4_epi16(xs_1, xs_1, xs_0, xs_0);
 
 				__m256i xs_avx = _mm256_add_epi16(xs_01_avx, offset_01_avx);
 				xs_avx = _mm256_mullo_epi16(xs_avx, map_x_01_avx);

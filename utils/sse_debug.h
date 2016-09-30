@@ -16,6 +16,9 @@
 #define byteshift_left _mm_bslli_si128
 #endif
 
+#define frac_m256_interleave2_epi16(hi, lo) _mm256_set_epi16(hi, lo, hi, lo, hi, lo, hi, lo, hi, lo, hi, lo, hi, lo, hi, lo)
+#define frac_m256_interleave4_epi16(hi1, hi0, lo1, lo0) _mm256_set_epi16(hi1, hi0, lo1, lo0, hi1, hi0, lo1, lo0, hi1, hi0, lo1, lo0, hi1, hi0, lo1, lo0)
+
 extern void assert_sse_m128_epi16(const __m128i sse_value, uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
 	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0);
 
