@@ -14,6 +14,17 @@
 #endif
 
 namespace Frac {
+	static const int __map_lookup[8][8] = {
+		/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
+		/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
+		/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
+		/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
+		/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
+		/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
+		/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
+		/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
+	};
+
 class TransformMatcher {
 public:
 	TransformMatcher(const Metric& metric, const double rmsThreshold, const double sMax)
@@ -25,18 +36,7 @@ public:
 	}
 #ifdef FRAC_WITH_AVX
 	transform_score_t match_sse_2x2(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
-		static const int __map_lookup[8][8] = {
-			/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
-			/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
-			/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
-			/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
-			/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
-			/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
-			/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
-			/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
-		};
 		transform_score_t result;
-
 		Transform t(Transform::Id);
 
 		const auto stride_b = b->image().stride();
@@ -132,18 +132,7 @@ public:
 
 	//TODO
 	transform_score_t match_sse_4x4(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
-		static const int __map_lookup[8][8] = {
-			/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
-			/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
-			/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
-			/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
-			/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
-			/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
-			/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
-			/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
-		};
 		transform_score_t result;
-
 		Transform t(Transform::Id);
 		do {
 			transform_score_t candidate;
