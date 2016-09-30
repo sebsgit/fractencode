@@ -41,8 +41,8 @@ public:
 
 		const auto stride_b = b->image().stride();
 
-		__m128i offset_01 = _mm_set_epi16(1, 1, 1, 1, 0, 0, 0, 0);
-		__m128i b_stride_sse = _mm_set_epi16(stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1);
+		__m256i offset_01_avx = _mm256_set_epi16(1, 1, 1, 1, 0, 0, 0, 0,    1, 1, 1, 1, 0, 0, 0, 0);
+		__m256i b_stride_avx = _mm256_set_epi16(stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1, stride_b, 1);
 
 		do {
 			transform_score_t candidate;
@@ -53,8 +53,9 @@ public:
 				const auto map_x0 = __map_lookup[t.type()][0];
 				const auto map_x1 = __map_lookup[t.type()][4];
 				
-				__m128i map_x_01_sse = _mm_set_epi16(map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0);
-				__m128i map_lookup_5_1_sse = _mm_set_epi16(__map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1]);
+				__m256i map_x_01_avx = _mm256_set_epi16(map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0, map_x1, map_x0);
+
+				__m256i map_lookup_5_1_avx = _mm256_set_epi16(__map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1], __map_lookup[t.type()][5], __map_lookup[t.type()][1]);
 
 				const double N = 4.0;
 				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
@@ -62,15 +63,21 @@ public:
 				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
 				const auto height_offset = __map_lookup[t.type()][6] * (b->width() - 1) + __map_lookup[t.type()][7] * (b->height() - 1);
 				
-				__m128i wh_offset = _mm_set_epi16(height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset);
-				ALIGN_SPEC uint16_t top_coords_sse_store[8] ALIGN_ATTR;
-				ALIGN_SPEC uint16_t bottom_coords_sse_store[8] ALIGN_ATTR;
+				__m256i wh_offset_avx = _mm256_set_epi16(height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset, height_offset, width_offset);
+
+				ALIGN_SPEC uint16_t top_coords_avx_store[16] ALIGN_ATTR;
+				ALIGN_SPEC uint16_t bottom_coords_avx_store[16] ALIGN_ATTR;
 
 				for (uint32_t y = 0; y < 2; ++y) {
 					const auto ys = (y * b->image().height()) / 2;
-					__m128i ys_sse = _mm_set1_epi16(ys);
-					__m128i y_wh_offset = _mm_mullo_epi16(ys_sse, map_lookup_5_1_sse);
-					y_wh_offset = _mm_add_epi16(y_wh_offset, wh_offset);
+	
+					__m256i ys_avx = _mm256_set_m128i(_mm_set1_epi16(b->image().height() / 2), _mm_setzero_si128());
+					if (y == 1)
+						ys_avx = _mm256_set_m128i(_mm_setzero_si128(), _mm_set1_epi16(b->image().height() / 2));
+
+					__m256i y_wh_offset_avx = _mm256_mullo_epi16(ys_avx, map_lookup_5_1_avx);
+
+					y_wh_offset_avx = _mm256_add_epi16(y_wh_offset_avx, wh_offset_avx);
 					
 					const auto y_off = y * a->image().stride();
 
@@ -80,29 +87,30 @@ public:
 					const auto xs_0 = 0;
 					const auto xs_1 = (b->image().width()) / 2;
 
-					__m128i xs_01_sse = _mm_set_epi16(xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0);
-					__m128i xs_sse = _mm_add_epi16(xs_01_sse, offset_01);
-					xs_sse = _mm_mullo_epi16(xs_sse, map_x_01_sse);
+					__m256i xs_01_avx = _mm256_set_epi16(xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0, xs_1, xs_1, xs_0, xs_0);
 
-					__m128i offset_1_sse = _mm_add_epi16(y_wh_offset, map_lookup_5_1_sse);
-					
-					__m128i top_coords_sse = _mm_add_epi16(xs_sse, y_wh_offset);
-					__m128i bottom_coords_sse = _mm_add_epi16(xs_sse, offset_1_sse);
+					__m256i xs_avx = _mm256_add_epi16(xs_01_avx, offset_01_avx);
+					xs_avx = _mm256_mullo_epi16(xs_avx, map_x_01_avx);
 
-					top_coords_sse = _mm_mullo_epi16(top_coords_sse, b_stride_sse);
-					bottom_coords_sse = _mm_mullo_epi16(bottom_coords_sse, b_stride_sse);
 
-					_mm_store_si128((__m128i*)top_coords_sse_store, top_coords_sse);
-					_mm_store_si128((__m128i*)bottom_coords_sse_store, bottom_coords_sse);
+					__m256i offset_1_avx = _mm256_add_epi16(y_wh_offset_avx, map_lookup_5_1_avx);
 
-					const int total_0 = (int)source_b[top_coords_sse_store[0] + top_coords_sse_store[1]]
-						+ (int)source_b[top_coords_sse_store[4] + top_coords_sse_store[5]]
-						+ (int)source_b[bottom_coords_sse_store[0] + bottom_coords_sse_store[1]]
-						+ (int)source_b[bottom_coords_sse_store[4] + bottom_coords_sse_store[5]];
-					const int total_1 = (int)source_b[top_coords_sse_store[2] + top_coords_sse_store[3]]
-						+ (int)source_b[top_coords_sse_store[6] + top_coords_sse_store[7]]
-						+ (int)source_b[bottom_coords_sse_store[2] + bottom_coords_sse_store[3]]
-						+ (int)source_b[bottom_coords_sse_store[6] + bottom_coords_sse_store[7]];
+					__m256i top_coords_avx = _mm256_add_epi16(xs_avx, y_wh_offset_avx);
+					__m256i bottom_coords_avx = _mm256_add_epi16(xs_avx, offset_1_avx);
+					top_coords_avx = _mm256_mullo_epi16(top_coords_avx, b_stride_avx);
+					bottom_coords_avx = _mm256_mullo_epi16(bottom_coords_avx, b_stride_avx);
+
+					_mm256_store_si256((__m256i*)top_coords_avx_store, top_coords_avx);
+					_mm256_store_si256((__m256i*)bottom_coords_avx_store, bottom_coords_avx);
+
+					const int total_0 = (int)source_b[top_coords_avx_store[0] + top_coords_avx_store[1]]
+						+ (int)source_b[top_coords_avx_store[4] + top_coords_avx_store[5]]
+						+ (int)source_b[bottom_coords_avx_store[0] + bottom_coords_avx_store[1]]
+						+ (int)source_b[bottom_coords_avx_store[4] + bottom_coords_avx_store[5]];
+					const int total_1 = (int)source_b[top_coords_avx_store[2] + top_coords_avx_store[3]]
+						+ (int)source_b[top_coords_avx_store[6] + top_coords_avx_store[7]]
+						+ (int)source_b[bottom_coords_avx_store[2] + bottom_coords_avx_store[3]]
+						+ (int)source_b[bottom_coords_avx_store[6] + bottom_coords_avx_store[7]];
 
 					const double valB_0 = convert<double>(total_0 / 4);
 					const double valB_1 = convert<double>(total_1 / 4);
