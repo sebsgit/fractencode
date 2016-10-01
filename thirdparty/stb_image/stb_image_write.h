@@ -666,6 +666,7 @@ static void *stbiw__sbgrowf(void **arr, int increment, int itemsize)
    void *p = STBIW_REALLOC_SIZED(*arr ? stbiw__sbraw(*arr) : 0, *arr ? (stbiw__sbm(*arr)*itemsize + sizeof(int)*2) : 0, itemsize * m + sizeof(int)*2);
    STBIW_ASSERT(p);
    if (p) {
+#pragma warning(suppress: 6386)
 	  if (!*arr) ((int *) p)[1] = 0;
 	  *arr = (void *) ((int *) p + 2);
 	  stbiw__sbm(*arr) = m;
@@ -727,6 +728,7 @@ static unsigned int stbiw__zhash(unsigned char *data)
 
 #define stbiw__ZHASH   16384
 
+#pragma warning(suppress: 6262)
 unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, int *out_len, int quality)
 {
    static unsigned short lengthc[] = { 3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258, 259 };
@@ -939,6 +941,7 @@ unsigned char *stbi_write_png_to_mem(unsigned char *pixels, int stride_bytes, in
 			}
 			if (p) break;
 			for (i=0; i < x*n; ++i)
+#pragma warning(suppress: 6385)
 			   est += abs((signed char) line_buffer[i]);
 			if (est < bestval) { bestval = est; best = k; }
 		 }
@@ -958,6 +961,7 @@ unsigned char *stbi_write_png_to_mem(unsigned char *pixels, int stride_bytes, in
    *out_len = 8 + 12+13 + 12+zlen + 12;
 
    o=out;
+#pragma warning(suppress: 6386)
    STBIW_MEMMOVE(o,sig,8); o+= 8;
    stbiw__wp32(o, 13); // header length
    stbiw__wptag(o, "IHDR");

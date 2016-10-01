@@ -92,6 +92,7 @@ namespace Frac {
 				return s;
 			}
 		}
+		//TODO optimize more
 		template <typename T>
 		Point2d<T> map(const T x, const T y, const Size32u& s) const noexcept {
 			static const int __map_lookup[8][8] = {
