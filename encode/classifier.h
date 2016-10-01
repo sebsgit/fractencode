@@ -105,7 +105,12 @@ namespace Frac {
 			return typeA == typeB;
 		}
 	private:
+		//TODO optimize this for sizes > 2
 		static int getCategory(const Image& image) {
+			if (image.width() == 2) {
+				const auto data = image.data()->get();
+				return category(data[0], data[1], data[0 + image.stride()], data[1 + image.stride()]);
+			}
 			const auto halfW = image.width() / 2;
 			const auto halfH = image.height() / 2;
 			const double a1 = ImageStatistics::mean(image.slice(0, 0, halfW, halfH));

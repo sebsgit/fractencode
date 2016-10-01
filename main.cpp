@@ -18,6 +18,7 @@ public:
 	int decodeSteps = -1;
 	bool color = false;
 	bool useQuadtree = false;
+	bool preSample = false;
 
 	CmdArgs(int argc, char** argv) {
 		assert(argc > 1);
@@ -53,6 +54,9 @@ private:
 			} else if (tmp == "--quadtree") {
 				useQuadtree = true;
 			}
+			else if (tmp == "--presample") {
+				preSample = true;
+			}
 			++index;
 		}
 		if (encoderParams.targetGridSize >= encoderParams.sourceGridSize || encoderParams.targetGridSize < 2 || encoderParams.sourceGridSize < 2) {
@@ -82,14 +86,22 @@ static void test_partition() {
 static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	using namespace Frac;
 	const Size32u gridSize(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
+	const Size32u gridSizeSource(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
+	const Size32u gridOffset = gridSizeSource / args.encoderParams.latticeSize;
 	std::unique_ptr<PartitionCreator> targetCreator;
+	std::unique_ptr<PartitionCreator> sourceCreator;
+	if (args.preSample) {
+		sourceCreator.reset(new PreSampledPartitionCreator(gridSizeSource, gridOffset));
+	} else {
+		sourceCreator.reset(new GridPartitionCreator(gridSizeSource, gridOffset));
+	}
 	if (args.useQuadtree)
 		targetCreator.reset(new QuadtreePartitionCreator(Size32u(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize) / 2, gridSize));
 	else
 		targetCreator.reset(new GridPartitionCreator(gridSize, gridSize));
 	Timer timer;
 	timer.start();
-	Encoder encoder(image, args.encoderParams, *targetCreator);
+	Encoder encoder(image, args.encoderParams, *sourceCreator, *targetCreator);
 	std::cout << "encoded in " << timer.elapsed() << " s.\n";
 	auto data = encoder.data();
 	uint32_t w = image.width(), h = image.height();

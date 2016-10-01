@@ -37,6 +37,9 @@ namespace Frac {
 		Size operator / (const T& value) const {
 			return Size(_x / value, _y / value);
 		}
+		Size operator * (const T& value) const {
+			return Size(_x * value, _y * value);
+		}
 		bool isAligned(const T x, const T y) const {
 			return _x % x == 0 && _y % y == 0;
 		}

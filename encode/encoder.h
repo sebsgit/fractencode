@@ -5,6 +5,7 @@
 #include "image/transform.h"
 #include "image/sampler.h"
 #include "image/partition/gridpartition.h"
+#include "image/partition/presampledpartition.h"
 #include "transformmatcher.h"
 #include "classifier.h"
 #include "edgeclassifier.h"
@@ -35,16 +36,13 @@ public:
 	};
 
 public:
-	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& targetCreator)
+	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& sourceCreator, const PartitionCreator& targetCreator)
 		: _metric(new RootMeanSquare)
 		, _classifier(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier))
 		, _encodeParameters(p)
 		, _matcher(*_metric, p.rmsThreshold, p.sMax)
 	{
-		const Size32u gridSizeSource(p.sourceGridSize, p.sourceGridSize);
-		const Size32u gridOffset = gridSizeSource / p.latticeSize;
-		GridPartitionCreator gridCreatorSource(gridSizeSource, gridOffset);
-		PartitionPtr gridSource = gridCreatorSource.create(image);
+		PartitionPtr gridSource = sourceCreator.create(image);
 		PartitionPtr gridTarget = targetCreator.create(image);
 		_data = gridTarget->estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();

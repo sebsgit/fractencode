@@ -18,7 +18,6 @@ SamplerBilinear::SamplerBilinear(const Image& source)
 	, _width(source.width())
 	, _height(source.height())
 {
-
 }
 
 Image::Pixel SamplerBilinear::operator() (uint32_t x, uint32_t y) const {

@@ -16,14 +16,18 @@ namespace Frac {
 
 	class GridItem {
 	public:
-		GridItem(const Image& source, const uint32_t x, const uint32_t y, const Size32u& s)
+		GridItem(const Image& source, const uint32_t x, const uint32_t y, const Size32u& s, const Image& presampled = Image())
 			:_pos(x, y)
 			,_image(source.slice(x, y, s.x(), s.y()))
+			,_sourceSize(s)
+			,_presampled(presampled)
 		{
 		}
-		GridItem(const Image& source, const uint32_t x, const uint32_t y)
+		GridItem(const Image& source, const uint32_t x, const uint32_t y, const Image& presampled = Image())
 			:_pos(x, y)
 			,_image(source)
+			,_sourceSize(source.size())
+			,_presampled(presampled)
 		{
 		}
 		~GridItem() {}
@@ -32,6 +36,9 @@ namespace Frac {
 		}
 		Image image() const noexcept {
 			return _image;
+		}
+		Image presampled() const noexcept {
+			return _presampled.empty() ? _image : _presampled;
 		}
 		const Point2du pos() const noexcept {
 			return _pos;
@@ -45,9 +52,14 @@ namespace Frac {
 		const Size32u size() const noexcept {
 			return _image.size();
 		}
+		const Size32u sourceSize() const noexcept {
+			return _sourceSize;
+		}
 	private:
 		const Point2du _pos;
+		const Size32u _sourceSize;
 		Image _image;
+		const Image _presampled;
 	};
 
 	using PartitionItemPtr = std::shared_ptr<GridItem>;

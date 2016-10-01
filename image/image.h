@@ -99,6 +99,9 @@ public:
 	const Size32u size() const noexcept {
 		return Size32u(this->_width, this->_height);
 	}
+	bool empty() const noexcept {
+		return !_data;
+	}
 	Image slice(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const {
 		assert(x + width <= _width);
 		assert(y + height <= _height);

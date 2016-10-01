@@ -79,14 +79,14 @@ grid_encode_data_t GridPartition::estimateMapping(const PartitionPtr &source, co
 item_match_t Partition::matchItem(const PartitionItemPtr& a, const PartitionPtr &source, const ImageClassifier& classifier, const TransformMatcher& matcher, uint64_t &rejectedMappings) const {
 	item_match_t result;
 	for (auto it : source->_data) {
-		if (it->width() > a->width() && it->height() > a->height()) {
+        if (it->width() >= a->width() && it->height() >= a->height()) {
 			if (classifier.compare(a, it)) {
 				auto score = matcher.match(a, it);
 				if (score.distance < result.score.distance) {
 					result.score = score;
 					result.x = it->pos().x();
 					result.y = it->pos().y();
-					result.sourceItemSize = it->image().size();
+					result.sourceItemSize = it->sourceSize();
 				}
 				if (matcher.checkDistance(result.score.distance))
 					break;

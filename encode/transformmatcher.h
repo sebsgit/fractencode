@@ -52,7 +52,7 @@ public:
 
 		do {
 			transform_score_t candidate;
-			candidate.distance = _metric.distance(a->image(), b->image(), t);
+			candidate.distance = _metric.distance(a->image(), b->presampled(), t);
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const __m256i map_lookup_4_0_avx = frac_m256_interleave2_epi16(__map_lookup[t.type()][4], __map_lookup[t.type()][0]);
@@ -136,7 +136,7 @@ public:
 		Transform t(Transform::Id);
 		do {
 			transform_score_t candidate;
-			candidate.distance = _metric.distance(a->image(), b->image(), t);
+			candidate.distance = _metric.distance(a->image(), b->presampled(), t);
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
@@ -240,7 +240,7 @@ public:
 		__m128i ab_ratio_sse = _mm_set1_epi16(b->width() / a->width());
 		do {
 			transform_score_t candidate;
-			candidate.distance = _metric.distance(a->image(), b->image(), t);
+			candidate.distance = _metric.distance(a->image(), b->presampled(), t);
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
@@ -361,7 +361,7 @@ public:
 		const SamplerBilinear samplerB(b->image());
 		do {
 			transform_score_t candidate;
-			candidate.distance = _metric.distance(a->image(), b->image(), t);
+			candidate.distance = _metric.distance(a->image(), b->presampled(), t);
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
@@ -390,6 +390,7 @@ public:
 		} while (t.next() != Transform::Id);
 		return result;
 	}
+
 	inline transform_score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
 #ifdef FRAC_WITH_AVX
 		if (a->width() == 2)
