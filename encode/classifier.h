@@ -5,6 +5,7 @@
 #include "partition.h"
 #include <memory>
 #include <vector>
+#include "sse_debug.h"
 
 namespace Frac {
 	class ImageClassifier {
@@ -105,12 +106,46 @@ namespace Frac {
 			return typeA == typeB;
 		}
 	private:
-		//TODO optimize this for sizes > 2
+		//TODO optimize this for sizes > 4
 		static int getCategory(const Image& image) {
 			if (image.width() == 2) {
 				const auto data = image.data()->get();
 				return category(data[0], data[1], data[0 + image.stride()], data[1 + image.stride()]);
 			}
+#ifdef FRAC_WITH_AVX
+			if (image.width() == 4) {
+				const auto row0 = image.data()->get();
+				const auto row1 = row0 + image.stride();
+				const auto row2 = row0 + 2 * image.stride();
+				const auto row3 = row0 + 3 * image.stride();
+
+				__m128i row01 = _mm_set_epi32(0, 0, *(int32_t*)(row1), *(int32_t*)row0); // [0] [0] [row1] [row0]
+				row01 = _mm_unpacklo_epi8(row01, _mm_setzero_si128()); // [row1_3, row1_2] [row1_1, row1_0] [row0_3, row0_2] [row0_1, row0_0]
+				
+				__m128i shuffle = _mm_shuffle_epi32(row01, _MM_SHUFFLE(1, 0, 3, 2));
+				shuffle = _mm_add_epi16(shuffle, row01);
+				
+				row01 = _mm_shufflehi_epi16(shuffle, _MM_SHUFFLE(2, 3, 0, 1));
+				row01 = _mm_add_epi16(row01, shuffle);
+				
+				const double a1 = _mm_extract_epi16(row01, 5) / 4.0;
+				const double a2 = _mm_extract_epi16(row01, 7) / 4.0;
+
+				row01 = _mm_set_epi32(0, 0, *(int32_t*)(row3), *(int32_t*)row2);
+				row01 = _mm_unpacklo_epi8(row01, _mm_setzero_si128());
+
+				shuffle = _mm_shuffle_epi32(row01, _MM_SHUFFLE(1, 0, 3, 2));
+				shuffle = _mm_add_epi16(shuffle, row01);
+
+				row01 = _mm_shufflehi_epi16(shuffle, _MM_SHUFFLE(2, 3, 0, 1));
+				row01 = _mm_add_epi16(row01, shuffle);
+
+				const double a3 = _mm_extract_epi16(row01, 5) / 4.0;
+				const double a4 = _mm_extract_epi16(row01, 7) / 4.0;
+
+				return category(a1, a2, a3, a4);
+			}
+#endif
 			const auto halfW = image.width() / 2;
 			const auto halfH = image.height() / 2;
 			const double a1 = ImageStatistics::mean(image.slice(0, 0, halfW, halfH));

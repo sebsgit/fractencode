@@ -22,4 +22,6 @@ void assert_sse_m128_epi16(const __m128i sse_value, uint16_t x7, uint16_t x6, ui
 	__ASSERT_EQ(tmp[7], x7);
 }
 
+#undef __ASSERT_EQ
+
 #endif
