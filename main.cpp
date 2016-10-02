@@ -16,6 +16,8 @@ public:
 	std::string inputPath;
 	Frac::Encoder::encode_parameters_t encoderParams;
 	int decodeSteps = -1;
+	double decodeRms = 0.00001;
+	bool saveDecodeSteps = false;
 	bool color = false;
 	bool useQuadtree = false;
 	bool preSample = false;
@@ -53,9 +55,13 @@ private:
 				color = true;
 			} else if (tmp == "--quadtree") {
 				useQuadtree = true;
-			}
-			else if (tmp == "--presample") {
+			} else if (tmp == "--presample") {
 				preSample = true;
+			} else if (tmp == "--debug_decode") {
+				saveDecodeSteps = true;
+			} else {
+				std::cout << "unrecognized parameter: " << tmp << '\n';
+				exit(0);
 			}
 			++index;
 		}
@@ -109,7 +115,7 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	buffer->memset(0);
 	Image result = Image(buffer, w, h, w);
 	timer.start();
-	Decoder decoder(result, args.decodeSteps);
+	Decoder decoder(result, args.decodeSteps, args.decodeRms, args.saveDecodeSteps);
 	auto stats = decoder.decode(data);
 	std::cout << "decoded in " << timer.elapsed() << " s.\n";
 	std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";

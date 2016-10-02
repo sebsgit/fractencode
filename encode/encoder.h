@@ -66,10 +66,11 @@ public:
 		int iterations;
 		double rms;
 	};
-	Decoder(Image& target, const int nMaxIterations = -1, const double rmsEpsilon = 0.00001)
+	Decoder(Image& target, const int nMaxIterations = -1, const double rmsEpsilon = 0.00001, bool saveDecodeSteps = false)
 		:_target(target)
 		,_iterations(nMaxIterations < 0 ? 300 : nMaxIterations)
 		,_rmsEpsilon(rmsEpsilon)
+		,_saveSteps(saveDecodeSteps)
 	{
 	}
 	decode_stats_t decode(const grid_encode_data_t& data) {
@@ -79,8 +80,15 @@ public:
 		RootMeanSquare metric;
 		int i=0;
 		double rms = 0.0;
+		if (_saveSteps)
+			source.savePng("decode_debug0.png");
 		for ( ; i<_iterations ; ++i) {
 			this->decodeStep(source, _target, data);
+			if (_saveSteps) {
+				std::stringstream ss;
+				ss << i + 1;
+				_target.savePng("decode_debug" + ss.str() +".png");
+			}
 			rms = metric.distance(source, _target);
 			if (rms < _rmsEpsilon)
 				break;
@@ -103,6 +111,7 @@ private:
 	Image& _target;
 	const int _iterations;
 	const double _rmsEpsilon;
+	const bool _saveSteps = false;
 };
 
 }

@@ -119,12 +119,12 @@ public:
 	Image copy() const {
 		return Image(this->_data->clone() , width(), height(), stride());
 	}
-	void savePng(const char* path) const {
+	void savePng(const std::string& path) const {
 		if (sizeof(Pixel) == 1)
-			stbi_write_png(path, _width, _height, 1, _data->get(), _stride);
+			stbi_write_png(path.c_str(), _width, _height, 1, _data->get(), _stride);
 		else {
 			auto buffer = convert<uint8_t>(_data);
-			stbi_write_png(path, _width, _height, 1, buffer->get(), _stride);
+			stbi_write_png(path.c_str(), _width, _height, 1, buffer->get(), _stride);
 		}
 	}
 	void map(const std::function<void(Image::Pixel)>& f) const {
@@ -167,10 +167,10 @@ public:
 	Image v() const noexcept {
 		return _v;
 	}
-	void savePng(const char* path) {
+	void savePng(const std::string& path) {
 		auto buffer = Buffer<uint8_t>::alloc(_y.width() * _y.height() * 3);
 		this->packToRgb(buffer->get());
-		stbi_write_png(path, _y.width(), _y.height(), 3, buffer->get(), _y.width() * 3);
+		stbi_write_png(path.c_str(), _y.width(), _y.height(), 3, buffer->get(), _y.width() * 3);
 	}
 private:
 	void unpackRgb(const unsigned char* rgb, uint32_t width, uint32_t height, uint32_t stride) {
