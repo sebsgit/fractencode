@@ -48,6 +48,32 @@ void assert_sse_m256_epi16(const __m256i sse_value,
 	__ASSERT_EQ(tmp[15], x15);
 }
 
+void assert_sse_m256_epi16(const __m256i sse_value, const uint8_t* imageRow) {
+	uint16_t tmp[16] = { 0 };
+	_mm256_storeu_si256((__m256i*)tmp, sse_value);
+	for (int i = 0; i < 16; ++i) {
+		__ASSERT_EQ(tmp[i], (uint16_t)imageRow[i]);
+	}
+}
+
+void assert_sse_m256_epi16(const __m256i sse_value, const uint16_t* imageRow) {
+	uint16_t tmp[16] = { 0 };
+	_mm256_storeu_si256((__m256i*)tmp, sse_value);
+	for (int i = 0; i < 16; ++i) {
+		__ASSERT_EQ(tmp[i], imageRow[i]);
+	}
+}
+
+void assert_sse_m256_epi16_sum(const __m256i sse_value, const uint8_t* row0, const uint8_t* row1, const uint8_t* row2, const uint8_t* row3,
+	const uint8_t* row4, const uint8_t* row5, const uint8_t* row6, const uint8_t* row7)
+{
+	uint16_t row_sum[16] = { 0 };
+	for (int i = 0; i < 16; ++i) {
+		row_sum[i] = row0[i] + row1[i] + row2[i] + row3[i] + row4[i] + row5[i] + row6[i] + row7[i];
+	}
+	assert_sse_m256_epi16(sse_value, row_sum);
+}
+
 #undef __ASSERT_EQ
 
 #endif

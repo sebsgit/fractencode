@@ -28,6 +28,12 @@ extern void assert_sse_m256_epi16(const __m256i sse_value,
 	uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
 	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0);
 
+extern void assert_sse_m256_epi16(const __m256i sse_value, const uint8_t* imageRow);
+extern void assert_sse_m256_epi16(const __m256i sse_value, const uint16_t* data);
+
+extern void assert_sse_m256_epi16_sum(const __m256i sse_value, const uint8_t* row0, const uint8_t* row1, const uint8_t* row2, const uint8_t* row3,
+	const uint8_t* row4, const uint8_t* row5, const uint8_t* row6, const uint8_t* row7);
+
 #endif
 
 #endif

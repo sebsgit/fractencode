@@ -108,7 +108,6 @@ namespace Frac {
 			return typeA == typeB;
 		}
 	private:
-		//TODO optimize this for sizes > 8
 		static int getCategory(const Image& image) {
 			if (image.width() == 2) {
 				const auto data = image.data()->get();
@@ -169,8 +168,6 @@ namespace Frac {
 				row_sse = _mm_shufflelo_epi16(row_sse, _MM_SHUFFLE(2, 3, 0, 1));
 				row_sse = _mm_add_epi16(row_sse, shuffle);
 
-				const auto halfW = image.width() / 2;
-				const auto halfH = image.height() / 2;
 				const double a1 = _mm_extract_epi16(row_sse, 0) / 16.0;
 				const double a2 = _mm_extract_epi16(row_sse, 7) / 16.0;
 
@@ -189,6 +186,69 @@ namespace Frac {
 
 				const double a3 = _mm_extract_epi16(row_sse, 0) / 16.0;
 				const double a4 = _mm_extract_epi16(row_sse, 7) / 16.0;
+				return category(a1, a2, a3, a4);
+			} else if (image.width() == 16) {
+				const auto row0 = image.data()->get();
+				const auto row1 = row0 + image.stride();
+				const auto row2 = row0 + 2 * image.stride();
+				const auto row3 = row0 + 3 * image.stride();
+				const auto row4 = row0 + 4 * image.stride();
+				const auto row5 = row0 + 5 * image.stride();
+				const auto row6 = row0 + 6 * image.stride();
+				const auto row7 = row0 + 7 * image.stride();
+				const auto row8 = row0 + 8 * image.stride();
+				const auto row9 = row0 + 9 * image.stride();
+				const auto row10 = row0 + 10 * image.stride();
+				const auto row11 = row0 + 11 * image.stride();
+				const auto row12 = row0 + 12 * image.stride();
+				const auto row13 = row0 + 13 * image.stride();
+				const auto row14 = row0 + 14 * image.stride();
+				const auto row15 = row0 + 15 * image.stride();
+
+				__m256i row_avx = _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row0 + 8), 0, *(uint64_t*)row0), _mm256_setzero_si256());
+
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row1 + 8), 0, *(uint64_t*)row1), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row2 + 8), 0, *(uint64_t*)row2), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row3 + 8), 0, *(uint64_t*)row3), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row4 + 8), 0, *(uint64_t*)row4), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row5 + 8), 0, *(uint64_t*)row5), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row6 + 8), 0, *(uint64_t*)row6), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row7 + 8), 0, *(uint64_t*)row7), _mm256_setzero_si256()));
+
+				__m256i shuffle = _mm256_shuffle_epi32(row_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				shuffle = _mm256_add_epi16(shuffle, row_avx);
+				row_avx = _mm256_shuffle_epi32(shuffle, _MM_SHUFFLE(0, 2, 1, 3));
+				shuffle = _mm256_add_epi16(row_avx, shuffle);
+
+				row_avx = _mm256_shufflehi_epi16(shuffle, _MM_SHUFFLE(2, 3, 0, 1));
+				row_avx = _mm256_shufflelo_epi16(row_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				row_avx = _mm256_add_epi16(row_avx, shuffle);
+
+				const double a1 = _mm_extract_epi16(_mm256_extracti128_si256(row_avx, 0), 0) / 64.0;
+				const double a2 = _mm_extract_epi16(_mm256_extracti128_si256(row_avx, 1), 0) / 64.0;
+
+
+				row_avx = _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row8 + 8), 0, *(uint64_t*)row8), _mm256_setzero_si256());
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row9 + 8), 0, *(uint64_t*)row9), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row10 + 8), 0, *(uint64_t*)row10), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row11 + 8), 0, *(uint64_t*)row11), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row12 + 8), 0, *(uint64_t*)row12), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row13 + 8), 0, *(uint64_t*)row13), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row14 + 8), 0, *(uint64_t*)row14), _mm256_setzero_si256()));
+				row_avx = _mm256_add_epi16(row_avx, _mm256_unpacklo_epi8(_mm256_set_epi64x(0, *(uint64_t*)(row15 + 8), 0, *(uint64_t*)row15), _mm256_setzero_si256()));
+
+				shuffle = _mm256_shuffle_epi32(row_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				shuffle = _mm256_add_epi16(shuffle, row_avx);
+				row_avx = _mm256_shuffle_epi32(shuffle, _MM_SHUFFLE(0, 2, 1, 3));
+				shuffle = _mm256_add_epi16(row_avx, shuffle);
+
+				row_avx = _mm256_shufflehi_epi16(shuffle, _MM_SHUFFLE(2, 3, 0, 1));
+				row_avx = _mm256_shufflelo_epi16(row_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				row_avx = _mm256_add_epi16(row_avx, shuffle);
+
+				const double a3 = _mm_extract_epi16(_mm256_extracti128_si256(row_avx, 0), 0) / 64.0;
+				const double a4 = _mm_extract_epi16(_mm256_extracti128_si256(row_avx, 1), 0) / 64.0;
+
 				return category(a1, a2, a3, a4);
 			}
 #endif
