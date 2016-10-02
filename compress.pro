@@ -22,6 +22,7 @@ SOURCES += main.cpp \
         image/sampler.cpp \
         image/transform.cpp \
         utils/utils.cpp \
+		utils/sse_debug.cpp \
         image/imageutils.cpp \
         image/partition/gridpartition.cpp \
         image/partition/quadtreepartition.cpp \

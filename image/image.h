@@ -135,8 +135,8 @@ public:
 			}
 		}
 	}
-	ImageData& cache() const {
-		return *_cache;
+	const std::shared_ptr<ImageData>& cache() const {
+		return _cache;
 	}
 private:
 	AbstractBufferPtr<Pixel> _data;

@@ -11,26 +11,6 @@
 
 namespace Frac {
 
-class SafeFlag {
-public:
-	void waitFor(bool value) {
-		std::unique_lock<std::mutex> lock(this->_mutex);
-		if (this->_flag != value)
-			this->_waitCondition.wait(lock);
-		this->_flag = !value;
-	}
-	void set(bool value) {
-		this->_mutex.lock();
-		this->_flag = value;
-		this->_mutex.unlock();
-		this->_waitCondition.notify_one();
-	}
-private:
-	std::mutex _mutex;
-	std::condition_variable _waitCondition;
-	bool _flag = false;
-};
-
 template <typename Result>
 class _ThreadSchedulerHelper : public AbstractScheduler<Result> {
 	using TaskPtr = std::unique_ptr<AbstractTask<Result>>;

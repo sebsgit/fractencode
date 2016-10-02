@@ -22,6 +22,12 @@
 extern void assert_sse_m128_epi16(const __m128i sse_value, uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
 	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0);
 
+extern void assert_sse_m256_epi16(const __m256i sse_value,
+	uint16_t x15, uint16_t x14, uint16_t x13, uint16_t x12,
+	uint16_t x11, uint16_t x10, uint16_t x9, uint16_t x8,
+	uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
+	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0);
+
 #endif
 
 #endif

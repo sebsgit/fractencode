@@ -18,15 +18,15 @@ namespace Frac {
 	public:
 		GridItem(const Image& source, const uint32_t x, const uint32_t y, const Size32u& s, Image&& presampled = Image())
 			:_pos(x, y)
-			,_image(source.slice(x, y, s.x(), s.y()))
 			,_sourceSize(s)
+			,_image(source.slice(x, y, s.x(), s.y()))
 			,_presampled(std::move(presampled))
 		{
 		}
 		GridItem(const Image& source, const uint32_t x, const uint32_t y, Image&& presampled = Image())
 			:_pos(x, y)
-			,_image(source)
 			,_sourceSize(source.size())
+			,_image(source)
 			,_presampled(std::move(presampled))
 		{
 		}

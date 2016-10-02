@@ -61,7 +61,13 @@ public:
 				const __m256i map_lookup_7_3_avx = frac_m256_interleave2_epi16(__map_lookup[t.type()][7], __map_lookup[t.type()][3]);
 				
 				const __m256i wh_offset_avx = _mm256_add_epi16( _mm256_mullo_epi16(map_lookup_6_2_avx, w_1_avx), _mm256_mullo_epi16(map_lookup_7_3_avx, h_1_avx) );
+#ifdef _MSC_VER
 				const __m256i ys_avx = _mm256_set_m128i(_mm_set1_epi16(b->image().height() / 2), _mm_setzero_si128());
+#else
+				const __m256i ys_avx = _mm256_set_epi16(b->image().height() / 2, b->image().height() / 2, b->image().height() / 2, b->image().height() / 2,
+					b->image().height() / 2, b->image().height() / 2, b->image().height() / 2, b->image().height() / 2,
+					0, 0, 0, 0, 0, 0, 0, 0);
+#endif
 				__m256i y_wh_offset_avx = _mm256_mullo_epi16(ys_avx, map_lookup_5_1_avx);
 				y_wh_offset_avx = _mm256_add_epi16(y_wh_offset_avx, wh_offset_avx);
 					
@@ -283,7 +289,7 @@ public:
 
 					for (uint32_t x = 0; x<a->image().width(); x += 8) {
 						auto src_data = (a->image().data()->get() + x + y_off);
-						__m128i x_sse = _mm_cvtsi64_si128(*(uint64_t*)src_data);
+						__m128i x_sse = _mm_set_epi64x(0, *(uint64_t*)src_data);
 						x_sse = _mm_unpacklo_epi8(x_sse, _mm_setzero_si128());
 						sumA_sse = _mm_add_epi16(x_sse, sumA_sse);
 						x_sse = _mm_mullo_epi16(x_sse, x_sse);

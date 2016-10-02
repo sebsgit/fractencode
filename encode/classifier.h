@@ -93,15 +93,17 @@ namespace Frac {
 	class BrightnessBlockClassifier : public ImageClassifier {
 	public:
 		bool compare(const Image& a, const Image& b) const override {
-			int typeA = (int)a.cache().get(ImageData::KeyBlockTypeBrightness, -1);
-			int typeB = (int)b.cache().get(ImageData::KeyBlockTypeBrightness, -1);
+			int typeA = a.cache() ? (int)a.cache()->get(ImageData::KeyBlockTypeBrightness, -1) : -1;
+			int typeB = b.cache() ? (int)b.cache()->get(ImageData::KeyBlockTypeBrightness, -1) : -1;
 			if (typeA == -1) {
 				typeA = BrightnessBlockClassifier::getCategory(a);
-				a.cache().put(ImageData::KeyBlockTypeBrightness, typeA);
+				if (a.cache())
+					a.cache()->put(ImageData::KeyBlockTypeBrightness, typeA);
 			}
 			if (typeB == -1) {
 				typeB = BrightnessBlockClassifier::getCategory(b);
-				b.cache().put(ImageData::KeyBlockTypeBrightness, typeB);
+				if (b.cache())
+					b.cache()->put(ImageData::KeyBlockTypeBrightness, typeB);
 			}
 			return typeA == typeB;
 		}

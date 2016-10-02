@@ -9,8 +9,8 @@ extern "C" {
 using namespace Frac;
 
 double ImageStatistics::sum(const Image& a) noexcept {
-	auto& cache = a.cache();
-	double result = cache.get(ImageData::KeySum);
+	const auto& cache = a.cache();
+	double result = cache ? cache->get(ImageData::KeySum) : -1.0;
 	if (result == -1.0) {
 		result = 0.0;
 #ifdef FRAC_WITH_AVX
@@ -37,23 +37,25 @@ double ImageStatistics::sum(const Image& a) noexcept {
 #else
 		a.map([&](Image::Pixel v) { result += v; });
 #endif
-		cache.put(ImageData::KeySum, result);
+		if (cache)
+			cache->put(ImageData::KeySum, result);
 	}
 	return result;
 }
 double ImageStatistics::mean(const Image& image) noexcept {
-	auto& cache = image.cache();
-	double result = -1; cache.get(ImageData::KeyMean);
+	const auto& cache = image.cache();
+	double result = cache ? cache->get(ImageData::KeyMean) : -1.0;
 	if (result == -1.0) {
 		result = sum(image) / image.size().area();
-		cache.put(ImageData::KeyMean, result);
+		if (cache)
+			cache->put(ImageData::KeyMean, result);
 	}
 	return result;
 }
 double ImageStatistics::variance(const Image& image) noexcept {
 	const double av = mean(image);
-	auto& cache = image.cache();
-	double result = -1; cache.get(ImageData::KeyVariance);
+	const auto& cache = image.cache();
+	double result = cache ? cache->get(ImageData::KeyVariance) : -1.0;
 	if (result == -1.0) {
 		double sum = 0.0;
 #ifdef FRAC_WITH_AVX
@@ -89,7 +91,8 @@ double ImageStatistics::variance(const Image& image) noexcept {
 		image.map([&](Image::Pixel p) { sum += (p - av) * (p - av); });
 #endif
 		result = sum / image.size().area();
-		cache.put(ImageData::KeyVariance, result);
+		if (cache)
+			cache->put(ImageData::KeyVariance, result);
 	}
 	return result;
 }
