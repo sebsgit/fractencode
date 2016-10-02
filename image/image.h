@@ -46,6 +46,12 @@ private:
 class Image {
 public:
 	typedef uint8_t Pixel;
+
+	enum CachePolicy {
+		CacheFull,
+		NoCache
+	};
+
 	Image(const char* fileName, const int channelCount = 1) {
 		assert(channelCount == 1 && "multiple channels not implemented");
 		int components = 0;
@@ -68,11 +74,12 @@ public:
 			_data.reset(new Buffer<Pixel>((Pixel*)data, _height * _stride * sizeof(Pixel), [](uint8_t* ptr) { ::free(ptr); }));
 		}
 	}
-	Image(AbstractBufferPtr<Pixel> data, uint32_t width, uint32_t height, uint32_t stride)
+	Image(AbstractBufferPtr<Pixel> data, uint32_t width, uint32_t height, uint32_t stride, Image::CachePolicy cache = Image::CacheFull)
 		:_data(data)
 		,_width(width)
 		,_height(height)
 		,_stride(stride)
+		,_cache(cache == CacheFull ? new ImageData : nullptr)
 	{
 
 	}
@@ -102,12 +109,12 @@ public:
 	bool empty() const noexcept {
 		return !_data;
 	}
-	Image slice(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const {
+	Image slice(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Image::CachePolicy cached = Image::CacheFull) const {
 		assert(x + width <= _width);
 		assert(y + height <= _height);
 		const auto offset = y * _stride + x;
 		auto buffer = BufferSlice<Pixel>::slice(_data, offset, _data->size() - offset);
-		return Image(buffer, width, height, _stride);
+		return Image(buffer, width, height, _stride, cached);
 	}
 	Image copy() const {
 		return Image(this->_data->clone() , width(), height(), stride());
@@ -134,7 +141,7 @@ public:
 private:
 	AbstractBufferPtr<Pixel> _data;
 	uint32_t _width = 0, _height = 0, _stride = 0;
-	mutable std::shared_ptr<ImageData> _cache = std::shared_ptr<ImageData>(new ImageData);
+	mutable std::shared_ptr<ImageData> _cache;
 };
 
 class PlanarImage {
