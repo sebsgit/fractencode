@@ -121,7 +121,6 @@ public:
 				const auto sumA = valA_0 + valA_1 + valA_2 + valA_3;
 				const auto sumB = valB_0 + valB_1 + valB_2 + valB_3;
 				const auto sumA2 = valA_0 * valA_0 + valA_1 * valA_1 + valA_2 * valA_2 + valA_3 * valA_3;
-				const auto sumB2 = valB_0 * valB_0 + valB_1 * valB_1 + valB_2 * valB_2 + valB_3 * valB_3;
 				const auto sumAB = valA_0 * valB_0 + valA_1 * valB_1 + valA_2 * valB_2 + valA_3 * valB_3;
 				const double tmp = (N * sumA2 - (sumA - 1) * sumA);
 				const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
@@ -146,7 +145,7 @@ public:
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
-				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
+				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
 				const Image::Pixel* source_b = b->image().data()->get();
 				const auto stride_b = b->image().stride();
 				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
@@ -212,7 +211,6 @@ public:
 						sumA += valA;
 						sumB += valB;
 						sumA2 += valA * valA;
-						sumB2 += valB * valB;
 						sumAB += valA * valB;
 					}
 				}
@@ -250,9 +248,8 @@ public:
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
-				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
+				double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
 				const Image::Pixel* source_b = b->image().data()->get();
-				const auto stride_b = b->image().stride();
 				const auto width_offset = __map_lookup[t.type()][2] * (b->width() - 1) + __map_lookup[t.type()][3] * (b->height() - 1);
 				const auto height_offset = __map_lookup[t.type()][6] * (b->width() - 1) + __map_lookup[t.type()][7] * (b->height() - 1);
 
@@ -277,9 +274,6 @@ public:
 					const auto y_height_offset = __map_lookup[t.type()][5] * ys + height_offset;
 					const auto y_width_offset_1 = __map_lookup[t.type()][1] * (ys + 1) + width_offset;
 					const auto y_height_offset_1 = __map_lookup[t.type()][5] * (ys + 1) + height_offset;
-
-					const auto map_x0 = __map_lookup[t.type()][0];
-					const auto map_x1 = __map_lookup[t.type()][4];
 					const auto y_off = y * a->image().stride();
 
 					__m128i y_w_off_sse = _mm_set1_epi16(y_width_offset);
@@ -339,7 +333,6 @@ public:
 								+ (int)source_b[bl_store[i]]
 								+ (int)source_b[br_store[i]];
 							sumAB += convert<double>(total / 4) * src_data[i];
-							sumB2 += convert<double>(total / 4) * convert<double>(total / 4);
 							sumB += convert<double>(total / 4);
 						}
 					}
@@ -371,7 +364,7 @@ public:
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
 				const double N = (double)(a->image().width()) * a->image().height();
-				double sumA = ImageStatistics::sum(a->image()), sumA2 = 0.0, sumB = 0.0, sumB2 = 0.0, sumAB = 0.0;
+				double sumA = ImageStatistics::sum(a->image()), sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
 				for (uint32_t y = 0 ; y<a->image().height() ; ++y) {
 					for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
 						const auto srcY = (y * b->image().height()) / a->image().height();
@@ -380,7 +373,6 @@ public:
 						const double valB = convert<double>(samplerB(srcX, srcY, t, b->image().size()));
 						sumB += valB;
 						sumA2 += valA * valA;
-						sumB2 += valB * valB;
 						sumAB += valA * valB;
 					}
 				}
