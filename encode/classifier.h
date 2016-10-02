@@ -108,7 +108,7 @@ namespace Frac {
 			return typeA == typeB;
 		}
 	private:
-		//TODO optimize this for sizes > 4
+		//TODO optimize this for sizes > 8
 		static int getCategory(const Image& image) {
 			if (image.width() == 2) {
 				const auto data = image.data()->get();
@@ -145,6 +145,50 @@ namespace Frac {
 				const double a3 = _mm_extract_epi16(row01, 5) / 4.0;
 				const double a4 = _mm_extract_epi16(row01, 7) / 4.0;
 
+				return category(a1, a2, a3, a4);
+			} else if (image.width() == 8) {
+				const auto row0 = image.data()->get();
+				const auto row1 = row0 + image.stride();
+				const auto row2 = row0 + 2 * image.stride();
+				const auto row3 = row0 + 3 * image.stride();
+				const auto row4 = row0 + 4 * image.stride();
+				const auto row5 = row0 + 5 * image.stride();
+				const auto row6 = row0 + 6 * image.stride();
+				const auto row7 = row0 + 7 * image.stride();
+
+				__m128i row_sse = _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row0), _mm_setzero_si128());
+				
+				row_sse = _mm_add_epi16(row_sse, _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row1), _mm_setzero_si128()));
+				row_sse = _mm_add_epi16(row_sse, _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row2), _mm_setzero_si128()));
+				row_sse = _mm_add_epi16(row_sse, _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row3), _mm_setzero_si128()));
+
+				__m128i shuffle = _mm_shuffle_epi32(row_sse, _MM_SHUFFLE(2, 3, 0, 1));
+				shuffle = _mm_add_epi16(shuffle, row_sse);
+
+				row_sse = _mm_shufflehi_epi16(shuffle, _MM_SHUFFLE(2, 3, 0, 1));
+				row_sse = _mm_shufflelo_epi16(row_sse, _MM_SHUFFLE(2, 3, 0, 1));
+				row_sse = _mm_add_epi16(row_sse, shuffle);
+
+				const auto halfW = image.width() / 2;
+				const auto halfH = image.height() / 2;
+				const double a1 = _mm_extract_epi16(row_sse, 0) / 16.0;
+				const double a2 = _mm_extract_epi16(row_sse, 7) / 16.0;
+
+				row_sse = _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row4), _mm_setzero_si128());
+				
+				row_sse = _mm_add_epi16(row_sse, _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row5), _mm_setzero_si128()));
+				row_sse = _mm_add_epi16(row_sse, _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row6), _mm_setzero_si128()));
+				row_sse = _mm_add_epi16(row_sse, _mm_unpacklo_epi8(_mm_set_epi64x(0, *(uint64_t*)row7), _mm_setzero_si128()));
+
+				shuffle = _mm_shuffle_epi32(row_sse, _MM_SHUFFLE(2, 3, 0, 1));
+				shuffle = _mm_add_epi16(shuffle, row_sse);
+
+				row_sse = _mm_shufflehi_epi16(shuffle, _MM_SHUFFLE(2, 3, 0, 1));
+				row_sse = _mm_shufflelo_epi16(row_sse, _MM_SHUFFLE(2, 3, 0, 1));
+				row_sse = _mm_add_epi16(row_sse, shuffle);
+
+				const double a3 = _mm_extract_epi16(row_sse, 0) / 16.0;
+				const double a4 = _mm_extract_epi16(row_sse, 7) / 16.0;
 				return category(a1, a2, a3, a4);
 			}
 #endif
