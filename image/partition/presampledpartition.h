@@ -18,8 +18,8 @@ public:
 			for (uint32_t x = 0; x < image.width(); x += _offset.x()) {
 				if (x + _size.x() > image.width() || y + _size.y() > image.height())
 					continue;
-				const auto sampled = presampled.slice(x / 2, y / 2, _size.x() / 2, _size.y() / 2, Image::NoCache);
-				result->push_back(PartitionItemPtr(new GridItem(image, x, y, _size, sampled)));
+				auto sampled = presampled.slice(x / 2, y / 2, _size.x() / 2, _size.y() / 2, Image::NoCache);
+				result->push_back(PartitionItemPtr(new GridItem(image, x, y, _size, std::move(sampled))));
 			}
 		}
 		return result;
