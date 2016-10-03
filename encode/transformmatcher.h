@@ -9,7 +9,7 @@
 #include <iostream>
 
 #ifdef FRAC_WITH_AVX
-#include "sse_debug.h"
+#include "sse_utils.h"
 #include <immintrin.h>
 #endif
 
@@ -74,39 +74,41 @@ public:
 				const auto xs_0 = 0;
 				const auto xs_1 = (b->image().width()) / 2;
 
-				const __m256i xs_01_avx = frac_m256_interleave4_epi16(xs_1, xs_1, xs_0, xs_0);
-
-				__m256i xs_avx = _mm256_add_epi16(xs_01_avx, offset_01_avx);
+				__m256i xs_avx = _mm256_add_epi16(frac_m256_interleave4_epi16(xs_1, xs_1, xs_0, xs_0), offset_01_avx);
 				xs_avx = _mm256_mullo_epi16(xs_avx, map_lookup_4_0_avx);
 
-
-				const __m256i offset_1_avx = _mm256_add_epi16(y_wh_offset_avx, map_lookup_5_1_avx);
-
 				__m256i top_coords_avx = _mm256_add_epi16(xs_avx, y_wh_offset_avx);
-				__m256i bottom_coords_avx = _mm256_add_epi16(xs_avx, offset_1_avx);
+				__m256i bottom_coords_avx = _mm256_add_epi16(xs_avx, _mm256_add_epi16(y_wh_offset_avx, map_lookup_5_1_avx));
 				top_coords_avx = _mm256_mullo_epi16(top_coords_avx, b_stride_avx);
 				bottom_coords_avx = _mm256_mullo_epi16(bottom_coords_avx, b_stride_avx);
+
+				xs_avx = _mm256_shufflehi_epi16(top_coords_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				xs_avx = _mm256_shufflelo_epi16(xs_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				top_coords_avx = _mm256_add_epi16(top_coords_avx, xs_avx);
+				xs_avx = _mm256_shufflehi_epi16(bottom_coords_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				xs_avx = _mm256_shufflelo_epi16(xs_avx, _MM_SHUFFLE(2, 3, 0, 1));
+				bottom_coords_avx = _mm256_add_epi16(bottom_coords_avx, xs_avx);
 
 				_mm256_store_si256((__m256i*)top_coords_avx_store, top_coords_avx);
 				_mm256_store_si256((__m256i*)bottom_coords_avx_store, bottom_coords_avx);
 
-				const int total_0 = (int)source_b[top_coords_avx_store[0] + top_coords_avx_store[1]]
-					+ (int)source_b[top_coords_avx_store[4] + top_coords_avx_store[5]]
-					+ (int)source_b[bottom_coords_avx_store[0] + bottom_coords_avx_store[1]]
-					+ (int)source_b[bottom_coords_avx_store[4] + bottom_coords_avx_store[5]];
-				const int total_1 = (int)source_b[top_coords_avx_store[2] + top_coords_avx_store[3]]
-					+ (int)source_b[top_coords_avx_store[6] + top_coords_avx_store[7]]
-					+ (int)source_b[bottom_coords_avx_store[2] + bottom_coords_avx_store[3]]
-					+ (int)source_b[bottom_coords_avx_store[6] + bottom_coords_avx_store[7]];
+				const int total_0 = (int)source_b[top_coords_avx_store[0]]
+				+ (int)source_b[top_coords_avx_store[4]]
+				+ (int)source_b[bottom_coords_avx_store[0]]
+				+ (int)source_b[bottom_coords_avx_store[4]];
+				const int total_1 = (int)source_b[top_coords_avx_store[2]]
+				+ (int)source_b[top_coords_avx_store[6]]
+				+ (int)source_b[bottom_coords_avx_store[2]]
+				+ (int)source_b[bottom_coords_avx_store[6]];
 
-				const int total_2 = (int)source_b[top_coords_avx_store[0 + 8] + top_coords_avx_store[1 + 8]]
-					+ (int)source_b[top_coords_avx_store[4 + 8] + top_coords_avx_store[5 + 8]]
-					+ (int)source_b[bottom_coords_avx_store[0 + 8] + bottom_coords_avx_store[1 + 8]]
-					+ (int)source_b[bottom_coords_avx_store[4 + 8] + bottom_coords_avx_store[5 + 8]];
-				const int total_3 = (int)source_b[top_coords_avx_store[2 + 8] + top_coords_avx_store[3 + 8]]
-					+ (int)source_b[top_coords_avx_store[6 + 8] + top_coords_avx_store[7 + 8]]
-					+ (int)source_b[bottom_coords_avx_store[2 + 8] + bottom_coords_avx_store[3 + 8]]
-					+ (int)source_b[bottom_coords_avx_store[6 + 8] + bottom_coords_avx_store[7 + 8]];
+				const int total_2 = (int)source_b[top_coords_avx_store[0 + 8]]
+				+ (int)source_b[top_coords_avx_store[4 + 8]]
+				+ (int)source_b[bottom_coords_avx_store[0 + 8]]
+				+ (int)source_b[bottom_coords_avx_store[4 + 8]];
+				const int total_3 = (int)source_b[top_coords_avx_store[2 + 8]]
+				+ (int)source_b[top_coords_avx_store[6 + 8]]
+				+ (int)source_b[bottom_coords_avx_store[2 + 8]]
+				+ (int)source_b[bottom_coords_avx_store[6 + 8]];
 
 				const double valB_0 = convert<double>(total_0 / 4);
 				const double valB_1 = convert<double>(total_1 / 4);
