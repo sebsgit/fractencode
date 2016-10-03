@@ -1,6 +1,6 @@
 #include "gaussian5x5.h"
 #include "sampler.h"
-#include <immintrin.h>
+#include "sse_debug.h"
 #include <iostream>
 
 using namespace Frac;
@@ -73,8 +73,8 @@ Image GaussianBlur5x5::process(const Image &image) const {
 				row0f = _mm256_add_ps(row0f, row2f);
 				row0f = _mm256_add_ps(row0f, row3f);
 				row0f = _mm256_add_ps(row0f, row4f);
-				float tmp[8];
-				_mm256_storeu_ps(tmp, row0f);
+				FRAC_ALIGNED_16(float tmp[8]);
+				_mm256_store_ps(tmp, row0f);
 				sum = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4];
 			}
 			resultPtr[x + y*image.stride()] = convert<Image::Pixel>(sum / _normalizationFactor);

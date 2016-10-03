@@ -15,6 +15,7 @@
 #define ALIGN_ATTR __attribute__ ((aligned (16)))
 #define byteshift_left _mm_bslli_si128
 #endif
+#define FRAC_ALIGNED_16(what) ALIGN_SPEC what ALIGN_ATTR
 
 extern void assert_sse_m128_epi16(const __m128i sse_value, uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
 	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0);

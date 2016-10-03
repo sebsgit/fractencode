@@ -85,10 +85,10 @@ AbstractBufferPtr<SobelOperator::result_t> SobelOperator::calculate(const Image 
 				row0 = _mm_mullo_epi16(row0, _mm_set_epi16(0, 0, 0, 0, 0, 1, 1, 1));
 				__m128i data_y = _mm_mullo_epi16(_mm_add_epi16(row0, row2), kernel_y128i);
 
-				int16_t tmp[8];
-				_mm_storeu_si128((__m128i*)tmp, data_x);
+				FRAC_ALIGNED_16(int16_t tmp[8]);
+				_mm_store_si128((__m128i*)tmp, data_x);
 				derivative.dx = (float)tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6];
-				_mm_storeu_si128((__m128i*)tmp, data_y);
+				_mm_store_si128((__m128i*)tmp, data_y);
 				derivative.dy = (float)tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5];
 			}
 #else

@@ -10,8 +10,8 @@
 void assert_sse_m128_epi16(const __m128i sse_value, uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
 	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0)
 {
-	uint16_t tmp[8] = { 0 };
-	_mm_storeu_si128((__m128i*)tmp, sse_value);
+	FRAC_ALIGNED_16(uint16_t tmp[8]) = { 0 };
+	_mm_store_si128((__m128i*)tmp, sse_value);
 	__ASSERT_EQ(tmp[0], x0);
 	__ASSERT_EQ(tmp[1], x1);
 	__ASSERT_EQ(tmp[2], x2);
@@ -28,8 +28,8 @@ void assert_sse_m256_epi16(const __m256i sse_value,
 	uint16_t x7, uint16_t x6, uint16_t x5, uint16_t x4,
 	uint16_t x3, uint16_t x2, uint16_t x1, uint16_t x0)
 {
-	uint16_t tmp[16] = { 0 };
-	_mm256_storeu_si256((__m256i*)tmp, sse_value);
+	FRAC_ALIGNED_16(uint16_t tmp[16]) = { 0 };
+	_mm256_store_si256((__m256i*)tmp, sse_value);
 	__ASSERT_EQ(tmp[0], x0);
 	__ASSERT_EQ(tmp[1], x1);
 	__ASSERT_EQ(tmp[2], x2);
@@ -49,16 +49,16 @@ void assert_sse_m256_epi16(const __m256i sse_value,
 }
 
 void assert_sse_m256_epi16(const __m256i sse_value, const uint8_t* imageRow) {
-	uint16_t tmp[16] = { 0 };
-	_mm256_storeu_si256((__m256i*)tmp, sse_value);
+	FRAC_ALIGNED_16(uint16_t tmp[16]) = { 0 };
+	_mm256_store_si256((__m256i*)tmp, sse_value);
 	for (int i = 0; i < 16; ++i) {
 		__ASSERT_EQ(tmp[i], (uint16_t)imageRow[i]);
 	}
 }
 
 void assert_sse_m256_epi16(const __m256i sse_value, const uint16_t* imageRow) {
-	uint16_t tmp[16] = { 0 };
-	_mm256_storeu_si256((__m256i*)tmp, sse_value);
+	FRAC_ALIGNED_16(uint16_t tmp[16]) = { 0 };
+	_mm256_store_si256((__m256i*)tmp, sse_value);
 	for (int i = 0; i < 16; ++i) {
 		__ASSERT_EQ(tmp[i], imageRow[i]);
 	}

@@ -1,9 +1,7 @@
 #include "image.h"
 #include <iostream>
 #ifdef FRAC_WITH_AVX
-extern "C" {
-#include "immintrin.h"
-}
+#include "sse_debug.h"
 #endif
 
 using namespace Frac;
@@ -27,8 +25,8 @@ double ImageStatistics::sum(const Image& a) noexcept {
 					column += 8;
 				}
 			}
-			int tmpi[4];
-			_mm_storeu_si128((__m128i*)tmpi, total);
+			FRAC_ALIGNED_16(int tmpi[4]);
+			_mm_store_si128((__m128i*)tmpi, total);
 			uint16_t* tmp = reinterpret_cast<uint16_t*>(tmpi);
 			result = tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + tmp[5] + tmp[6] + tmp[7];
 		} else {
@@ -81,8 +79,8 @@ double ImageStatistics::variance(const Image& image) noexcept {
 					column += 8;
 				}
 			}
-			float tmp[4];
-			_mm_storeu_ps(tmp, total);
+			FRAC_ALIGNED_16(float tmp[4]);
+			_mm_store_ps(tmp, total);
 			sum = tmp[0] + tmp[1] + tmp[2] + tmp[3];
 		} else {
 			image.map([&](Image::Pixel p) { sum += (p - av) * (p - av); });
