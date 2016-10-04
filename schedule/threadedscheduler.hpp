@@ -133,7 +133,7 @@ public:
 			_threadsStarted = true;
 			for (size_t i = 0; i < _threadQueue.size(); ++i) {
 				_threads.push_back(std::unique_ptr<std::thread>(new std::thread(
-					[&]() { _threadQueue[i]->threadFunc(); }
+					[this, i]() { _threadQueue[i]->threadFunc(); }
 				)));
 			}
 			std::cout << "starting " << _threadQueue.size() << " threads...\n";

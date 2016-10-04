@@ -8,7 +8,7 @@ CONFIG += debug_and_release
 QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
 
 unix {
-        DEFINES += FRAC_NO_THREADS
+    QMAKE_LFLAGS += -pthread
 }
 
 INCLUDEPATH += .	\
@@ -47,6 +47,7 @@ HEADERS += \
         image/partition/gridpartition.h \
         encode/datatypes.h \
         utils/timer.h \
+        utils/sse_debug.h \
         image/partition/quadtreepartition.h \
         process/gaussian5x5.h \
         process/abstractprocessor.h \

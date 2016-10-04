@@ -5,6 +5,7 @@
 
 #include <immintrin.h>
 #include <inttypes.h>
+#include <iostream>
 
 #ifdef _MSC_VER
 #define ALIGN_SPEC __declspec(align(16))
