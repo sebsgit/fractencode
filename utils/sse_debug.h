@@ -33,13 +33,11 @@ extern void assert_sse_m256_epi16(const __m256i sse_value, const uint16_t* data)
 extern void assert_sse_m256_epi16_sum(const __m256i sse_value, const uint8_t* row0, const uint8_t* row1, const uint8_t* row2, const uint8_t* row3,
 	const uint8_t* row4, const uint8_t* row5, const uint8_t* row6, const uint8_t* row7);
 
-template <typename T>
-void assert_eq(const T a, const T b) {
-	if (a != b) {
-		std::cout << a << ' ' << b << '\n';
-		exit(0);
-	}
-}
+#define assert_eq(a, b) { \
+	if ((a) != (b)) { \
+		std::cout << __FILE__ << ':' << __LINE__ << "  ---> " << (a) << ' ' << (b) << '\n'; \
+		exit(0); \
+	} }
 
 #endif
 
