@@ -2,8 +2,6 @@
 #define PARTITION_H
 
 #include "image/image.h"
-#include "image/transform.h"
-#include "image/metrics.h"
 #include "encode/datatypes.h"
 #include <vector>
 
@@ -94,9 +92,6 @@ namespace Frac {
 			_data.insert(end(), other->begin(), other->end());
 		}
 
-		virtual grid_encode_data_t estimateMapping(const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings) = 0;
-	protected:
-		virtual item_match_t matchItem(const PartitionItemPtr& p, const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t& rejectedMappings) const;
 	protected:
 		std::vector<PartitionItemPtr> _data;
 	};

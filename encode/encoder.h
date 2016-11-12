@@ -120,7 +120,6 @@ public:
 		classifierNode.classify(image, gridSource, gridTarget);
 		this->_data = matcherNode.result();
 		
-		//_data = gridTarget->estimateMapping(gridSource, *this->_classifier, this->_matcher, _stats.rejectedMappings);
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
 		this->_stats.print();
 	}

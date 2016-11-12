@@ -6,8 +6,6 @@
 namespace Frac {
 
 class GridPartition : public Partition {
-public:
-	grid_encode_data_t estimateMapping(const PartitionPtr& source, const ImageClassifier&, const TransformMatcher&, uint64_t &rejectedMappings) override;
 };
 
 class GridPartitionCreator : public PartitionCreator {
