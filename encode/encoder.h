@@ -6,6 +6,7 @@
 #include "image/sampler.h"
 #include "image/partition/gridpartition.h"
 #include "image/partition/presampledpartition.h"
+#include "schedule/schedulerfactory.hpp"
 #include "transformmatcher.h"
 #include "classifier.h"
 #include "edgeclassifier.h"
@@ -49,38 +50,43 @@ public:
 		: _matcher(matcher)
 		, _source(sourcePartition)
 		, _target(targetPartition)
+		, _scheduler(SchedulerFactory<encode_item_t>::create())
 	{}
 	void addCandidates(const classifier_data_t& data) {
 		if (!data.candidates.empty()) {
-			item_match_t result;
-			for (auto src : data.candidates) {
-				auto score = this->_matcher->match(data.targetItem, src);
-				if (score.distance < result.score.distance) {
-					result.score = score;
-					result.x = src->pos().x();
-					result.y = src->pos().y();
-					result.sourceItemSize = src->sourceSize();
+			auto fn = [this, data]() {
+				item_match_t result;
+				for (auto src : data.candidates) {
+					auto score = this->_matcher->match(data.targetItem, src);
+					if (score.distance < result.score.distance) {
+						result.score = score;
+						result.x = src->pos().x();
+						result.y = src->pos().y();
+						result.sourceItemSize = src->sourceSize();
+					}
+					if (this->_matcher->checkDistance(result.score.distance))
+						break;
 				}
-				if (this->_matcher->checkDistance(result.score.distance))
-					break;
-			}
-			encode_item_t enc;
-			enc.x = data.targetItem->pos().x();
-			enc.y = data.targetItem->pos().y();
-			enc.w = data.targetItem->image().width();
-			enc.h = data.targetItem->image().height();
-			enc.match = result;
-			this->_result.encoded.emplace_back(enc);
+				encode_item_t enc;
+				enc.x = data.targetItem->pos().x();
+				enc.y = data.targetItem->pos().y();
+				enc.w = data.targetItem->image().width();
+				enc.h = data.targetItem->image().height();
+				enc.match = result;
+				return enc;
+			};
+			this->_scheduler->addTask(new LambdaTask<encode_item_t>(fn));
 		}
 	}
 	grid_encode_data_t result() const {
-		return this->_result;
+		this->_scheduler->waitForAll();
+		return grid_encode_data_t{ this->_scheduler->allResults() };
 	}
 private:
 	std::shared_ptr<TransformMatcher> _matcher;
 	PartitionPtr _source;
 	PartitionPtr _target;
-	grid_encode_data_t _result; //TODO make it output partial results too
+	std::unique_ptr<AbstractScheduler<encode_item_t>> _scheduler;
 };
 
 class Encoder {
