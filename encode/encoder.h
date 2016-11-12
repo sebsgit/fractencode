@@ -12,12 +12,13 @@
 #include "edgeclassifier.h"
 #include <iostream>
 #include <sstream>
+#include <atomic>
 
 namespace Frac {
 
-class TransformMatcherNode {
+class TransformEstimator {
 public:
-	TransformMatcherNode(std::shared_ptr<ImageClassifier> classifier, std::shared_ptr<TransformMatcher> matcher, const PartitionPtr& sourcePartition, const PartitionPtr& targetPartition) 
+	TransformEstimator(std::shared_ptr<ImageClassifier> classifier, std::shared_ptr<TransformMatcher> matcher, const PartitionPtr& sourcePartition, const PartitionPtr& targetPartition) 
 		: _classifier(classifier)
 		, _matcher(matcher)
 		, _source(sourcePartition)
@@ -39,6 +40,8 @@ public:
 						}
 						if (this->_matcher->checkDistance(result.score.distance))
 							break;
+					} else {
+						++this->_rejectedMappings;
 					}
 				}
 				encode_item_t enc;
@@ -56,12 +59,16 @@ public:
 		this->_scheduler->waitForAll();
 		return grid_encode_data_t{ this->_scheduler->allResults() };
 	}
+	int rejectedMappings() const noexcept {
+		return this->_rejectedMappings;
+	}
 private:
 	std::shared_ptr<ImageClassifier> _classifier;
 	std::shared_ptr<TransformMatcher> _matcher;
 	PartitionPtr _source;
 	PartitionPtr _target;
 	std::unique_ptr<AbstractScheduler<encode_item_t>> _scheduler;
+	std::atomic_int _rejectedMappings = 0;
 };
 
 class Encoder {
@@ -85,18 +92,16 @@ public:
 
 public:
 	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& sourceCreator, const PartitionCreator& targetCreator)
-		: _metric(new RootMeanSquare)
-		, _classifier(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier))
-		, _encodeParameters(p)
-		, _matcher(*_metric, p.rmsThreshold, p.sMax)
+		: _encodeParameters(p)
 	{
-		PartitionPtr gridSource = sourceCreator.create(image);
-		PartitionPtr gridTarget = targetCreator.create(image);
-		
-		TransformMatcherNode matcherNode(this->_classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource, gridTarget);
-		matcherNode.estimate(image);
-		this->_data = matcherNode.result();
-		
+		auto gridSource = sourceCreator.create(image);
+		auto gridTarget = targetCreator.create(image);
+		auto metric = RootMeanSquare();
+		auto classifier = std::shared_ptr<ImageClassifier>(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier));
+		TransformEstimator transformEstimator(classifier, std::make_shared<TransformMatcher>(metric, p.rmsThreshold, p.sMax), gridSource, gridTarget);
+		transformEstimator.estimate(image);
+		this->_data = transformEstimator.result();
+		this->_stats.rejectedMappings = transformEstimator.rejectedMappings();
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
 		this->_stats.print();
 	}
@@ -104,11 +109,8 @@ public:
 		return _data;
 	}
 private:
-	std::shared_ptr<Metric> _metric;
-	std::shared_ptr<ImageClassifier> _classifier;
 	grid_encode_data_t _data;
 	const encode_parameters_t _encodeParameters;
-	const TransformMatcher _matcher;
 	mutable encode_stats_t _stats;
 };
 
