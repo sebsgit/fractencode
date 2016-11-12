@@ -44,6 +44,7 @@ HEADERS += \
         image/sampler.h \
         encode/classifier.h \
         encode/transformmatcher.h \
+		encode/TransformEstimator.h \
         image/partition/gridpartition.h \
         encode/datatypes.h \
         utils/timer.h \
