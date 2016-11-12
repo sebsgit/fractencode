@@ -15,63 +15,37 @@
 
 namespace Frac {
 
-struct classifier_data_t {
-	PartitionItemPtr targetItem;	// item from target partition
-	std::vector<PartitionItemPtr> candidates;	// items from source partition that could be a possible match for target item
-};
-
-class ClassifierNode {
-public:
-	using classifier_callback_t = std::function<bool(const classifier_data_t&)>;
-	ClassifierNode(std::shared_ptr<ImageClassifier> classifier, classifier_callback_t callback)
-		: _classifier(classifier)
-		, _classifierCallback(callback) {}
-	void classify(const Image& image, const PartitionPtr& sourcePartition, const PartitionPtr& targetPartition) {
-		for (auto it : *targetPartition) {
-			classifier_data_t result;
-			result.targetItem = it;
-			for (auto src : *sourcePartition) {
-				if (this->_classifier->compare(it, src)) {
-					result.candidates.push_back(src);
-				}
-			}
-			if (!this->_classifierCallback(result))
-				break;
-		}
-	}
-private:
-	std::shared_ptr<ImageClassifier> _classifier;
-	 classifier_callback_t _classifierCallback;
-};
-
 class TransformMatcherNode {
 public:
-	TransformMatcherNode(std::shared_ptr<TransformMatcher> matcher, const PartitionPtr& sourcePartition, const PartitionPtr& targetPartition) 
-		: _matcher(matcher)
+	TransformMatcherNode(std::shared_ptr<ImageClassifier> classifier, std::shared_ptr<TransformMatcher> matcher, const PartitionPtr& sourcePartition, const PartitionPtr& targetPartition) 
+		: _classifier(classifier)
+		, _matcher(matcher)
 		, _source(sourcePartition)
 		, _target(targetPartition)
 		, _scheduler(SchedulerFactory<encode_item_t>::create())
 	{}
-	void addCandidates(const classifier_data_t& data) {
-		if (!data.candidates.empty()) {
-			auto fn = [this, data]() {
+	void estimate(const Image& image) {
+		for (auto targetItem : *this->_target) {
+			auto fn = [this, targetItem]() {
 				item_match_t result;
-				for (auto src : data.candidates) {
-					auto score = this->_matcher->match(data.targetItem, src);
-					if (score.distance < result.score.distance) {
-						result.score = score;
-						result.x = src->pos().x();
-						result.y = src->pos().y();
-						result.sourceItemSize = src->sourceSize();
+				for (auto src : *this->_source) {
+					if (this->_classifier->compare(src, targetItem)) {
+						auto score = this->_matcher->match(targetItem, src);
+						if (score.distance < result.score.distance) {
+							result.score = score;
+							result.x = src->pos().x();
+							result.y = src->pos().y();
+							result.sourceItemSize = src->sourceSize();
+						}
+						if (this->_matcher->checkDistance(result.score.distance))
+							break;
 					}
-					if (this->_matcher->checkDistance(result.score.distance))
-						break;
 				}
 				encode_item_t enc;
-				enc.x = data.targetItem->pos().x();
-				enc.y = data.targetItem->pos().y();
-				enc.w = data.targetItem->image().width();
-				enc.h = data.targetItem->image().height();
+				enc.x = targetItem->pos().x();
+				enc.y = targetItem->pos().y();
+				enc.w = targetItem->image().width();
+				enc.h = targetItem->image().height();
 				enc.match = result;
 				return enc;
 			};
@@ -83,6 +57,7 @@ public:
 		return grid_encode_data_t{ this->_scheduler->allResults() };
 	}
 private:
+	std::shared_ptr<ImageClassifier> _classifier;
 	std::shared_ptr<TransformMatcher> _matcher;
 	PartitionPtr _source;
 	PartitionPtr _target;
@@ -118,12 +93,8 @@ public:
 		PartitionPtr gridSource = sourceCreator.create(image);
 		PartitionPtr gridTarget = targetCreator.create(image);
 		
-		TransformMatcherNode matcherNode(std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource, gridTarget);
-		ClassifierNode classifierNode(this->_classifier, [&](const classifier_data_t& data) -> bool {
-			matcherNode.addCandidates(data);
-			return true;
-		});
-		classifierNode.classify(image, gridSource, gridTarget);
+		TransformMatcherNode matcherNode(this->_classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource, gridTarget);
+		matcherNode.estimate(image);
 		this->_data = matcherNode.result();
 		
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
