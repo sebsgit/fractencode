@@ -37,25 +37,40 @@ public:
 public:
 	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& sourceCreator, const PartitionCreator& targetCreator)
 		: _encodeParameters(p)
+		, _scheduler(SchedulerFactory<encode_item_t>::create())
+		, _metric(new RootMeanSquare())
 	{
 		auto gridSource = sourceCreator.create(image);
 		auto gridTarget = targetCreator.create(image);
-		auto metric = RootMeanSquare();
 		auto classifier = std::shared_ptr<ImageClassifier>(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier));
-		TransformEstimator transformEstimator(classifier, std::make_shared<TransformMatcher>(metric, p.rmsThreshold, p.sMax), gridSource, gridTarget);
-		transformEstimator.estimate(image);
-		this->_data = transformEstimator.result();
-		this->_stats.rejectedMappings = transformEstimator.rejectedMappings();
+		this->_estimator.reset(new TransformEstimator(classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource));
+		for (auto targetItem : *gridTarget) {
+			auto fn = [targetItem, this]() {
+				auto itemMatch = this->_estimator->estimate(targetItem);
+				encode_item_t enc;
+				enc.x = targetItem->pos().x();
+				enc.y = targetItem->pos().y();
+				enc.w = targetItem->image().width();
+				enc.h = targetItem->image().height();
+				enc.match = itemMatch;
+				return enc;
+			};
+			this->_scheduler->addTask(new LambdaTask<encode_item_t>(fn));
+		}
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
-		this->_stats.print();
 	}
 	grid_encode_data_t data() const {
-		return _data;
+		this->_scheduler->waitForAll();
+		this->_stats.rejectedMappings = this->_estimator->rejectedMappings();
+		this->_stats.print();
+		return grid_encode_data_t{ this->_scheduler->allResults() };
 	}
 private:
-	grid_encode_data_t _data;
 	const encode_parameters_t _encodeParameters;
 	mutable encode_stats_t _stats;
+	std::shared_ptr<AbstractScheduler<encode_item_t>> _scheduler;
+	std::shared_ptr<TransformEstimator> _estimator;
+	std::shared_ptr<Metric> _metric;
 };
 
 class Decoder {

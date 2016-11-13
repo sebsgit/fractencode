@@ -108,8 +108,8 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	Timer timer;
 	timer.start();
 	Encoder encoder(image, args.encoderParams, *sourceCreator, *targetCreator);
-	std::cout << "encoded in " << timer.elapsed() << " s.\n";
 	auto data = encoder.data();
+	std::cout << "encoded in " << timer.elapsed() << " s.\n";
 	uint32_t w = image.width(), h = image.height();
 	AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
 	buffer->memset(0);
