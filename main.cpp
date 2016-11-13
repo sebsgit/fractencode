@@ -14,7 +14,7 @@
 class CmdArgs {
 public:
 	std::string inputPath;
-	Frac::Encoder::encode_parameters_t encoderParams;
+	Frac::encode_parameters_t encoderParams;
 	int decodeSteps = -1;
 	double decodeRms = 0.00001;
 	bool saveDecodeSteps = false;
@@ -59,11 +59,19 @@ private:
 				preSample = true;
 			} else if (tmp == "--debug_decode") {
 				saveDecodeSteps = true;
+			} else if (tmp == "--nogpu") {
+				encoderParams.nogpu = true;
+			} else if (tmp == "--nocpu") {
+				encoderParams.nocpu = true;
 			} else {
 				std::cout << "unrecognized parameter: " << tmp << '\n';
 				exit(0);
 			}
 			++index;
+		}
+		if (encoderParams.nogpu && encoderParams.nocpu) {
+			std::cout << "invalid configuration: nocpu & nogpu!\n";
+			throw std::exception();
 		}
 		if (encoderParams.targetGridSize >= encoderParams.sourceGridSize || encoderParams.targetGridSize < 2 || encoderParams.sourceGridSize < 2) {
 			std::cout << "invalid source / target size\n";

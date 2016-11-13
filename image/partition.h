@@ -38,6 +38,12 @@ namespace Frac {
 		const Image& presampled() const noexcept {
 			return _presampled.empty() ? _image : _presampled;
 		}
+		uint32_t x() const {
+			return _pos.x();
+		}
+		uint32_t y() const {
+			return _pos.y();
+		}
 		const Point2du pos() const noexcept {
 			return _pos;
 		}

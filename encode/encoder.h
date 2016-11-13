@@ -17,14 +17,6 @@
 namespace Frac {
 class Encoder {
 public:
-	struct encode_parameters_t {
-		int sourceGridSize = 16;
-		int targetGridSize = 4;
-		int latticeSize = 2;
-		double rmsThreshold = 0.0;
-		double sMax = -1.0;
-	};
-
 	struct encode_stats_t {
 		uint64_t rejectedMappings = 0;
 		uint64_t totalMappings = 0;
@@ -43,7 +35,7 @@ public:
 		auto gridTarget = targetCreator.create(image);
 		auto classifier = std::shared_ptr<ImageClassifier>(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier));
 		this->_estimator.reset(new TransformEstimator(classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource));
-		this->_engine.reset(new EncodingEngineCore(image, gridSource, _estimator));
+		this->_engine.reset(new EncodingEngineCore(_encodeParameters, image, gridSource, _estimator));
 		this->_engine->encode(gridTarget);
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
 	}
