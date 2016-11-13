@@ -377,23 +377,23 @@ public:
 		return result;
 	}
 #endif
-	transform_score_t match_default(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
+	transform_score_t match_default(const PartitionItemPtr& target, const PartitionItemPtr& source) const {
 		transform_score_t result;
 		Transform t(Transform::Id);
-		const SamplerBilinear samplerB(b->image());
+		const SamplerBilinear samplerB(source->image());
 		do {
 			transform_score_t candidate;
-			candidate.distance = _metric.distance(a->image(), b->presampled(), t);
+			candidate.distance = _metric.distance(target->image(), source->presampled(), t);
 			candidate.transform = t.type();
 			if (candidate.distance <= result.distance) {
-				const double N = (double)(a->image().width()) * a->image().height();
-				double sumA = ImageStatistics::sum(a->image()), sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
-				for (uint32_t y = 0 ; y<a->image().height() ; ++y) {
-					for (uint32_t x = 0 ; x<a->image().width() ; ++x) {
-						const auto srcY = (y * b->image().height()) / a->image().height();
-						const auto srcX = (x * b->image().width()) / a->image().width();
-						const double valA = convert<double>(a->image().data()->get()[x + y * a->image().stride()]);
-						const double valB = convert<double>(samplerB(srcX, srcY, t, b->image().size()));
+				const double N = (double)(target->image().width()) * target->image().height();
+				double sumA = ImageStatistics::sum(target->image()), sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
+				for (uint32_t y = 0 ; y<target->image().height() ; ++y) {
+					for (uint32_t x = 0 ; x<target->image().width() ; ++x) {
+						const auto srcY = (y * source->image().height()) / target->image().height();
+						const auto srcX = (x * source->image().width()) / target->image().width();
+						const double valA = convert<double>(target->image().data()->get()[x + y * target->image().stride()]);
+						const double valB = convert<double>(samplerB(srcX, srcY, t, source->image().size()));
 						sumB += valB;
 						sumA2 += valA * valA;
 						sumAB += valA * valB;
@@ -412,17 +412,17 @@ public:
 		return result;
 	}
 
-	inline transform_score_t match(const PartitionItemPtr& a, const PartitionItemPtr& b) const {
+	inline transform_score_t match(const PartitionItemPtr& target, const PartitionItemPtr& source) const {
 #ifdef FRAC_WITH_AVX
-		if (a->width() == 2)
-			return this->match_sse_2x2(a, b);
-		else if (a->width() == 4)
-			return this->match_sse_4x4(a, b);
-		else if (a->width() == 8)
-			return this->match_sse_8x8(a, b);
-		return this->match_default(a, b);
+		if (target->width() == 2)
+			return this->match_sse_2x2(target, source);
+		else if (target->width() == 4)
+			return this->match_sse_4x4(target, source);
+		else if (target->width() == 8)
+			return this->match_sse_8x8(target, source);
+		return this->match_default(target, source);
 #else
-		return this->match_default(a, b);
+		return this->match_default(target, source);
 #endif
 	}
 	double truncateSMax(const double s) const noexcept {
