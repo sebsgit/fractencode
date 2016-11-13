@@ -6,6 +6,7 @@
 
 #include <thread>
 #include <iostream>
+#include <iterator>
 
 namespace Frac {
 class AbstractEncodingEngine {

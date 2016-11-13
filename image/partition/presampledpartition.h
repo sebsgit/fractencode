@@ -1,7 +1,6 @@
 #pragma once
 #include "partition.h"
 #include "gridpartition.h"
-#include "schedule/schedulerfactory.hpp"
 
 namespace Frac {
 

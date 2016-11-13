@@ -37,7 +37,6 @@ public:
 public:
 	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& sourceCreator, const PartitionCreator& targetCreator)
 		: _encodeParameters(p)
-		, _scheduler(SchedulerFactory<encode_item_t>::create())
 		, _metric(new RootMeanSquare())
 	{
 		auto gridSource = sourceCreator.create(image);
@@ -56,7 +55,6 @@ public:
 private:
 	const encode_parameters_t _encodeParameters;
 	mutable encode_stats_t _stats;
-	std::shared_ptr<AbstractScheduler<encode_item_t>> _scheduler;
 	std::shared_ptr<TransformEstimator> _estimator;
 	std::shared_ptr<Metric> _metric;
 

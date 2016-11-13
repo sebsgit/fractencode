@@ -53,11 +53,7 @@ HEADERS += \
         process/gaussian5x5.h \
         process/abstractprocessor.h \
         process/sobel.h \
-        encode/edgeclassifier.h	\
-	schedule/scheduler.h	\
-	schedule/schedulerfactory.hpp \
-	schedule/sequentialscheduler.hpp \
-	schedule/threadedscheduler.hpp
+        encode/edgeclassifier.h
 
 OBJECTS_DIR = build
 
