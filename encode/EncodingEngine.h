@@ -7,13 +7,20 @@
 #include <thread>
 #include <iostream>
 #include <iterator>
+#include <sstream>
 
 namespace Frac {
 class AbstractEncodingEngine {
 public:
-	virtual ~AbstractEncodingEngine() = 0 { };
-	virtual void encode(const PartitionItemPtr& targetItem) const {
+	virtual ~AbstractEncodingEngine() {
+		std::cout << this->_name << ", tasks done: " << this->_tasksDone << '\n';
+	}
+	virtual void encode(const PartitionItemPtr& targetItem) {
 		this->_result.push_back(this->encode_impl(targetItem));
+		++this->_tasksDone;
+	}
+	void setName(const std::string& name) {
+		this->_name = name;
 	}
 	std::vector<encode_item_t> result() const {
 		return _result;
@@ -21,7 +28,9 @@ public:
 protected:
 	virtual encode_item_t encode_impl(const PartitionItemPtr& targetItem) const = 0;
 private:
-	mutable std::vector<encode_item_t> _result;
+	std::vector<encode_item_t> _result;
+	std::string _name;
+	int _tasksDone = 0;
 };
 
 class CpuEncodingEngine : public AbstractEncodingEngine {
@@ -45,35 +54,39 @@ protected:
 	}
 private:
 	const PartitionPtr _source;
-	std::shared_ptr<TransformEstimator> _estimator;
+	const std::shared_ptr<TransformEstimator> _estimator;
 };
 
 class EncodingEngineCore {
 public:
-	EncodingEngineCore(const Image& image, const PartitionPtr& gridSource, const std::shared_ptr<TransformEstimator> estimator) 
+	EncodingEngineCore(const Image& image, const PartitionPtr& gridSource, const std::shared_ptr<TransformEstimator> estimator)
 		: _estimator(estimator)
 	{
 		const auto maxThreads = std::thread::hardware_concurrency() - 1;
-		for (size_t i = 0; i < maxThreads; ++i)
-			this->_engines.push_back(std::unique_ptr<CpuEncodingEngine>(new CpuEncodingEngine(image, gridSource, estimator)));
+		for (size_t i = 0; i < maxThreads; ++i) {
+			auto engine = std::unique_ptr<CpuEncodingEngine>(new CpuEncodingEngine(image, gridSource, estimator));
+			std::stringstream ss;
+			ss << "cpu " << i;
+			engine->setName(ss.str());
+			this->_engines.push_back(std::move(engine));
+		}
 	}
 	void encode(const PartitionPtr& gridTarget) {
-		std::vector<PartitionItemPtr> jobQueue;
 		size_t jobQueueIndex = 0;
-		std::copy(gridTarget->begin(), gridTarget->end(), std::back_inserter(jobQueue));
 		std::vector<std::unique_ptr<std::thread>> threads;
 		std::mutex queueMutex;
 		std::mutex doneMutex;
 		std::condition_variable queueEmpty;
 		int tasksDone = 0;
+		auto jobQueueStart = gridTarget->begin();
 		for (size_t i = 0; i < this->_engines.size(); ++i) {
 			auto fn = [&, i]() {
 				while (1) {
 					PartitionItemPtr task;
 					{
 						std::lock_guard<std::mutex> lock(queueMutex);
-						if (jobQueueIndex < jobQueue.size()) {
-							task = jobQueue[jobQueueIndex];
+						if (jobQueueIndex < gridTarget->size()) {
+							task = *(jobQueueStart + jobQueueIndex);
 							++jobQueueIndex;
 						}
 					}
@@ -99,13 +112,13 @@ public:
 		}
 		for (auto& thread : threads)
 			thread->join();
-		for (auto& engine : _engines) {
+		for (auto& engine : this->_engines) {
 			const auto part = engine->result();
 			std::copy(part.begin(), part.end(), std::back_inserter(this->_result.encoded));
 		}
 	}
 	const grid_encode_data_t result() const {
-		return _result;
+		return this->_result;
 	}
 private:
 	std::vector<std::unique_ptr<AbstractEncodingEngine>> _engines;

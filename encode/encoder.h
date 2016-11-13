@@ -57,7 +57,6 @@ private:
 	mutable encode_stats_t _stats;
 	std::shared_ptr<TransformEstimator> _estimator;
 	std::shared_ptr<Metric> _metric;
-
 	std::unique_ptr<EncodingEngineCore> _engine;
 };
 
