@@ -7,6 +7,7 @@
 #include "image/partition/gridpartition.h"
 #include "image/partition/presampledpartition.h"
 #include "encode/TransformEstimator.h"
+#include "encode/EncodingEngine.h"
 #include "transformmatcher.h"
 #include "classifier.h"
 #include "edgeclassifier.h"
@@ -14,7 +15,6 @@
 #include <sstream>
 
 namespace Frac {
-
 class Encoder {
 public:
 	struct encode_parameters_t {
@@ -44,26 +44,14 @@ public:
 		auto gridTarget = targetCreator.create(image);
 		auto classifier = std::shared_ptr<ImageClassifier>(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier));
 		this->_estimator.reset(new TransformEstimator(classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource));
-		for (auto targetItem : *gridTarget) {
-			auto fn = [targetItem, this]() {
-				auto itemMatch = this->_estimator->estimate(targetItem);
-				encode_item_t enc;
-				enc.x = targetItem->pos().x();
-				enc.y = targetItem->pos().y();
-				enc.w = targetItem->image().width();
-				enc.h = targetItem->image().height();
-				enc.match = itemMatch;
-				return enc;
-			};
-			this->_scheduler->addTask(new LambdaTask<encode_item_t>(fn));
-		}
+		this->_engine.reset(new EncodingEngineCore(image, gridSource, _estimator));
+		this->_engine->encode(gridTarget);
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
 	}
 	grid_encode_data_t data() const {
-		this->_scheduler->waitForAll();
 		this->_stats.rejectedMappings = this->_estimator->rejectedMappings();
 		this->_stats.print();
-		return grid_encode_data_t{ this->_scheduler->allResults() };
+		return this->_engine->result();
 	}
 private:
 	const encode_parameters_t _encodeParameters;
@@ -71,6 +59,8 @@ private:
 	std::shared_ptr<AbstractScheduler<encode_item_t>> _scheduler;
 	std::shared_ptr<TransformEstimator> _estimator;
 	std::shared_ptr<Metric> _metric;
+
+	std::unique_ptr<EncodingEngineCore> _engine;
 };
 
 class Decoder {

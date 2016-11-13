@@ -21,7 +21,7 @@ public:
 		:_task(fn)
 	{}
 	void run() override {
-		this->_result = this->_task();
+		this->_result = std::move(this->_task());
 	}
 	Result result() const override {
 		return this->_result;
