@@ -40,23 +40,9 @@ namespace Frac {
 
 	class CudaEncodeKernel {
 	public:
-		CudaEncodeKernel(size_t width, size_t height, size_t stride, const encode_parameters_t& params, uint8_t* buffer, const cuda_partition_item_t* partition, const size_t partitionSize)
-		{
-			_kernelParams.width = width;
-			_kernelParams.height = height;
-			_kernelParams.stride = stride;
-			_kernelParams.params = params;
-			_kernelParams.gpuBuffer = buffer;
-			_kernelParams.partition = partition;
-			_kernelParams.partitionSize = partitionSize;
-			_blockSize.x = 16;
-			_blockSize.y = 16;
-			_gridSize.x = 16;
-			_gridSize.y = 16;
-			cudaMallocHost(&_kernelResult, partitionSize * sizeof(cuda_thread_result_t));
-		}
+		CudaEncodeKernel(size_t width, size_t height, size_t stride, const encode_parameters_t& params, uint8_t* buffer, const cuda_partition_item_t* partition, const size_t partitionSize);
 		~CudaEncodeKernel() {
-			cudaFreeHost(_kernelResult);
+			CUDA_CALL(cudaFreeHost(_kernelResult));
 		}
 		cuda_thread_result_t launch(const cuda_partition_item_t& targetItem);
 	private:

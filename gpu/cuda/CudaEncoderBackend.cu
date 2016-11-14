@@ -5,8 +5,6 @@
 
 using namespace Frac;
 
-#define CUDA_CALL(what) { auto result = what ; if (result != cudaError::cudaSuccess) { std::cout << "error while calling " #what ": " << result << '\n'; exit(0); } }
-
 /*
 transform_score_t match_default(const PartitionItemPtr& target, const PartitionItemPtr& source) const {
 		transform_score_t result;
@@ -85,6 +83,32 @@ __global__ static void encode_kernel(const cuda_launch_params_t params,
 	result[myId].distance = dist;
 	result[myId].contrast = s;
 	result[myId].brightness = o;
+}
+
+CudaEncodeKernel::CudaEncodeKernel(size_t width, size_t height, size_t stride, const encode_parameters_t& params, uint8_t* buffer, const cuda_partition_item_t* partition, const size_t partitionSize)
+{
+	_kernelParams.width = width;
+	_kernelParams.height = height;
+	_kernelParams.stride = stride;
+	_kernelParams.params = params;
+	_kernelParams.gpuBuffer = buffer;
+	_kernelParams.partition = partition;
+	_kernelParams.partitionSize = partitionSize;
+	int minGridSize = 0;
+	int blockSize = 0;
+	CUDA_CALL(cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (CUfunction)encode_kernel, 0, 0));
+	_blockSize.x = blockSize / 32;
+	_blockSize.y = 32;
+	blockSize = 4;
+	int totalThreads = 0;
+	do {
+		_gridSize.x = blockSize;
+		_gridSize.y = blockSize;
+		totalThreads = _blockSize.x * _blockSize.y * _gridSize.x * _gridSize.y;
+		blockSize *= 2;
+	} while (totalThreads < partitionSize);
+	std::cout << "configuration: " << _gridSize.x * _gridSize.y << " blocks / " << _blockSize.x << 'x' << _blockSize.y << " threads; " << totalThreads << " total.\n";
+	CUDA_CALL(cudaMallocHost(&_kernelResult, partitionSize * sizeof(cuda_thread_result_t)));
 }
 
 cuda_thread_result_t CudaEncodeKernel::launch(const cuda_partition_item_t& targetItem) {

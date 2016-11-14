@@ -8,8 +8,6 @@
 
 using namespace Frac;
 
-#define CUDA_CALL(what) { auto result = what ; if (result != cudaError::cudaSuccess) { std::cout << "error while calling " #what "\n"; exit(0); } }
-
 class CudaEncodingEngine::CudaEncoderBackend {
 public:
 	CudaEncoderBackend(const encode_parameters_t& params, const Image& image, const PartitionPtr& sourceGrid)
