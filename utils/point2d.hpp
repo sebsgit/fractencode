@@ -2,6 +2,7 @@
 #define POINT2D_HPP
 
 #include <inttypes.h>
+#include <ostream>
 
 namespace Frac {
 	template <typename T>
@@ -25,5 +26,7 @@ namespace Frac {
 
 	using Point2du = Point2d<uint32_t>;
 }
+
+extern std::ostream& operator << (std::ostream& out, const Frac::Point2du& p);
 
 #endif // POINT2D_HPP

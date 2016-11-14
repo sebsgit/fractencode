@@ -4,6 +4,7 @@
 #include "image/image.h"
 #include "encode/datatypes.h"
 #include <vector>
+#include <ostream>
 
 namespace Frac {
 	class TransformMatcher;
@@ -109,5 +110,7 @@ namespace Frac {
 	};
 
 }
+
+std::ostream& operator << (std::ostream& out, const Frac::Size32u& s);
 
 #endif // PARTITION_H

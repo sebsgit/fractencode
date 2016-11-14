@@ -34,6 +34,8 @@ public:
 		auto gridSource = sourceCreator.create(image);
 		auto gridTarget = targetCreator.create(image);
 		auto classifier = std::shared_ptr<ImageClassifier>(new CombinedClassifier(new BrightnessBlockClassifier, new ThresholdClassifier));
+		if (p.noclassifier)
+			classifier.reset(new DummyClassifier);
 		this->_estimator.reset(new TransformEstimator(classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource));
 		this->_engine.reset(new EncodingEngineCore(_encodeParameters, image, gridSource, _estimator));
 		this->_engine->encode(gridTarget);

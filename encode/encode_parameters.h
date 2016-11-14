@@ -10,6 +10,7 @@ namespace Frac {
 		double sMax = -1.0;
 		bool nogpu = false;
 		bool nocpu = false;
+		bool noclassifier = false;
 	};
 
 }

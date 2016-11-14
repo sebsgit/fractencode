@@ -11,6 +11,16 @@
 #include <cassert>
 #include <cstring>
 
+std::ostream& operator << (std::ostream& out, const Frac::Point2du& p) {
+	out << p.x() << ',' << p.y() << ' ';
+	return out;
+}
+
+std::ostream& operator << (std::ostream& out, const Frac::Size32u& p) {
+	out << p.x() << ',' << p.y() << ' ';
+	return out;
+}
+
 class CmdArgs {
 public:
 	std::string inputPath;
@@ -63,6 +73,8 @@ private:
 				encoderParams.nogpu = true;
 			} else if (tmp == "--nocpu") {
 				encoderParams.nocpu = true;
+			} else if (tmp == "--noclassifier") {
+				encoderParams.noclassifier = true;
 			} else {
 				std::cout << "unrecognized parameter: " << tmp << '\n';
 				exit(0);
