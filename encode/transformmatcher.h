@@ -1,6 +1,7 @@
 #ifndef TRANSFORMMATCHER_H
 #define TRANSFORMMATCHER_H
 
+#include "Config.h"
 #include "image.h"
 #include "transform.h"
 #include "metrics.h"
@@ -199,7 +200,7 @@ public:
 					_mm256_store_si256((__m256i*)br_tmp_store, br_x_avx);
 				}
 
-#define DECL_VALB(i) const float valB_ ## i = ((int)source_b[tl_tmp_store[i]] + (int)source_b[tr_tmp_store[i]] + (int)source_b[bl_tmp_store[i]] + (int)source_b[br_tmp_store[i]]) / 4;
+#define DECL_VALB(i) const float valB_ ## i = ((int)source_b[tl_tmp_store[i]] + (int)source_b[tr_tmp_store[i]] + (int)source_b[bl_tmp_store[i]] + (int)source_b[br_tmp_store[i]]) / 4.f;
 				DECL_VALB(0);
 				DECL_VALB(1);
 				DECL_VALB(2);

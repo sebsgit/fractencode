@@ -1,4 +1,5 @@
 #include "process/sobel.h"
+#include "Config.h"
 #ifdef FRAC_WITH_AVX
 #include <immintrin.h>
 #include "sse_debug.h"

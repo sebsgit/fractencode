@@ -1,4 +1,6 @@
 #pragma once
+#include "Config.h"
+
 #ifdef FRAC_WITH_AVX
 
 #include "sse_debug.h"

@@ -1,4 +1,5 @@
 #include "image.h"
+#include "Config.h"
 #include <iostream>
 #ifdef FRAC_WITH_AVX
 #include "sse_debug.h"

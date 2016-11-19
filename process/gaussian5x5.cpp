@@ -1,3 +1,4 @@
+#include "Config.h"
 #include "gaussian5x5.h"
 #include "sampler.h"
 #include "sse_debug.h"

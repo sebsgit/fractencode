@@ -1,6 +1,7 @@
 #ifndef CLASSIFIER_H
 #define CLASSIFIER_H
 
+#include "Config.h"
 #include "image.h"
 #include "partition.h"
 #include <memory>
