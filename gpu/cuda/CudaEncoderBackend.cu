@@ -5,6 +5,27 @@
 
 using namespace Frac;
 
+class GpuSamplerBilinear {
+public:
+	__device__ GpuSamplerBilinear(const uint8_t* buffer, const cuda_partition_item_t& item, const uint32_t stride)
+		: _buffer(buffer)
+		, _item(item)
+		, _stride(stride)
+	{}
+	__device__ ~GpuSamplerBilinear() {}
+	__device__ uint8_t operator()(const uint32_t x, const uint32_t y) const {
+		const int valB_0 = static_cast<int>(this->_buffer[x + this->_item.x + (y + this->_item.y) * this->_stride]);
+		const int valB_1 = static_cast<int>(this->_buffer[x + this->_item.x + 1 + (y + this->_item.y) * this->_stride]);
+		const int valB_2 = static_cast<int>(this->_buffer[x + this->_item.x + (y + this->_item.y + 1) * this->_stride]);
+		const int valB_3 = static_cast<int>(this->_buffer[x + this->_item.x + 1 + (y + this->_item.y + 1) * this->_stride]);
+		return static_cast<uint8_t>((valB_0 + valB_1 + valB_2 + valB_3) / 4);
+	}
+private:
+	const uint8_t* _buffer;
+	const cuda_partition_item_t& _item;
+	const uint32_t _stride;
+};
+
 /*
 transform_score_t match_default(const PartitionItemPtr& target, const PartitionItemPtr& source) const {
 		transform_score_t result;
@@ -56,6 +77,7 @@ __global__ static void encode_kernel(const cuda_launch_params_t params,
 	const double N = (double)(targetItem.height) * targetItem.width;
 	double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
 	double dist = 0.0;
+	const GpuSamplerBilinear sampler(params.gpuBuffer, sourceItem, params.stride);
 	for (uint32_t y = 0; y<targetItem.height; ++y) {
 		for (uint32_t x = 0; x<targetItem.width; ++x) {
 			const auto targetX = x + targetItem.x;
@@ -63,11 +85,7 @@ __global__ static void encode_kernel(const cuda_launch_params_t params,
 			const auto srcX = (x * sourceItem.height) / targetItem.height;
 			const auto srcY = (y * sourceItem.width) / targetItem.width;
 			const double valA = static_cast<double>(params.gpuBuffer[targetX + targetY * params.stride]);
-			const int valB_0 = static_cast<int>(params.gpuBuffer[srcX + sourceItem.x + (srcY + sourceItem.y) * params.stride]);
-			const int valB_1 = static_cast<int>(params.gpuBuffer[srcX + sourceItem.x + 1 + (srcY + sourceItem.y) * params.stride]);
-			const int valB_2 = static_cast<int>(params.gpuBuffer[srcX + sourceItem.x + (srcY + sourceItem.y + 1) * params.stride]);
-			const int valB_3 = static_cast<int>(params.gpuBuffer[srcX + sourceItem.x + 1 + (srcY + sourceItem.y + 1) * params.stride]);
-			const int valB = (valB_0 + valB_1 + valB_2 + valB_3) / 4;
+			const int valB = static_cast<int>(sampler(srcX, srcY));
 			sumA += valA;
 			sumB += valB;
 			sumA2 += valA * valA;
