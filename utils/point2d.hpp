@@ -20,6 +20,8 @@ namespace Frac {
 		const T y() const noexcept {
 			return _y;
 		}
+		T& x() { return _x; }
+		T& y() { return _y; }
 	private:
 		T _x, _y;
 	};

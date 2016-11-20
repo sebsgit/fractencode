@@ -3,6 +3,7 @@
 
 #include "image/image.h"
 #include "image/transform.h"
+#include "image/sampler.h"
 #include <cmath>
 
 namespace Frac {

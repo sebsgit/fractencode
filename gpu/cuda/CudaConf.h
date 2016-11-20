@@ -8,4 +8,13 @@
 #include <iostream>
 
 #define CUDA_CALL(what) { auto result = what ; if (result != cudaError::cudaSuccess) { std::cout << "error while calling " #what ": " << cudaGetErrorName(result) << '\n'; exit(0); } }
+
+#ifdef __CUDACC__
+#define CUDA_CALLABLE __host__ __device__
+#endif
+
+#endif
+
+#ifndef CUDA_CALLABLE
+#define CUDA_CALLABLE
 #endif

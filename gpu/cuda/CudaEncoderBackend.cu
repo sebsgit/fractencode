@@ -1,5 +1,6 @@
 #include "CudaEncoderBackend.h"
 #include <iostream>
+#include "transform.h"
 
 #ifdef FRAC_WITH_CUDA
 
@@ -7,18 +8,34 @@ using namespace Frac;
 
 class GpuSamplerBilinear {
 public:
-	__device__ GpuSamplerBilinear(const uint8_t* buffer, const cuda_partition_item_t& item, const uint32_t stride)
+	CUDA_CALLABLE GpuSamplerBilinear(const uint8_t* buffer, const cuda_partition_item_t& item, const uint32_t stride)
 		: _buffer(buffer)
 		, _item(item)
 		, _stride(stride)
 	{}
-	__device__ ~GpuSamplerBilinear() {}
-	__device__ uint8_t operator()(const uint32_t x, const uint32_t y) const {
+	CUDA_CALLABLE ~GpuSamplerBilinear() {}
+	CUDA_CALLABLE uint8_t operator()(const uint32_t x, const uint32_t y) const {
 		const int valB_0 = static_cast<int>(this->_buffer[x + this->_item.x + (y + this->_item.y) * this->_stride]);
 		const int valB_1 = static_cast<int>(this->_buffer[x + this->_item.x + 1 + (y + this->_item.y) * this->_stride]);
 		const int valB_2 = static_cast<int>(this->_buffer[x + this->_item.x + (y + this->_item.y + 1) * this->_stride]);
 		const int valB_3 = static_cast<int>(this->_buffer[x + this->_item.x + 1 + (y + this->_item.y + 1) * this->_stride]);
 		return static_cast<uint8_t>((valB_0 + valB_1 + valB_2 + valB_3) / 4);
+	}
+	CUDA_CALLABLE uint8_t operator() (uint32_t x, uint32_t y, const Transform& t) const {
+		if (x == _item.width - 1)
+			--x;
+		if (y == _item.height - 1)
+			--y;
+		cuda_size_t tl, tr, bl, br;
+		t.map(&tl.x, &tl.y, x, y, _item.width, _item.height);
+		t.map(&tr.x, &tr.y, x + 1, y, _item.width, _item.height);
+		t.map(&bl.x, &bl.y, x, y + 1, _item.width, _item.height);
+		t.map(&br.x, &br.y, x + 1, y + 1, _item.width, _item.height);
+		const int total = (int)this->_buffer[tl.x + this->_item.x + (tl.y + this->_item.y) * _stride]
+			+ (int)this->_buffer[tr.x + this->_item.x + (tr.y + this->_item.y) * _stride]
+			+ (int)this->_buffer[bl.x + this->_item.x + (bl.y + this->_item.y) * _stride]
+			+ (int)this->_buffer[br.x + this->_item.x + (br.y + this->_item.y) * _stride];
+		return static_cast<uint8_t>(total / 4);
 	}
 private:
 	const uint8_t* _buffer;
@@ -74,6 +91,9 @@ __global__ static void encode_kernel(const cuda_launch_params_t params,
 	if (myId >= params.partitionSize)
 		return;
 	const cuda_partition_item_t sourceItem = params.partition[myId];
+
+	Transform t(Transform::Id);
+
 	const double N = (double)(targetItem.height) * targetItem.width;
 	double sumA = 0.0, sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
 	double dist = 0.0;
@@ -85,7 +105,7 @@ __global__ static void encode_kernel(const cuda_launch_params_t params,
 			const auto srcX = (x * sourceItem.height) / targetItem.height;
 			const auto srcY = (y * sourceItem.width) / targetItem.width;
 			const double valA = static_cast<double>(params.gpuBuffer[targetX + targetY * params.stride]);
-			const int valB = static_cast<int>(sampler(srcX, srcY));
+			const int valB = static_cast<int>(sampler(srcX, srcY, t));
 			sumA += valA;
 			sumB += valB;
 			sumA2 += valA * valA;
@@ -97,6 +117,8 @@ __global__ static void encode_kernel(const cuda_launch_params_t params,
 	const double tmp = (N * sumA2 - (sumA - 1) * sumA);
 	const double s = (fabs(tmp) < 0.00001) ? 0.0 : (N * sumAB - sumA * sumB) / tmp;
 	const double o = (sumB - s * sumA) / N;
+
+
 	result[myId].index = myId;
 	result[myId].distance = dist;
 	result[myId].contrast = s;
