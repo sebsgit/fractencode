@@ -5,6 +5,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "CudaPointer.h"
 
 using namespace Frac;
 
@@ -19,21 +20,14 @@ public:
 		CUDA_CALL(cudaGetDeviceProperties(&props, device));
 		std::cout << "cuda backend on " << props.name << '\n';
 		const auto imageBuffer = image.data();
-		CUDA_CALL(cudaMalloc(&_gpuBuffer, imageBuffer->size() * sizeof(Image::Pixel)));
-		CUDA_CALL(cudaMemcpy(_gpuBuffer, imageBuffer->get(), imageBuffer->size(), cudaMemcpyHostToDevice));
-		CUDA_CALL(cudaMallocHost(&_partition, sourceGrid->size() * sizeof(cuda_partition_item_t)));
+		this->_gpuBuffer = CudaPtr<Image::Pixel>(imageBuffer->get(), imageBuffer->size() / sizeof(Image::Pixel));
+		this->_partition.realloc(sourceGrid->size());
 		size_t i = 0;
 		for (auto item : *sourceGrid) {
 			this->_partition[i] = cuda_partition_item_t(item->x(), item->y(), item->width(), item->height());
 			++i;
 		}
-		this->_kernel.reset(new CudaEncodeKernel(image.width(), image.height(), image.stride(), this->_parameters, this->_gpuBuffer, this->_partition, sourceGrid->size()));
-	}
-	~CudaEncoderBackend() {
-		if (_gpuBuffer)
-			CUDA_CALL(cudaFree(this->_gpuBuffer));
-		if (_partition)
-			CUDA_CALL(cudaFreeHost(this->_partition));
+		this->_kernel.reset(new CudaEncodeKernel(image.width(), image.height(), image.stride(), this->_parameters, this->_gpuBuffer.get(), this->_partition.get(), sourceGrid->size()));
 	}
 	encode_item_t encode(const PartitionItemPtr& targetItem) {
 		const cuda_partition_item_t targetRect(targetItem->x(), targetItem->y(), targetItem->width(), targetItem->height());
@@ -54,8 +48,8 @@ public:
 		return result;
 	}
 private:
-	Image::Pixel* _gpuBuffer = nullptr;
-	cuda_partition_item_t* _partition = nullptr;
+	CudaPtr<Image::Pixel> _gpuBuffer;
+	CudaPtr<cuda_partition_item_t, PageLockedBufferAllocator> _partition;
 	const encode_parameters_t _parameters;
 	std::unique_ptr<CudaEncodeKernel> _kernel;
 };

@@ -117,14 +117,14 @@ CudaEncodeKernel::CudaEncodeKernel(size_t width, size_t height, size_t stride, c
 		blockSize *= 2;
 	} while (totalThreads < partitionSize);
 	std::cout << "configuration: " << _gridSize.x * _gridSize.y << " blocks / " << _blockSize.x << 'x' << _blockSize.y << " threads; " << totalThreads << " total.\n";
-	CUDA_CALL(cudaMallocHost(&_kernelResult, partitionSize * sizeof(cuda_thread_result_t)));
+	this->_kernelResult.realloc(partitionSize);
 }
 
 cuda_thread_result_t CudaEncodeKernel::launch(const cuda_partition_item_t& targetItem) {
 	const dim3 blockSize(_blockSize.x, _blockSize.y);
 	const dim3 gridSize(_gridSize.x, _gridSize.y);
-	memset(_kernelResult, 0, sizeof(_kernelResult) * _kernelParams.partitionSize);
-	encode_kernel<<< blockSize, gridSize >>>(this->_kernelParams, targetItem, this->_kernelResult);
+	memset(_kernelResult.get(), 0, sizeof(cuda_thread_result_t) * _kernelParams.partitionSize);
+	encode_kernel<<< blockSize, gridSize >>>(this->_kernelParams, targetItem, this->_kernelResult.get());
 	CUDA_CALL(cudaDeviceSynchronize());
 	size_t index = 0;
 	double minDist = _kernelResult[0].distance;

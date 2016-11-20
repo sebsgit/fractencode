@@ -7,6 +7,7 @@
 #include <cuda_runtime.h>
 #include <inttypes.h>
 #include "encode/encode_parameters.h"
+#include "CudaPointer.h"
 
 namespace Frac {
 	typedef struct _cuda_partition_item_t {
@@ -41,14 +42,11 @@ namespace Frac {
 	class CudaEncodeKernel {
 	public:
 		CudaEncodeKernel(size_t width, size_t height, size_t stride, const encode_parameters_t& params, uint8_t* buffer, const cuda_partition_item_t* partition, const size_t partitionSize);
-		~CudaEncodeKernel() {
-			CUDA_CALL(cudaFreeHost(_kernelResult));
-		}
 		cuda_thread_result_t launch(const cuda_partition_item_t& targetItem);
 	private:
 		cuda_launch_params_t _kernelParams;
 		cuda_size_t _blockSize, _gridSize;
-		cuda_thread_result_t* _kernelResult;
+		CudaPtr<cuda_thread_result_t, PageLockedBufferAllocator> _kernelResult;
 	};
 }
 
