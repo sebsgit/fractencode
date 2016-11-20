@@ -42,7 +42,7 @@ public:
 		result.match.score.distance = kernelResult.distance;
 		result.match.score.brightness = kernelResult.brightness;
 		result.match.score.contrast = kernelResult.contrast;
-		result.match.score.transform = Transform::Id;
+		result.match.score.transform = static_cast<Transform::Type>(kernelResult.transform);
 		result.match.sourceItemSize = Size32u(this->_partition[kernelResult.index].width, this->_partition[kernelResult.index].height);
 		result.match.x = this->_partition[kernelResult.index].x;
 		result.match.y = this->_partition[kernelResult.index].y;
