@@ -21,7 +21,7 @@ class SamplerBilinear {
 public:
 	explicit SamplerBilinear(const Image& source);
 	Image::Pixel operator() (uint32_t x, uint32_t y) const;
-	Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const Size32u& s) const;
+	Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const uint32_t w, const uint32_t h) const;
 private:
 	const Image::Pixel* _source;
 	const uint32_t _stride;

@@ -24,13 +24,13 @@ public:
 
 	void put(int key, double value) {
 #ifndef FRAC_NO_THREADS
-		std::unique_lock<std::mutex> lock(_mutex);
+		std::lock_guard<std::mutex> lock(_mutex);
 #endif
 		_data[key] = value;
 	}
 	double get(const int key, const double defaultValue = -1.0) const {
 #ifndef FRAC_NO_THREADS
-		std::unique_lock<std::mutex> lock(_mutex);
+		std::lock_guard<std::mutex> lock(_mutex);
 #endif
 		if (_data[key] != -1)
 			return _data[key];
@@ -58,26 +58,25 @@ public:
 		int w, h;
 		unsigned char* data = stbi_load(fileName, &w, &h, &components, channelCount);
 		if (data) {
-			_width = w;
-			_height = h;
-			_stride = _width * channelCount;
+			_size.setX(w);
+			_size.setY(h);
+			_stride = w * channelCount;
 			if (sizeof(Pixel) > 1) {
-				Pixel* buffer = (Pixel*)malloc(sizeof(Pixel) * _height * _stride);
+				Pixel* buffer = (Pixel*)malloc(sizeof(Pixel) * h * _stride);
 				try {
-					for (size_t i=0 ; i<_height * _stride ; ++i) {
+					for (size_t i=0 ; i<h * _stride ; ++i) {
 						buffer[i] = convert<Pixel>(data[i]);
 					}
 				} catch (...) {}
 				free(data);
 				data = (unsigned char*)buffer;
 			}
-			_data.reset(new Buffer<Pixel>((Pixel*)data, _height * _stride * sizeof(Pixel), [](uint8_t* ptr) { ::free(ptr); }));
+			_data.reset(new Buffer<Pixel>((Pixel*)data, h * _stride * sizeof(Pixel), [](uint8_t* ptr) { ::free(ptr); }));
 		}
 	}
 	Image(AbstractBufferPtr<Pixel> data, uint32_t width, uint32_t height, uint32_t stride, Image::CachePolicy cache = Image::CacheFull)
 		:_data(data)
-		,_width(width)
-		,_height(height)
+		,_size(width, height)
 		,_stride(stride)
 		,_cache(cache == CacheFull ? new ImageData : nullptr)
 	{
@@ -85,8 +84,7 @@ public:
 	}
 	Image(uint32_t width, uint32_t height, uint32_t stride)
 		:_data(Buffer<Pixel>::alloc(height * stride))
-		,_width(width)
-		,_height(height)
+		,_size(width, height)
 		,_stride(stride)
 	{
 
@@ -94,37 +92,35 @@ public:
 
 	Image() {}
 
-	uint32_t width() const { return _width; }
-	uint32_t height() const { return _height; }
+	uint32_t width() const { return _size.x(); }
+	uint32_t height() const { return _size.y(); }
 	uint32_t stride() const { return _stride; }
+	Size32u size() const { return _size; }
 	AbstractBufferPtr<Pixel> data() {
 		return _data;
 	}
 	const AbstractBufferPtr<Pixel> data() const {
 		return _data;
 	}
-	const Size32u size() const noexcept {
-		return Size32u(this->_width, this->_height);
-	}
 	bool empty() const noexcept {
 		return !_data;
 	}
-	Image slice(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Image::CachePolicy cached = Image::CacheFull) const {
-		assert(x + width <= _width);
-		assert(y + height <= _height);
+	Image slice(uint32_t x, uint32_t y, uint32_t w, uint32_t h, Image::CachePolicy cached = Image::CacheFull) const {
+		assert(x + w <= width());
+		assert(y + h <= height());
 		const auto offset = y * _stride + x;
 		auto buffer = BufferSlice<Pixel>::slice(_data, offset, _data->size() - offset);
-		return Image(buffer, width, height, _stride, cached);
+		return Image(buffer, w, h, _stride, cached);
 	}
 	Image copy() const {
 		return Image(this->_data->clone() , width(), height(), stride());
 	}
 	void savePng(const std::string& path) const {
 		if (sizeof(Pixel) == 1)
-			stbi_write_png(path.c_str(), _width, _height, 1, _data->get(), _stride);
+			stbi_write_png(path.c_str(), width(), height(), 1, _data->get(), _stride);
 		else {
 			auto buffer = convert<uint8_t>(_data);
-			stbi_write_png(path.c_str(), _width, _height, 1, buffer->get(), _stride);
+			stbi_write_png(path.c_str(), width(), height(), 1, buffer->get(), _stride);
 		}
 	}
 	void map(const std::function<void(Image::Pixel)>& f) const {
@@ -140,7 +136,8 @@ public:
 	}
 private:
 	AbstractBufferPtr<Pixel> _data;
-	uint32_t _width = 0, _height = 0, _stride = 0;
+	Size32u _size;
+	uint32_t _stride = 0;
 	mutable std::shared_ptr<ImageData> _cache;
 };
 

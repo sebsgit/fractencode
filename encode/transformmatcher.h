@@ -394,7 +394,7 @@ public:
 						const auto srcY = (y * source->image().height()) / target->image().height();
 						const auto srcX = (x * source->image().width()) / target->image().width();
 						const double valA = convert<double>(target->image().data()->get()[x + y * target->image().stride()]);
-						const double valB = convert<double>(samplerB(srcX, srcY, t, source->image().size()));
+						const double valB = convert<double>(samplerB(srcX, srcY, t, source->image().width(), source->image().height()));
 						sumB += valB;
 						sumA2 += valA * valA;
 						sumAB += valA * valB;

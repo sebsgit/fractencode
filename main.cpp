@@ -269,7 +269,7 @@ static void test_sampler() {
 	while (1) {
 		for (uint32_t y=0 ; y<size.y() ; ++y) {
 			for (uint32_t x=0 ; x<size.x() ; ++x) {
-				if(sampler(x, y, t, size) != 4) {
+				if(sampler(x, y, t, size.x(), size.y()) != 4) {
 					std::cout << "sampler error\n";
 					exit(0);
 				}

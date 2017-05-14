@@ -79,6 +79,12 @@ namespace Frac {
 			this->map(&result.x(), &result.y(), x, y, s.x(), s.y());
 			return result;
 		}
+		template <typename T>
+		Point2d<T> map(const T x, const T y, const uint32_t w, const uint32_t h) const noexcept {
+			Point2d<T> result;
+			this->map(&result.x(), &result.y(), x, y, w, h);
+			return result;
+		}
 		template <typename T> CUDA_CALLABLE
 		void map(T* rx, T* ry, const T x, const T y, const T sx, const T sy) const noexcept {
 			static const int __map_lookup[8][8] = {

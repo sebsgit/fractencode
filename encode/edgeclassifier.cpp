@@ -9,7 +9,7 @@ using namespace Frac;
 class EdgeClassifier::Data {
 public:
 	explicit Data(Image image) {
-		assert(image.size().isAligned(_patchSize, _patchSize) && "can't process edge info on unaligned image!");
+		assert(Size32u(image.width(), image.height()).isAligned(_patchSize, _patchSize) && "can't process edge info on unaligned image!");
 		_stride = (image.width() / _patchSize);
 		const uint32_t nPatches = _stride * (image.height() / _patchSize);
 		_data = Buffer<uint32_t>::alloc(nPatches);

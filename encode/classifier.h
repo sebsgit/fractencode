@@ -24,35 +24,35 @@ namespace Frac {
 
 		}
 		explicit CombinedClassifier(ImageClassifier* c1) {
-			_classifiers.push_back(std::shared_ptr<ImageClassifier>(c1));
+			_classifiers.emplace_back(c1);
 		}
 		CombinedClassifier(ImageClassifier* c1, ImageClassifier* c2) {
-			_classifiers.push_back(std::shared_ptr<ImageClassifier>(c1));
-			_classifiers.push_back(std::shared_ptr<ImageClassifier>(c2));
+			_classifiers.emplace_back(c1);
+			_classifiers.emplace_back(c2);
 		}
 		CombinedClassifier(ImageClassifier* c1, ImageClassifier* c2, ImageClassifier* c3) {
-			_classifiers.push_back(std::shared_ptr<ImageClassifier>(c1));
-			_classifiers.push_back(std::shared_ptr<ImageClassifier>(c2));
-			_classifiers.push_back(std::shared_ptr<ImageClassifier>(c3));
-		}
-		CombinedClassifier& add(std::shared_ptr<ImageClassifier> p) {
-			this->_classifiers.push_back(p);
-			return *this;
+			_classifiers.emplace_back(c1);
+			_classifiers.emplace_back(c2);
+			_classifiers.emplace_back(c3);
 		}
 		bool compare(const PartitionItemPtr& a, const PartitionItemPtr& b) const override {
-			for (const auto& p : _classifiers)
-				if (!p->compare(a, b))
+			for (size_t i = 0; i < _classifiers.size(); ++i) {
+				auto p = _classifiers.data() + i;
+				if (!(*p)->compare(a, b))
 					return false;
+			}
 			return true;
 		}
 		bool compare(const Image& a, const Image& b) const override {
-			for (const auto& p : _classifiers)
-				if (!p->compare(a, b))
+			for (size_t i = 0; i < _classifiers.size(); ++i) {
+				auto p = _classifiers.data() + i;
+				if (!(*p)->compare(a, b))
 					return false;
+			}
 			return true;
 		}
 	private:
-		std::vector<std::shared_ptr<ImageClassifier>> _classifiers;
+		std::vector<std::unique_ptr<ImageClassifier>> _classifiers;
 	};
 
 	class DummyClassifier : public ImageClassifier {

@@ -11,7 +11,7 @@ public:
 	PartitionPtr create(const Image& image) const override {
 		assert(image.size().isAligned(_size.x(), _size.y()) && "can't create pre-sampled partition on unaligned image!");
 		assert(image.size().isAligned(_offset.x(), _offset.y()) && "can't create grid partition with unaligned offset!");
-		Image presampled = Transform().resize(image, image.size() / 2, Transform::Bilinear);
+		Image presampled = Transform().resize(image, Size32u(image.width(), image.height()) / 2, Transform::Bilinear);
 		PartitionPtr result(new GridPartition());
 		for (uint32_t y = 0; y < image.height(); y += _offset.y()) {
 			for (uint32_t x = 0; x < image.width(); x += _offset.x()) {

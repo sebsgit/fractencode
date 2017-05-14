@@ -29,15 +29,15 @@ Image::Pixel SamplerBilinear::operator() (uint32_t x, uint32_t y) const {
 	return (Image::Pixel)(total / 4);
 }
 
-Image::Pixel SamplerBilinear::operator() (uint32_t x, uint32_t y, const Transform& t, const Size32u& size) const {
+Image::Pixel SamplerBilinear::operator() (uint32_t x, uint32_t y, const Transform& t, const uint32_t w, const uint32_t h) const {
 	if (x == _width - 1)
 		--x;
 	if (y == _height - 1)
 		--y;
-	auto tl = t.map(x, y, size);
-	auto tr = t.map(x + 1, y, size);
-	auto bl = t.map(x, y + 1, size);
-	auto br = t.map(x + 1, y + 1, size);
+	auto tl = t.map(x, y, w, h);
+	auto tr = t.map(x + 1, y, w, h);
+	auto bl = t.map(x, y + 1, w, h);
+	auto br = t.map(x + 1, y + 1, w, h);
 	const int total = (int)_source[tl.x() + tl.y() * _stride] + (int)_source[tr.x() + tr.y() * _stride] + (int)_source[bl.x() + bl.y() * _stride] + (int)_source[br.x() + br.y() * _stride];
 	return (Image::Pixel)(total / 4);
 }
