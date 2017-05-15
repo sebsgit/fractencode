@@ -8,12 +8,18 @@
 #include <cstring>
 #include <unordered_map>
 #ifndef FRAC_NO_THREADS
+#include <atomic>
 #include <mutex>
 #endif
 
 namespace Frac {
 
 class ImageData {
+#ifndef FRAC_NO_THREADS
+	using ValueType = std::atomic<double>;
+#else
+	using ValueType = double;
+#endif
 public:
 	static const int KeySum = 0;
 	static const int KeyMean = 1;
@@ -23,24 +29,13 @@ public:
 	ImageData() {}
 
 	void put(int key, double value) {
-#ifndef FRAC_NO_THREADS
-		std::lock_guard<std::mutex> lock(_mutex);
-#endif
 		_data[key] = value;
 	}
 	double get(const int key, const double defaultValue = -1.0) const {
-#ifndef FRAC_NO_THREADS
-		std::lock_guard<std::mutex> lock(_mutex);
-#endif
-		if (_data[key] != -1)
-			return _data[key];
-		return defaultValue;
+		return (_data[key] != -1) ? (double)_data[key] : defaultValue;
 	}
 private:
-	double _data[KeyBlockTypeBrightness + 1] = {-1, -1, -1, -1};
-#ifndef FRAC_NO_THREADS
-	mutable std::mutex _mutex;
-#endif
+	ValueType _data[KeyBlockTypeBrightness + 1] = {-1, -1, -1, -1};
 };
 
 class Image {

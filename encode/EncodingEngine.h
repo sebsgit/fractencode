@@ -11,6 +11,12 @@
 #include <sstream>
 
 namespace Frac {
+class ProgressReporter {
+public:
+	virtual ~ProgressReporter() {}
+	virtual void log(size_t done, size_t total) = 0;
+};
+
 class AbstractEncodingEngine {
 public:
 	AbstractEncodingEngine(const encode_parameters_t& params, const Image& image, const PartitionPtr& sourceGrid)
@@ -70,7 +76,7 @@ private:
 
 class EncodingEngineCore {
 public:
-	EncodingEngineCore(const encode_parameters_t& params, const Image& image, const PartitionPtr& gridSource, const std::shared_ptr<TransformEstimator> estimator);
+	EncodingEngineCore(const encode_parameters_t& params, const Image& image, const PartitionPtr& gridSource, const std::shared_ptr<TransformEstimator>& estimator, ProgressReporter* reporter);
 	void encode(const PartitionPtr& gridTarget) {
 		size_t jobQueueIndex = 0;
 		std::vector<std::unique_ptr<std::thread>> threads;
@@ -89,6 +95,7 @@ public:
 						if (jobQueueIndex < gridTarget->size()) {
 							task = *(jobQueueStart + jobQueueIndex);
 							++jobQueueIndex;
+							_reporter->log(jobQueueIndex, gridTarget->size());
 						}
 					}
 					if (task) {
@@ -128,5 +135,6 @@ private:
 	std::vector<std::unique_ptr<AbstractEncodingEngine>> _engines;
 	const std::shared_ptr<TransformEstimator> _estimator;
 	grid_encode_data_t _result;
+	ProgressReporter* _reporter; // not owned
 };
 }

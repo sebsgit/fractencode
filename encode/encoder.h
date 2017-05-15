@@ -15,6 +15,12 @@
 #include <sstream>
 
 namespace Frac {
+class DummyReporter : public ProgressReporter
+{
+public:
+	void log(size_t, size_t) override {}
+};
+
 class Encoder {
 public:
 	struct encode_stats_t {
@@ -27,9 +33,10 @@ public:
 	};
 
 public:
-	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& sourceCreator, const PartitionCreator& targetCreator)
+	Encoder(const Image& image, const encode_parameters_t& p, const PartitionCreator& sourceCreator, const PartitionCreator& targetCreator, ProgressReporter* reporter = nullptr)
 		: _encodeParameters(p)
 		, _metric(new RootMeanSquare())
+		, _reporter(reporter ? reporter : new DummyReporter())
 	{
 		auto gridSource = sourceCreator.create(image);
 		auto gridTarget = targetCreator.create(image);
@@ -37,7 +44,7 @@ public:
 		if (p.noclassifier)
 			classifier.reset(new DummyClassifier);
 		this->_estimator.reset(new TransformEstimator(classifier, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), gridSource));
-		this->_engine.reset(new EncodingEngineCore(_encodeParameters, image, gridSource, _estimator));
+		this->_engine.reset(new EncodingEngineCore(_encodeParameters, image, gridSource, _estimator, _reporter.get()));
 		this->_engine->encode(gridTarget);
 		this->_stats.totalMappings = gridSource->size() * gridTarget->size();
 	}
@@ -52,6 +59,7 @@ private:
 	std::shared_ptr<TransformEstimator> _estimator;
 	std::shared_ptr<Metric> _metric;
 	std::unique_ptr<EncodingEngineCore> _engine;
+	std::unique_ptr<ProgressReporter> _reporter;
 };
 
 class Decoder {

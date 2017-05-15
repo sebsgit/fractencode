@@ -10,6 +10,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
+#include <chrono>
 
 std::ostream& operator << (std::ostream& out, const Frac::Point2du& p) {
 	out << p.x() << ',' << p.y() << ' ';
@@ -31,6 +32,7 @@ public:
 	bool color = false;
 	bool useQuadtree = false;
 	bool preSample = false;
+	bool logProgress = false;
 
 	CmdArgs(int argc, char** argv) {
 		assert(argc > 1);
@@ -75,7 +77,9 @@ private:
 				encoderParams.nocpu = true;
 			} else if (tmp == "--noclassifier") {
 				encoderParams.noclassifier = true;
-			} else {
+			} else if (tmp == "--log") {
+				logProgress = true;
+			}else {
 				std::cout << "unrecognized parameter: " << tmp << '\n';
 				exit(0);
 			}
@@ -109,6 +113,37 @@ static void test_partition() {
 	//image.savePng("grid.png");
 }
 
+class StdoutReporter : public Frac::ProgressReporter {
+public:
+	void log(size_t done, size_t total) override
+	{
+		auto now = std::chrono::system_clock::now();
+		std::chrono::duration<double> seconds = now - _lastPrintout;
+		if (seconds.count() > 0.3) {
+			_lastPrintout = now;
+			const double percent = (100.0 * done) / total;
+			std::stringstream ss;
+			ss << percent;
+			const auto toPrint = ss.str();
+			rewind();
+			this->_lastPrintLength = toPrint.size();
+			std::cout << toPrint;
+		}
+	}
+private:
+	void rewind()
+	{
+		while (_lastPrintLength > 0) {
+			--_lastPrintLength;
+			std::cout << '\b';
+		}
+		std::fflush(stdout);
+	}
+private:
+	size_t _lastPrintLength = 0;
+	std::chrono::system_clock::time_point _lastPrintout;
+};
+
 static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	using namespace Frac;
 	const Size32u gridSize(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
@@ -127,9 +162,13 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 		targetCreator.reset(new GridPartitionCreator(gridSize, gridSize));
 	Timer timer;
 	timer.start();
-	Encoder encoder(image, args.encoderParams, *sourceCreator, *targetCreator);
+	ProgressReporter* reporter = nullptr;
+	if (args.logProgress)
+		reporter = new StdoutReporter();
+	Encoder encoder(image, args.encoderParams, *sourceCreator, *targetCreator, reporter);
 	auto data = encoder.data();
 	std::cout << "encoded in " << timer.elapsed() << " s.\n";
+	std::cout << data.encoded.size() << " elements.\n";
 	uint32_t w = image.width(), h = image.height();
 	AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
 	buffer->memset(0);

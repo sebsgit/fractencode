@@ -3,9 +3,12 @@
 
 using namespace Frac;
 
-EncodingEngineCore::EncodingEngineCore(const encode_parameters_t& params, const Image& image, const PartitionPtr& gridSource, const std::shared_ptr<TransformEstimator> estimator)
+EncodingEngineCore::EncodingEngineCore(const encode_parameters_t& params, const Image& image, const PartitionPtr& gridSource, const std::shared_ptr<TransformEstimator>& estimator, ProgressReporter* reporter)
 	: _estimator(estimator)
+	, _reporter(reporter)
 {
+	assert(estimator);
+	assert(reporter);
 	const auto maxThreads = std::thread::hardware_concurrency() - 1;
 	if (!params.nocpu)
 		for (size_t i = 0; i < maxThreads; ++i) {
