@@ -1,5 +1,6 @@
 #include "image/image.h"
 #include "encode/encoder.h"
+#include "encode/Quantizer.hpp"
 #include "transform.h"
 #include "metrics.h"
 #include "partition.h"
@@ -11,6 +12,7 @@
 #include <cassert>
 #include <cstring>
 #include <chrono>
+#include <map>
 
 std::ostream& operator << (std::ostream& out, const Frac::Point2du& p) {
 	out << p.x() << ',' << p.y() << ' ';
@@ -144,6 +146,44 @@ private:
 	std::chrono::system_clock::time_point _lastPrintout;
 };
 
+static void encode_data_statistics(const Frac::grid_encode_data_t& data)
+{
+	using namespace Frac;
+	double max_contrast = -1;
+	double max_brightness = -1;
+	double min_contrast = std::numeric_limits<double>::max();
+	double min_brightness = std::numeric_limits<double>::max();
+	for (const auto & d : data.encoded)
+	{
+		max_contrast = std::max(max_contrast, d.match.score.contrast);
+		min_contrast = std::min(min_contrast, d.match.score.contrast);
+		max_brightness = std::max(max_brightness, d.match.score.brightness);
+		min_brightness = std::min(min_brightness, d.match.score.brightness);
+	}
+	// grid stats
+	const int contrast_bits = 5;
+	const int brighntess_bits = 7;
+	std::cout << "----\n";
+	std::cout << "grid element count: " << data.encoded.size() << "\n";
+	std::cout << "contrast: " << min_contrast << ':' << max_contrast << '\n';
+	std::cout << "brightness: " << min_brightness << ':' << max_brightness << '\n';
+	// quantization stats
+	Quantizerd quantBrightness(min_brightness, max_brightness, brighntess_bits);
+	Quantizerd quantContrast(min_contrast, max_contrast, contrast_bits);
+	std::map<int, int> brightness_buckets;
+	std::map<int, int> contrast_buckets;
+	for (const auto & d : data.encoded)
+	{
+		int bucket = quantContrast.quantized(d.match.score.contrast);
+		++contrast_buckets[bucket];
+	
+		bucket = quantBrightness.quantized(d.match.score.brightness);
+		++brightness_buckets[bucket];
+	}
+	std::cout << "contrast / brighntess quantization: " << contrast_buckets.size() << ' ' << brightness_buckets.size() << '\n';
+	std::cout << "----\n";
+}
+
 static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	using namespace Frac;
 	const Size32u gridSize(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
@@ -178,6 +218,7 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	auto stats = decoder.decode(data);
 	std::cout << "decoded in " << timer.elapsed() << " s.\n";
 	std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
+	encode_data_statistics(data);
 	return result;
 }
 
@@ -319,12 +360,28 @@ static void test_sampler() {
 	}
 }
 
+static void test_quantizer()
+{
+	using namespace Frac;
+	// quantize values from [-13; 24] using 7 bits
+	Quantizerd quant(-13, 24.0, 7);
+	for (double d = -13; d < 24.0; d += 1.0) {
+		auto q = quant.quantized(d);
+		auto v = quant.value(q);
+		// quantized value can be stored using 7 bits
+		assert(q < std::pow(2, 7));
+		// quantized value error is less than 1.0
+		assert(std::abs(d - v) < 1.0);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	test_statistics();
 	test_partition();
 	test_sobel();
 	test_sampler();
+	test_quantizer();
 
 	if (argc > 1) {
 		Frac::Image image(argv[1]);
