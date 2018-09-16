@@ -28,13 +28,24 @@ namespace Frac2 {
     public:
         const auto& items() const noexcept { return this->_items; }
         void reserve(size_t n) { this->_items.reserve(n); }
-        void add(const Point2du& origin, const Size32u& size, typename Item::ExtraData&& d = Item::ExtraData{})
+        void add(const Point2du& origin, const Size32u& size, typename Item::ExtraData&& d)
         {
             this->_items.push_back(Item{origin, size, std::move(d)});
+        }
+        void add(const Point2du& origin, const Size32u& size)
+        {
+            this->_items.push_back(Item{ origin, size });
         }
     private:
         std::vector<Item> _items;
     };
+
+    struct GridItemData {
+        // any grid per-item data lands here
+    };
+
+    using UniformGridItem = GridItem<GridItemData>;
+    using UniformGrid = GridPartition<UniformGridItem>;
 
     /**
         Creates a uniform grid partition over the specified size.
@@ -42,7 +53,7 @@ namespace Frac2 {
         @param itemSize Size of each item in this grid.
         @param itemOffset Offset between each grid element.
     */
-    template <typename Item>
+    template <typename Item = UniformGridItem>
     GridPartition<Item> createUniformGrid(
         const Size32u& imageSize,
         const Size32u& itemSize, 

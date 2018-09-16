@@ -8,6 +8,12 @@ namespace Frac {
 	template <typename T>
 	class Point2d {
 	public:
+        struct hash {
+            constexpr auto operator() (const Point2d& p) const noexcept {
+                return p._x ^ p._y;
+            }
+        };
+
 		Point2d() : Point2d(T(), T()) {}
 		Point2d(const T x, const T y)
 			:_x(x), _y(y)
@@ -23,10 +29,13 @@ namespace Frac {
 		T& x() { return _x; }
 		T& y() { return _y; }
 
-
         friend std::ostream& operator << (std::ostream& out, const Point2d<T>& p) {
             out << p.x() << ',' << p.y() << ' ';
             return out;
+        }
+
+        bool operator==(const Point2d& other) const noexcept {
+            return other._x == this->_x && other._y == this->_y;
         }
 	private:
 		T _x, _y;

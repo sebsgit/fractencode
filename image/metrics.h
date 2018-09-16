@@ -67,9 +67,8 @@ namespace Frac {
                 for (uint32_t y = 0; y < sliceB.size.y(); ++y) {
                     for (uint32_t x = 0; x < sliceB.size.x(); ++x) {
                         const auto valB = b.value<int16_t>(sliceB.origin.x() + x, sliceB.origin.y() + y);
-                        int32_t newX, newY;
-                        t_a.map(&newX, &newY, sliceA.origin.x() + x, sliceA.origin.y() + y, sliceA.size.x(), sliceA.size.y());
-                        auto val = a.value<int16_t>(newX, newY) - valB;
+                        auto p = t_a.map(x, y, sliceA.origin.x(), sliceA.origin.y(), sliceA.size.x(), sliceA.size.y());
+                        auto val = a.value<int16_t>(p) - valB;
                         sum += val * val;
                     }
                 }
