@@ -22,13 +22,17 @@ namespace Frac {
 		}
 		T& x() { return _x; }
 		T& y() { return _y; }
+
+
+        friend std::ostream& operator << (std::ostream& out, const Point2d<T>& p) {
+            out << p.x() << ',' << p.y() << ' ';
+            return out;
+        }
 	private:
 		T _x, _y;
 	};
 
 	using Point2du = Point2d<uint32_t>;
 }
-
-extern std::ostream& operator << (std::ostream& out, const Frac::Point2du& p);
 
 #endif // POINT2D_HPP

@@ -14,10 +14,10 @@
 #include <chrono>
 #include <map>
 
-std::ostream& operator << (std::ostream& out, const Frac::Point2du& p) {
-	out << p.x() << ',' << p.y() << ' ';
-	return out;
-}
+#ifdef FRAC_TESTS
+#define CATCH_CONFIG_MAIN
+#endif
+#include "tests/catch.hpp"
 
 std::ostream& operator << (std::ostream& out, const Frac::Size32u& p) {
 	out << p.x() << ',' << p.y() << ' ';
@@ -375,6 +375,7 @@ static void test_quantizer()
 	}
 }
 
+#ifndef FRAC_TESTS
 int main(int argc, char *argv[])
 {
 	test_statistics();
@@ -400,3 +401,4 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
+#endif
