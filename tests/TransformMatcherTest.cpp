@@ -1,3 +1,5 @@
+#ifdef FRAC_TESTS
+
 #include "encode/transformmatcher.h"
 #include "catch.hpp"
 #include "image/Image2.hpp"
@@ -34,3 +36,4 @@ TEST_CASE("TransformMatcher", "[encode][matcher]")
         REQUIRE(score.brightness < 1.0);
     }
 }
+#endif

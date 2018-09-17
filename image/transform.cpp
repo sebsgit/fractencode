@@ -1,5 +1,7 @@
 #include "image/transform.h"
 #include "image/image.h"
+#include "image/Image2.hpp"
+#include "image/partition2.hpp"
 #include "image/sampler.h"
 
 using namespace Frac;
@@ -15,6 +17,22 @@ void Transform::copy(const Image& source, Image& target, const double contrast, 
 		const double result = contrast * convert<double, Image::Pixel>(sourceSampler(srcX, srcY, *this, source.width(), source.height())) + brightness;
 		targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : (Image::Pixel)(result);
 	}
+}
+
+void Transform::copy(const Frac2::ImagePlane& source,
+    Frac2::ImagePlane& target,
+    const Frac2::GridItemBase& sourcePatch,
+    const Frac2::GridItemBase& targetPatch,
+    const double contrast,
+    const double brightness) const 
+{
+    const auto targetSize = target.size();
+    const auto targetPtr = target.data();
+    for (uint32_t y = 0; y < targetPatch.size.y(); ++y)
+        for (uint32_t x = 0; x < targetPatch.size.x(); ++x) {
+            const double result = contrast * SamplerBilinear::sample<double>(source, sourcePatch, x, y, *this) + brightness;
+            targetPtr[x + y * target.stride()] = result < 0.0 ? 0 : result > 255 ? 255 : convert<uint8_t>(result);
+        }
 }
 
 template <typename Sampler>

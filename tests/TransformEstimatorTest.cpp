@@ -1,3 +1,5 @@
+#ifdef FRAC_TESTS
+
 #include "catch.hpp"
 #include "encode/TransformEstimator2.hpp"
 #include <unordered_map>
@@ -44,3 +46,4 @@ TEST_CASE("TransformEstimator", "[encode][estimator]")
         REQUIRE(expectedResults.empty());
     }
 }
+#endif

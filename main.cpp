@@ -1,5 +1,7 @@
 #include "image/image.h"
+#include "image/Image2.hpp"
 #include "encode/encoder.h"
+#include "encode/Encoder2.hpp"
 #include "encode/Quantizer.hpp"
 #include "transform.h"
 #include "metrics.h"
@@ -8,6 +10,11 @@
 #include "utils/timer.h"
 #include "process/gaussian5x5.h"
 #include "process/sobel.h"
+
+#include "image/Image2.hpp"
+#include "image/partition2.hpp"
+#include "encode/EncodingEngine2.hpp"
+
 #include <iostream>
 #include <cassert>
 #include <cstring>
@@ -35,6 +42,7 @@ public:
 	bool useQuadtree = false;
 	bool preSample = false;
 	bool logProgress = false;
+    bool useOldImplementation = false;
 
 	CmdArgs(int argc, char** argv) {
 		assert(argc > 1);
@@ -81,7 +89,9 @@ private:
 				encoderParams.noclassifier = true;
 			} else if (tmp == "--log") {
 				logProgress = true;
-			}else {
+            } else if (tmp == "--old") {
+                useOldImplementation = true;
+            } else {
 				std::cout << "unrecognized parameter: " << tmp << '\n';
 				exit(0);
 			}
@@ -222,13 +232,50 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	return result;
 }
 
+static Frac::Image encode_image2(const CmdArgs& args, const Frac2::ImagePlane& image) {
+    using namespace Frac2;
+    const Size32u gridSizeTarget(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
+    const Size32u gridSizeSource(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
+    const Size32u gridOffset = gridSizeSource / args.encoderParams.latticeSize;
+    ProgressReporter2* reporter = nullptr;
+    if (args.logProgress)
+        reporter = new StdoutReporter2();
+
+    auto sourceGrid = Frac2::createUniformGrid(image.size(), gridSizeSource, gridOffset);
+    auto targetGrid = Frac2::createUniformGrid(image.size(), gridSizeTarget, gridSizeTarget);
+
+    Timer timer;
+    timer.start();
+    Encoder2 encoder(image, args.encoderParams, sourceGrid, targetGrid, reporter);
+    auto data = encoder.data();
+    std::cout << "encoded in " << timer.elapsed() << " s.\n";
+    std::cout << data.encoded.size() << " elements.\n";
+    uint32_t w = image.width(), h = image.height();
+    AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
+    buffer->memset(0);
+    Image result = Image(buffer, w, h, w);
+    timer.start();
+    Decoder decoder(result, args.decodeSteps, args.decodeRms, args.saveDecodeSteps);
+    auto stats = decoder.decode(data);
+    std::cout << "decoded in " << timer.elapsed() << " s.\n";
+    std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
+    encode_data_statistics(data);
+    return result;
+}
+
 static void test_encoder(const CmdArgs& args) {
 	using namespace Frac;
 	Timer timer;
 	timer.start();
 	if (args.color == false) {
-		Image image(args.inputPath.c_str());
-		Image result = encode_image(args, image);
+        Image result;
+        if (args.useOldImplementation) {
+            Image image(args.inputPath.c_str());
+            result = encode_image(args, image);
+        } else {
+            std::array<Frac2::ImagePlane, 3> image = Frac2::ImageIO::loadImage(args.inputPath);
+            result = encode_image2(args, image[0]);
+        }
 		result.savePng("result.png");
 	} else {
 		PlanarImage image(args.inputPath.c_str());
@@ -387,12 +434,6 @@ int main(int argc, char *argv[])
 	if (argc > 1) {
 		Frac::Image image(argv[1]);
 		if (image.data()) {
-
-			Frac::Image test = Frac::SobelOperator().process(image);
-			test.savePng("sobel.png");
-			test = Frac::NonMaximumSuppressionOperator().edgeImage(Frac::SobelOperator().calculate(image), image.width(), image.height());
-			test.savePng("sobel_nonmax.png");
-
 			test_encoder(CmdArgs(argc, argv));
 		}
 	}

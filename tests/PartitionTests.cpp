@@ -1,3 +1,5 @@
+#ifdef FRAC_TESTS
+
 #include "catch.hpp"
 #include "image/Image2.hpp"
 #include "image/metrics.h"
@@ -50,3 +52,4 @@ TEST_CASE("Partition", "[image][partition]")
         }
     }
 }
+#endif

@@ -26,10 +26,18 @@ namespace Frac2 {
             , _size(size)
         {
         }
+        ImagePlane(const Size32u& size, uint32_t stride, std::vector<uint8_t>&& initialData)
+            : _data(std::move(initialData))
+            , _stride(stride)
+            , _size(size)
+        {
+        }
         ImagePlane() {}
         ImagePlane(ImagePlane&&) = default;
         ImagePlane& operator=(ImagePlane&&) = default;
         auto size() const noexcept { return this->_size; }
+        auto width() const noexcept { return this->_size.x(); }
+        auto height() const noexcept { return this->_size.y(); }
         auto stride() const noexcept { return this->_stride; }
         auto data() noexcept { return this->_data.data(); }
         const auto data() const noexcept { return this->_data.data(); }
@@ -40,6 +48,11 @@ namespace Frac2 {
         template <typename T, typename U>
         auto value(const Point2d<U>& pt) const {
             return this->value<T>(pt.x(), pt.y());
+        }
+        auto copy() const {
+            ImagePlane result(this->_size, this->_stride);
+            result._data = this->_data;
+            return result;
         }
     private:
         std::vector<uint8_t> _data;

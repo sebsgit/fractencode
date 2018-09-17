@@ -7,6 +7,11 @@
 #include "utils/Assert.hpp"
 #include <iostream>
 
+namespace Frac2 {
+    class ImagePlane;
+    class GridItemBase;
+};
+
 namespace Frac {
 	class Image;
 
@@ -120,6 +125,12 @@ namespace Frac {
 			*ry = __map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (sx - 1) + __map_lookup[_type][7] * (sy - 1);
 		}
 		void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const;
+        void copy(const Frac2::ImagePlane& source, 
+            Frac2::ImagePlane& target, 
+            const Frac2::GridItemBase& sourcePatch,
+            const Frac2::GridItemBase& targetPatch,
+            const double contrast = 1.0, 
+            const double brightness = 0.0) const;
 	private:
 		Image _resize_nn(const Image& source, const Size32u& targetSize) const;
 		Image _resize_b(const Image& source, const Size32u& targetSize) const;

@@ -39,6 +39,10 @@ namespace Frac2 {
             }
             return result;
         }
+
+        int rejectedMappings() const noexcept {
+            return this->_rejectedMappings;
+        }
     private:
         const ImagePlane& _sourceImage;
         const ImagePlane& _targetImage;

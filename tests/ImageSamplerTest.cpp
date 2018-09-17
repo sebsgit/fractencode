@@ -1,3 +1,5 @@
+#ifdef FRAC_TESTS
+
 #include "catch.hpp"
 #include "image/Image2.hpp"
 #include "image/sampler.h"
@@ -43,3 +45,4 @@ TEST_CASE("ImageSampler", "[image]")
         REQUIRE(sample4x4(image, 3, 4, Transform::Flip) == (26 + 27 + 30 + 31) / 4.0f);
     }
 }
+#endif

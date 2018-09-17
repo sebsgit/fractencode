@@ -88,6 +88,12 @@ namespace Frac {
                 return convert<double>(sum) / sliceA.size.area();
             }
         }
+
+        double distance(const Frac2::ImagePlane& a, const Frac2::ImagePlane& b,
+            const Transform& t_a = Transform()) const
+        {
+            return this->distance(a, b, Frac2::GridItemBase{Point2du(0, 0), a.size()}, Frac2::GridItemBase{Point2du(0, 0), b.size()}, t_a);
+        }
 	};
 }
 

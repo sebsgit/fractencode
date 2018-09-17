@@ -1,3 +1,5 @@
+#ifdef FRAC_TESTS
+
 #include "catch.hpp"
 #include "image/ImageIO.hpp"
 
@@ -19,3 +21,4 @@ TEST_CASE("ImageIO", "[image]")
         ImageIO::saveImage(image, "tests/output/lenna512_out.png");
     }
 }
+#endif
