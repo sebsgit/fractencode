@@ -63,9 +63,20 @@ int BrightnessBlocksClassifier2::getCategory(const ImagePlane& image, const Unif
 
 bool BrightnessBlocksClassifier2::compare(const UniformGridItem& item1, const UniformGridItem& item2) const
 {
-    //TODO: maybe cache
+    int sourceCategory = -1;
     {
-       
+        auto key = this->cacheKey(item1);
+        std::shared_lock readLock(this->_cacheLock);
+        auto it = this->_cache.find(key);
+        readLock.unlock();
+        if (it == this->_cache.end()) {
+            sourceCategory = getCategory(this->sourceImage(), item1);
+            std::unique_lock writeLock(this->_cacheLock);
+            this->_cache[key] = sourceCategory;
+        }
+        else {
+            sourceCategory = it->second;
+        }
     }
-    return getCategory(this->sourceImage(), item1) == getCategory(this->targetImage(), item2);
+    return sourceCategory == getCategory(this->targetImage(), item2);
 }

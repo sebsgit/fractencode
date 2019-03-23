@@ -29,8 +29,8 @@ namespace Frac2 {
         const ImagePlane& _sourceImage;
         const ImagePlane& _targetImage;
 
-        std::shared_mutex _cacheLock;
-        std::unordered_map<uint64_t, float> _cache;
+        mutable std::shared_mutex _cacheLock;
+        mutable std::unordered_map<uint64_t, float> _cache;
     };
 
     class DummyClassifier : public Classifier2
