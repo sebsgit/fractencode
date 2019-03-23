@@ -37,6 +37,11 @@ namespace Frac {
         bool operator==(const Point2d& other) const noexcept {
             return other._x == this->_x && other._y == this->_y;
         }
+
+        friend Point2d operator+ (const Point2d& p0, const Point2d& p1) noexcept
+        {
+            return Point2d{ p0._x + p1._x, p0._y + p1._y };
+        }
 	private:
 		T _x, _y;
 	};

@@ -14,6 +14,20 @@ namespace Frac2 {
     public:
         Point2du origin;
         Size32u size;
+
+        /// @return item in top left corner with half the original size
+        GridItemBase topLeft() const noexcept {
+            return GridItemBase{origin, size / 2};
+        }
+        GridItemBase topRight() const noexcept {
+            return GridItemBase{ origin + Point2du{size.x() / 2, 0}, size / 2 };
+        }
+        GridItemBase bottomLeft() const noexcept {
+            return GridItemBase{ origin + Point2du{0, size.y() / 2}, size / 2 };
+        }
+        GridItemBase bottomRight() const noexcept {
+            return GridItemBase{ origin + Point2du{size.x() / 2, size.y() / 2}, size / 2 };
+        }
     };
 
     template <typename ExtraDataIn, bool isEmpty = std::is_empty_v<ExtraDataIn>>

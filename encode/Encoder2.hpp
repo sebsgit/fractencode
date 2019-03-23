@@ -2,6 +2,7 @@
 
 #include "encode/EncodingEngine2.hpp"
 #include "image/ImageIO.hpp"
+#include "encode/Classifier2.hpp"
 
 namespace Frac2 {
     class DummyReporter2 : public ProgressReporter2
@@ -27,7 +28,9 @@ namespace Frac2 {
             , _metric(new RootMeanSquare())
             , _reporter(reporter ? reporter : new DummyReporter2())
         {
-            auto classifier = std::make_unique<DummyClassifier>(image, image);
+            std::unique_ptr<Classifier2> classifier = std::make_unique<BrightnessBlocksClassifier2>(image, image);
+            if (p.noclassifier)
+                classifier = std::make_unique<DummyClassifier>(image, image);
             this->_estimator.reset(new TransformEstimator2(image, image, std::move(classifier), std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), sourcePartition));
             this->_engine.reset(new EncodingEngineCore2(_encodeParameters, image, sourcePartition, *_estimator, _reporter.get()));
             this->_engine->encode(targetPartition);
