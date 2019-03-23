@@ -27,8 +27,8 @@ namespace Frac2 {
             , _metric(new RootMeanSquare())
             , _reporter(reporter ? reporter : new DummyReporter2())
         {
-            //TODO: classifier
-            this->_estimator.reset(new TransformEstimator2(image, image, std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), sourcePartition));
+            auto classifier = std::make_unique<DummyClassifier>(image, image);
+            this->_estimator.reset(new TransformEstimator2(image, image, std::move(classifier), std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), sourcePartition));
             this->_engine.reset(new EncodingEngineCore2(_encodeParameters, image, sourcePartition, *_estimator, _reporter.get()));
             this->_engine->encode(targetPartition);
             this->_stats.totalMappings = sourcePartition.items().size() * targetPartition.items().size();
