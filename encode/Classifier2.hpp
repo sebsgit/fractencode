@@ -3,6 +3,8 @@
 #include "image/Image2.hpp"
 #include "image/partition2.hpp"
 
+#include <shared_mutex>
+
 namespace Frac2 {
     class Classifier2 {
     public:
@@ -18,8 +20,17 @@ namespace Frac2 {
         virtual bool compare(const UniformGridItem& source, const UniformGridItem& target) const = 0;
 
     protected:
+        inline static uint64_t cacheKey(const GridItemBase& it) noexcept
+        {
+            return (it.origin.x() << 32) + it.origin.y();
+        }
+
+    protected:
         const ImagePlane& _sourceImage;
         const ImagePlane& _targetImage;
+
+        std::shared_mutex _cacheLock;
+        std::unordered_map<uint64_t, float> _cache;
     };
 
     class DummyClassifier : public Classifier2

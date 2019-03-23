@@ -64,5 +64,8 @@ int BrightnessBlocksClassifier2::getCategory(const ImagePlane& image, const Unif
 bool BrightnessBlocksClassifier2::compare(const UniformGridItem& item1, const UniformGridItem& item2) const
 {
     //TODO: maybe cache
+    {
+       
+    }
     return getCategory(this->sourceImage(), item1) == getCategory(this->targetImage(), item2);
 }

@@ -38,6 +38,17 @@ namespace Frac2 {
     public:
         using ExtraData = ExtraDataIn;
         ExtraData data;
+
+        GridItem() noexcept : GridItemBase{ Point2du{}, Size32u{} }
+        {}
+        GridItem(const Point2du& origin, const Size32u& size) noexcept : GridItemBase{ origin, size }
+        {
+        }
+        GridItem(const Point2du& origin, const Size32u& size, ExtraData&& d) noexcept
+            :GridItemBase{ origin, size }
+            , data(std::move(d))
+        {
+        }
     };
 
     template <typename ExtraDataIn>
@@ -81,7 +92,6 @@ namespace Frac2 {
     using UniformGrid = GridPartition<UniformGridItem>;
 
     static_assert(sizeof(GridItemBase) == 4 * sizeof(uint32_t), "");
-    static_assert(sizeof(UniformGridItem) == sizeof(GridItemBase), "");
 
     /**
         Creates a uniform grid partition over the specified size.
