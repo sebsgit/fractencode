@@ -102,7 +102,7 @@ namespace Frac {
             @return Coordinates of the transformed point in the global image coordinate system.
         */
         template <typename T>
-        Point2d<T> map(T local_x, T local_y, T patch_offset_x, T patch_offset_y, T patch_width, T patch_height) const noexcept {
+        Point2du map(T local_x, T local_y, T patch_offset_x, T patch_offset_y, T patch_width, T patch_height) const noexcept {
             FRAC_ASSERT(local_x >= 0 && local_x < patch_width);
             FRAC_ASSERT(local_y >= 0 && local_y < patch_height);
             T x, y;

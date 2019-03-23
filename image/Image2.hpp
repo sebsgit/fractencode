@@ -39,6 +39,7 @@ namespace Frac2 {
         auto width() const noexcept { return this->_size.x(); }
         auto height() const noexcept { return this->_size.y(); }
         auto stride() const noexcept { return this->_stride; }
+        auto sizeInBytes() const noexcept { return this->_data.size() * sizeof(this->_data[0]); };
         auto data() noexcept { return this->_data.data(); }
         const auto data() const noexcept { return this->_data.data(); }
         template <typename T = uint8_t>

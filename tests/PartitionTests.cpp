@@ -15,7 +15,7 @@ TEST_CASE("Partition", "[image][partition]")
         const Size32u imageSize(512, 512);
         const Size32u itemSize(32, 32);
         const Size32u itemOffset = itemSize;
-        auto grid = Frac2::createUniformGrid<Frac2::GridItem<>>(imageSize, itemSize, itemOffset);
+        auto grid = Frac2::createUniformGrid<Frac2::UniformGridItem>(imageSize, itemSize, itemOffset);
         REQUIRE(grid.items().size() == (imageSize.x() / itemSize.x()) * (imageSize.y() / itemSize.y()));
     }
     SECTION("grid with data")
@@ -45,7 +45,7 @@ TEST_CASE("Partition", "[image][partition]")
                 imageB.data()[y * imageB.stride() + x] = x % 4;
             }
         }
-        auto grid = Frac2::createUniformGrid<GridItem<>>(imageA.size(), { 4, 4 }, {4, 4});
+        auto grid = Frac2::createUniformGrid<UniformGridItem>(imageA.size(), { 4, 4 }, {4, 4});
         for (const auto& item : grid.items()) {
             auto d = metrics.distance(imageA, imageB, item, item);
             REQUIRE(d > 0);

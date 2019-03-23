@@ -28,8 +28,8 @@ TEST_CASE("TransformMatcher", "[encode][matcher]")
 
         Frac::RootMeanSquare metric;
         Frac::TransformMatcher matcher(metric, 0.0, 100.0);
-        auto score = matcher.match(source, GridItemBase{ Point2du(0, 0), Size32u{4, 4} }, 
-            target, GridItemBase{ Point2du(0, 0), Size32u{2, 2} });
+        auto score = matcher.match(source, UniformGridItem{ Point2du(0, 0), Size32u{4, 4} }, 
+            target, UniformGridItem{ Point2du(0, 0), Size32u{2, 2} });
         REQUIRE(score.distance == Approx(0.0));
         REQUIRE(score.transform == Transform::Rotate_270);
         REQUIRE(score.contrast < 1.0);

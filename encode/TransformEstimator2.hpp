@@ -19,7 +19,7 @@ namespace Frac2 {
             , _matcher(matcher)
         {}
 
-        item_match_t estimate(const Frac2::GridItemBase& targetItem) const {
+        item_match_t estimate(const Frac2::UniformGridItem& targetItem) const {
             item_match_t result;
             for (const auto& sourcePatch : this->_sourceGrid.items()) {
                 if (true /*TODO: this->_classifier->compare(src, targetItem)*/) {

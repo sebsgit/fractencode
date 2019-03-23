@@ -1,5 +1,6 @@
 #include "EncodingEngine2.hpp"
 #include "utils/Assert.hpp"
+#include "gpu/opencl/OpenCLEncodingEngine.hpp"
 
 using namespace Frac2;
 
@@ -18,4 +19,12 @@ EncodingEngineCore2::EncodingEngineCore2(const encode_parameters_t& params, cons
             this->_engines.push_back(std::move(engine));
         }
     //TODO: CUDA, OpenCL engines
+    try {
+     //   auto engine = std::make_unique<OpenCLEncodingEngine>(params, image, gridSource);
+     //   engine->setName("OpenCL");
+     //   this->_engines.push_back(std::move(engine));
+    }
+    catch (const std::exception & exc) {
+        std::cout << "failed to create engine: " << exc.what();
+    }
 }

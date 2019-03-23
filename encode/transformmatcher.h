@@ -441,8 +441,8 @@ public:
 
     // Frac2
 
-    transform_score_t match(const Frac2::ImagePlane& source, const Frac2::GridItemBase& sourcePatch,
-        const Frac2::ImagePlane& target, const Frac2::GridItemBase& targetPatch) const {
+    transform_score_t match(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+        const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const {
         transform_score_t result;
         Transform t(Transform::Id);
         do {

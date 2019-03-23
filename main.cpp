@@ -232,7 +232,7 @@ static Frac::Image encode_image(const CmdArgs& args, Frac::Image image) {
 	return result;
 }
 
-static Frac::Image encode_image2(const CmdArgs& args, const Frac2::ImagePlane& image) {
+static Frac2::ImagePlane encode_image2(const CmdArgs& args, const Frac2::ImagePlane& image) {
     using namespace Frac2;
     const Size32u gridSizeTarget(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
     const Size32u gridSizeSource(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
@@ -251,11 +251,11 @@ static Frac::Image encode_image2(const CmdArgs& args, const Frac2::ImagePlane& i
     std::cout << "encoded in " << timer.elapsed() << " s.\n";
     std::cout << data.encoded.size() << " elements.\n";
     uint32_t w = image.width(), h = image.height();
-    AbstractBufferPtr<Image::Pixel> buffer = Buffer<Image::Pixel>::alloc(w * h);
-    buffer->memset(0);
-    Image result = Image(buffer, w, h, w);
+    std::vector<uint8_t> imgData(w * h);
+    std::memset(imgData.data(), 0, w * h);
+    Frac2::ImagePlane result({ w, h }, w, std::move(imgData));
     timer.start();
-    Decoder decoder(result, args.decodeSteps, args.decodeRms, args.saveDecodeSteps);
+    Decoder2 decoder(result, args.decodeSteps, args.decodeRms, args.saveDecodeSteps);
     auto stats = decoder.decode(data);
     std::cout << "decoded in " << timer.elapsed() << " s.\n";
     std::cout << "decode stats: " << stats.iterations << " steps, rms: " << stats.rms << "\n";
@@ -268,22 +268,35 @@ static void test_encoder(const CmdArgs& args) {
 	Timer timer;
 	timer.start();
 	if (args.color == false) {
-        Image result;
+        
         if (args.useOldImplementation) {
             Image image(args.inputPath.c_str());
-            result = encode_image(args, image);
+            Image result = encode_image(args, image);
+            result.savePng("result.png");
         } else {
             std::array<Frac2::ImagePlane, 3> image = Frac2::ImageIO::loadImage(args.inputPath);
-            result = encode_image2(args, image[0]);
+            auto result = encode_image2(args, image[0]);
+            Frac2::ImageIO::saveImage(result, "result.png");
         }
-		result.savePng("result.png");
 	} else {
-		PlanarImage image(args.inputPath.c_str());
-		Image y = encode_image(args, image.y());
-		Image u = encode_image(args, image.u());
-		Image v = encode_image(args, image.v());
-		PlanarImage result(y, u, v);
-		result.savePng("result.png");
+        if (args.useOldImplementation) {
+            PlanarImage image(args.inputPath.c_str());
+            Image y = encode_image(args, image.y());
+            Image u = encode_image(args, image.u());
+            Image v = encode_image(args, image.v());
+            PlanarImage result(y, u, v);
+            result.savePng("result.png");
+        }
+        else {
+            std::array<Frac2::ImagePlane, 3> image = Frac2::ImageIO::loadImage(args.inputPath);
+            std::array<Frac2::ImagePlane, 3> planes{
+                encode_image2(args, image[0]),
+                encode_image2(args, image[1]),
+                encode_image2(args, image[2])
+            };
+            Frac2::Image2<3> result(std::move(planes));
+            Frac2::ImageIO::saveImage(result, "result.png");
+        }
 	}
 	std::cout << "total time: " << timer.elapsed() << " s.\n";
 }
