@@ -24,6 +24,7 @@ uint16_t Frac2::ImageStatistics2::sum_u16(const ImagePlane & image, const GridIt
         result = rows01.sum();
     }
     else {
+        FRAC_ASSERT(item.size.x() <= 16);
         for (uint32_t y = 0; y < item.size.y(); ++y)
             for (uint32_t x = 0; x < item.size.x(); ++x)
                 result += image.value(item.origin.x() + x, item.origin.y() + y);
