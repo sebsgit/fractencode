@@ -47,11 +47,12 @@ namespace Frac2 {
     {
     public:
         using Classifier2::Classifier2;
+        
+        static int getCategory(const ImagePlane& image, const UniformGridItem& item);
 
         bool compare(const UniformGridItem& item1, const UniformGridItem& item2) const override;
 
     private:
-        static int getCategory(const ImagePlane& image, const UniformGridItem& item);
         static int getCategory(float a1, float a2, float a3, float a4) noexcept;
     };
 } // namespace Frac2

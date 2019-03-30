@@ -48,6 +48,14 @@ TEST_CASE("ImageStatistics", "[image]")
             REQUIRE(maxSum == Approx(expectedMaxSum));
         }
     }
+    SECTION("mean")
+    {
+        auto image = createTestImage(4, 16);
+        auto mean1x1 = ImageStatistics2::mean(image, UniformGridItem(Point2du(), Size32u(1, 1)));
+        REQUIRE(mean1x1 == 16);
+        auto mean2x2 = ImageStatistics2::mean(image, UniformGridItem(Point2du(), Size32u(4, 4)).topRight());
+        REQUIRE(mean2x2 == 16);
+    }
 }
 
 #endif
