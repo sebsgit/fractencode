@@ -15,9 +15,9 @@ static uint32_t align64(uint32_t v) noexcept {
 
 std::array<ImagePlane, 3> ImageIO::rgb2yuv(const uint8_t* rgb, uint32_t width, uint32_t height, uint32_t stride)
 {
-	
-	const uint32_t yStride = align64(width);
-    const uint32_t uvStride = align64(width / 2);
+    const uint32_t padding = 32;
+	const uint32_t yStride = align64(width) + padding;
+    const uint32_t uvStride = align64(width / 2) + padding;
     std::array<ImagePlane, 3> result {
 		ImagePlane({width, height}, yStride),
         ImagePlane({width / 2, height / 2}, uvStride),

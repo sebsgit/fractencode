@@ -108,6 +108,10 @@ public:
     {
         return this->value<T>(pt.x(), pt.y());
     }
+    void setValue(int32_t x, int32_t y, uint8_t value)
+    {
+        this->_data[y * this->_stride + x] = value;
+    }
     auto copy() const
     {
         ImagePlane result(this->_size, this->_stride);

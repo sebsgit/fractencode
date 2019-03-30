@@ -22,7 +22,7 @@ namespace Frac2 {
     protected:
         inline static uint64_t cacheKey(const GridItemBase& it) noexcept
         {
-            return (it.origin.x() << 32) + it.origin.y();
+            return ((uint64_t)it.origin.x() << 32) + it.origin.y();
         }
 
     protected:

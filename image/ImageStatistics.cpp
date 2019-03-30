@@ -1,7 +1,17 @@
 #include "ImageStatistics.hpp"
 #include "utils/simd/simdu16x8.hpp"
 
-uint16_t Frac2::ImageStatistics2::sum_impl(const ImagePlane & image, const GridItemBase & item) noexcept
+uint32_t Frac2::ImageStatistics2::sum_u32(const ImagePlane & image, const GridItemBase & item) noexcept
+{
+    uint32_t result = 0;
+    for (uint32_t y = 0; y < item.size.y(); ++y)
+        for (uint32_t x = 0; x < item.size.x(); ++x)
+            result += image.value(item.origin.x() + x, item.origin.y() + y);
+    return result;
+}
+
+// for items less than or equal to {16 x 16}
+uint16_t Frac2::ImageStatistics2::sum_u16(const ImagePlane & image, const GridItemBase & item) noexcept
 {
     uint16_t result = 0;
     if (item.size.x() == 4 && item.size.y() == 4) {

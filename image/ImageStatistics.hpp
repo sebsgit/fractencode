@@ -6,11 +6,14 @@
 namespace Frac2 {
     class ImageStatistics2 {
     public:
-        static uint16_t sum_impl(const ImagePlane& image, const GridItemBase& item) noexcept;
+        static uint16_t sum_u16(const ImagePlane& image, const GridItemBase& item) noexcept;
+        static uint32_t sum_u32(const ImagePlane& image, const GridItemBase& item) noexcept;
 
         template <typename T = double>
         static T sum(const ImagePlane& image, const GridItemBase& item) noexcept {
-            return static_cast<T>(sum_impl(image, item));
+            if (item.size.x() > 16)
+                return static_cast<T>(sum_u32(image, item));
+            return static_cast<T>(sum_u16(image, item));
         }
         template <typename T = double>
         static T mean(const ImagePlane& image, const GridItemBase& item) noexcept {
