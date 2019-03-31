@@ -23,6 +23,16 @@ uint16_t Frac2::ImageStatistics2::sum_u16(const ImagePlane & image, const GridIt
         rows01 += simdu16x8(row2[0], row2[1], row2[2], row2[3], row3[0], row3[1], row3[2], row3[3]);
         result = rows01.sum();
     }
+    else if (item.size.x() == 8 && item.size.y() == 8)
+    {
+        auto row = image.data() + item.origin.y() * image.stride() + item.origin.x();
+        simdu16x8 total(row);
+        for (int y = 1; y < 8; ++y) {
+            row += image.stride();
+            total += simdu16x8(row);
+        }
+        result = total.sum();
+    }
     else {
         FRAC_ASSERT(item.size.x() <= 16);
         for (uint32_t y = 0; y < item.size.y(); ++y)
