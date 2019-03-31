@@ -30,13 +30,20 @@ public:
     }
     explicit simd(const uint16_t* input) noexcept
         : _d(is_aligned(input, 16) ? _mm_load_si128(reinterpret_cast<const __m128i*>(input))
-                                   : _mm_loadu_si128(reinterpret_cast<const __m128i*>(input)))
+            : _mm_loadu_si128(reinterpret_cast<const __m128i*>(input)))
     {
     }
-
     explicit simd(const uint16_t* inputLo, const uint16_t* inputHi) noexcept
         : simd(inputLo[0], inputLo[1], inputLo[2], inputLo[3],
-              inputHi[0], inputHi[1], inputHi[2], inputHi[3])
+            inputHi[0], inputHi[1], inputHi[2], inputHi[3])
+    {
+    }
+    /**
+        Loads 8 unsigned 8 bit integers from memory and converts them to 16 bit values.
+        @param input Memory to load the values from. This pointer needs to point to allocation of at least 8 bytes.
+    */
+    explicit simd(const uint8_t* input) noexcept
+        : _d(_mm_unpacklo_epi8(_mm_loadu_si64(input), _mm_setzero_si128()))
     {
     }
 
@@ -44,7 +51,8 @@ public:
     {
         if (is_aligned(output, 16)) {
             this->store_aligned(output);
-        } else {
+        }
+        else {
             alignas(16) uint16_t tmp[8];
             this->store_aligned(tmp);
             memcpy(output, tmp, 8 * sizeof(tmp[0]));

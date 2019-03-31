@@ -38,7 +38,16 @@ public:
 
     explicit simd(const uint16_t* inputLo, const uint16_t* inputHi) noexcept
         : simd(inputLo[0], inputLo[1], inputLo[2], inputLo[3],
-              inputHi[0], inputHi[1], inputHi[2], inputHi[3])
+            inputHi[0], inputHi[1], inputHi[2], inputHi[3])
+    {
+    }
+    /**
+        Loads 8 unsigned 8 bit integers from memory and converts them to 16 bit values.
+        @param input Memory to load the values from. This pointer needs to point to allocation of at least 8 bytes.
+    */
+    explicit simd(const uint8_t* input) noexcept
+        : simd(input[0], input[1], input[2], input[3],
+            input[4], input[5], input[6], input[7])
     {
     }
 
@@ -46,7 +55,8 @@ public:
     {
         if (is_aligned(output, 16)) {
             this->store_aligned(output);
-        } else {
+        }
+        else {
             alignas(16) uint16_t tmp[8];
             this->store_aligned(tmp);
             memcpy(output, tmp, 8 * sizeof(tmp[0]));
