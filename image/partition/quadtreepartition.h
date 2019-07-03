@@ -1,7 +1,7 @@
 #ifndef QUADTREEPARTITION_H
 #define QUADTREEPARTITION_H
 
-#include "partition.h"
+#include "image/partition.h"
 
 namespace Frac {
 class QuadtreePartitionCreator: public PartitionCreator {

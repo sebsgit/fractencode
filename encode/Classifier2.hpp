@@ -4,6 +4,7 @@
 #include "image/partition2.hpp"
 
 #include <shared_mutex>
+#include <unordered_map>
 
 namespace Frac2 {
     class Classifier2 {

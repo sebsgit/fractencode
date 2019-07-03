@@ -1,20 +1,20 @@
 #ifndef TRANSFORMMATCHER_H
 #define TRANSFORMMATCHER_H
 
-#include "Config.h"
-#include "image.h"
-#include "transform.h"
-#include "metrics.h"
-#include "partition.h"
-#include "datatypes.h"
+#include "utils/Config.h"
+#include "image/image.h"
+#include "image/transform.h"
+#include "image/metrics.h"
+#include "image/partition.h"
+#include "encode/datatypes.h"
 #include <iostream>
 
-#include "partition2.hpp"
-#include "Image2.hpp"
-#include "ImageStatistics.hpp"
+#include "image/partition2.hpp"
+#include "image/Image2.hpp"
+#include "image/ImageStatistics.hpp"
 
 #ifdef FRAC_WITH_AVX
-#include "sse_utils.h"
+#include "utils/sse_utils.h"
 #include <immintrin.h>
 #endif
 

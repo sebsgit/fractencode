@@ -20,8 +20,10 @@ namespace Frac2 {
             , _sourceGrid(sourceGrid)
             , _classifier(std::move(classifier))
             , _matcher(matcher)
-        {}
-
+        {
+			this->_rejectedMappings = 0;
+		}
+		
         item_match_t estimate(const Frac2::UniformGridItem& targetItem) const {
             item_match_t result;
             for (const auto& sourcePatch : this->_sourceGrid.items()) {
@@ -52,6 +54,6 @@ namespace Frac2 {
         std::unique_ptr<Classifier2> _classifier;
         std::shared_ptr<TransformMatcher> _matcher;
         const UniformGrid& _sourceGrid;
-        mutable std::atomic_int _rejectedMappings = 0;
+        mutable std::atomic_int _rejectedMappings;
     };
 }

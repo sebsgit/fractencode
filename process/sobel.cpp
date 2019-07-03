@@ -1,8 +1,8 @@
 #include "process/sobel.h"
-#include "Config.h"
+#include "utils/Config.h"
 #ifdef FRAC_WITH_AVX
 #include <immintrin.h>
-#include "sse_debug.h"
+#include "utils/sse_debug.h"
 #endif
 #include <cmath>
 #include <inttypes.h>

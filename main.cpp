@@ -3,12 +3,12 @@
 #include "encode/encoder.h"
 #include "image/Image2.hpp"
 #include "image/image.h"
-#include "metrics.h"
-#include "partition.h"
-#include "partition/quadtreepartition.h"
+#include "image/metrics.h"
+#include "image/partition.h"
+#include "image/partition/quadtreepartition.h"
 #include "process/gaussian5x5.h"
 #include "process/sobel.h"
-#include "transform.h"
+#include "image/transform.h"
 #include "utils/timer.h"
 
 #include "encode/EncodingEngine2.hpp"
@@ -302,7 +302,7 @@ static void test_encoder(const CmdArgs& args)
                 encode_image2(args, image[2])
             };
             Frac2::Image2<3> result(std::move(planes));
-            Frac2::ImageIO::saveImage(result, "result.png");
+            Frac2::ImageIO::saveImage<3>(result, "result.png");
         }
     }
     std::cout << "total time: " << timer.elapsed() << " s.\n";

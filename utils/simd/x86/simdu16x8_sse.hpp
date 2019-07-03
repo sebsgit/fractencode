@@ -3,6 +3,7 @@
 #include "../simd_base.hpp"
 
 #include <immintrin.h>
+#include <emmintrin.h>
 #include <smmintrin.h>
 
 template <>

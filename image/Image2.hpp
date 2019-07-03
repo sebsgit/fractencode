@@ -7,6 +7,8 @@
 #include <array>
 #include <cstdlib>
 #include <vector>
+#include <memory>
+#include <cstring>
 
 namespace Frac2 {
 using namespace Frac;

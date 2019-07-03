@@ -1,12 +1,12 @@
 #ifndef CLASSIFIER_H
 #define CLASSIFIER_H
 
-#include "Config.h"
-#include "image.h"
-#include "partition.h"
+#include "utils/Config.h"
+#include "image/image.h"
+#include "image/partition.h"
 #include <memory>
 #include <vector>
-#include "sse_debug.h"
+#include "utils/sse_debug.h"
 
 namespace Frac {
 	class ImageClassifier {

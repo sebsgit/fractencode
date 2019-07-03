@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <thread>
 
 namespace Frac2 {
     class ProgressReporter2 {

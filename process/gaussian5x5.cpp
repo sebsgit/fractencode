@@ -1,7 +1,7 @@
-#include "Config.h"
+#include "utils/Config.h"
 #include "gaussian5x5.h"
-#include "sampler.h"
-#include "sse_debug.h"
+#include "image/sampler.h"
+#include "utils/sse_debug.h"
 #include <iostream>
 
 using namespace Frac;

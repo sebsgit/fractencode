@@ -66,12 +66,12 @@ bool BrightnessBlocksClassifier2::compare(const UniformGridItem& item1, const Un
     int sourceCategory = -1;
     {
         auto key = this->cacheKey(item1);
-        std::shared_lock readLock(this->_cacheLock);
+        std::shared_lock<std::shared_mutex> readLock(this->_cacheLock);
         auto it = this->_cache.find(key);
         readLock.unlock();
         if (it == this->_cache.end()) {
             sourceCategory = getCategory(this->sourceImage(), item1);
-            std::unique_lock writeLock(this->_cacheLock);
+            std::unique_lock<std::shared_mutex> writeLock(this->_cacheLock);
             this->_cache[key] = sourceCategory;
         }
         else {
