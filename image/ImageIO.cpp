@@ -59,19 +59,19 @@ void ImageIO::rgb2yuv(gsl::span<const uint8_t> rgb, uint32_t width, uint32_t hei
 std::array<ImagePlane, 3> ImageIO::loadImage(const std::string& path)
 {
     int components = 0;
-    int w, h;
+    int w = 0, h = 0;
     auto data = std::unique_ptr<uint8_t, decltype(&::free)>(stbi_load(path.c_str(), &w, &h, &components, 3), &free);
     return rgb2yuv(data.get(), w, h, w * 3);
 }
 
-void ImageIO::yuv2rgb(const uint8_t* yBuff, uint32_t ywidth, uint32_t yheight, uint32_t ystride,
-    const uint8_t* uBuff, uint32_t ustride,
-    const uint8_t* vBuff, uint32_t vstride,
-    uint8_t* rgb, uint32_t rgbStride)
+void ImageIO::yuv2rgb(gsl::span<const uint8_t> yBuff, uint32_t ywidth, uint32_t yheight, uint32_t ystride,
+			gsl::span<const uint8_t> uBuff, uint32_t ustride,
+			gsl::span<const uint8_t> vBuff, uint32_t vstride,
+			gsl::span<uint8_t> rgb, uint32_t rgbStride)
 {
     for (size_t y = 0; y < yheight; ++y) {
         for (size_t x = 0; x < ywidth; ++x) {
-            gsl::span<unsigned char, 3> ptr = {rgb + (x * 3 + y * rgbStride * 3), 3};
+            gsl::span<unsigned char, 3> ptr = {rgb.data() + (x * 3 + y * rgbStride * 3), 3};
             double yp = yBuff[x + y * ystride];
             double up = uBuff[(x / 2) + (y / 2) * ustride];
             double vp = vBuff[(x / 2) + (y / 2) * vstride];
@@ -88,10 +88,10 @@ void ImageIO::saveImage<3>(const Image2<3>& image, const std::string& path)
     const auto& yPlane = image.plane(0);
     const uint32_t rgbStride = yPlane.stride();
     std::vector<uint8_t> rgbData(yPlane.size().y() * rgbStride * 3);
-    yuv2rgb(yPlane.data(), yPlane.size().x(), yPlane.size().y(), yPlane.stride(),
-        image.plane(1).data(), image.plane(1).stride(),
-        image.plane(2).data(), image.plane(2).stride(),
-        rgbData.data(), rgbStride);
+    yuv2rgb({yPlane.data(), yPlane.size().y() * yPlane.stride()}, yPlane.size().x(), yPlane.size().y(), yPlane.stride(),
+        {image.plane(1).data(), image.plane(1).stride() * image.plane(1).size().y()}, image.plane(1).stride(),
+		{image.plane(2).data(), image.plane(2).stride() * image.plane(2).size().y()}, image.plane(2).stride(),
+        rgbData, rgbStride);
     stbi_write_png(path.c_str(), yPlane.size().x(), yPlane.size().y(), 3, rgbData.data(), rgbStride * 3);
 }
 

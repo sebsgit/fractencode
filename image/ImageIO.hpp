@@ -14,10 +14,10 @@ namespace Frac2 {
 						gsl::span<uint8_t> uBuff, uint32_t uStride,
 						gsl::span<uint8_t> vBuff, uint32_t vStride) noexcept;
 
-        static void yuv2rgb(const uint8_t* yBuff, uint32_t ywidth, uint32_t yheight, uint32_t ystride,
-            const uint8_t* uBuff, uint32_t ustride,
-            const uint8_t* vBuff, uint32_t vstride,
-            uint8_t* rgb, uint32_t rgbStride);
+        static void yuv2rgb(gsl::span<const uint8_t> yBuff, uint32_t ywidth, uint32_t yheight, uint32_t ystride,
+            gsl::span<const uint8_t> uBuff, uint32_t ustride,
+            gsl::span<const uint8_t> vBuff, uint32_t vstride,
+            gsl::span<uint8_t> rgb, uint32_t rgbStride);
 
         static std::array<ImagePlane, 3> loadImage(const std::string& path);
         template <int planeCount>
