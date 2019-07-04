@@ -13,7 +13,9 @@ namespace Frac {
 			: _classifier(classifier)
 			, _matcher(matcher)
 			, _source(sourcePartition)
-		{}
+		{
+			this->_rejectedMappings = 0;
+		}
 		item_match_t estimate(const PartitionItemPtr& targetItem) const {
 			item_match_t result;
 			for (auto src : *this->_source) {
@@ -42,6 +44,6 @@ namespace Frac {
 		std::shared_ptr<TransformMatcher> _matcher;
 		PartitionPtr _source;
 		PartitionPtr _target;
-		mutable std::atomic_int _rejectedMappings = 0;
+		mutable std::atomic_int _rejectedMappings;
 	};
 }

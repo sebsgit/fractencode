@@ -1,8 +1,8 @@
 #include "image.h"
-#include "Config.h"
+#include "utils/Config.h"
 #include <iostream>
 #ifdef FRAC_WITH_AVX
-#include "sse_debug.h"
+#include "utils/sse_debug.h"
 #endif
 
 using namespace Frac;

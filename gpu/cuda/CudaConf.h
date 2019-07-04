@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Config.h"
+#include "utils/Config.h"
 
 #ifdef FRAC_WITH_CUDA
 

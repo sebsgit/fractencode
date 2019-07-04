@@ -4,7 +4,13 @@
 #include "utils/size.hpp"
 #include "utils/point2d.hpp"
 #include "gpu/cuda/CudaConf.h"
+#include "utils/Assert.hpp"
 #include <iostream>
+
+namespace Frac2 {
+    class ImagePlane;
+    class GridItemBase;
+};
 
 namespace Frac {
 	class Image;
@@ -26,7 +32,7 @@ namespace Frac {
 			Bilinear
 		};
 
-		CUDA_CALLABLE explicit Transform(Type t = Id) noexcept
+		CUDA_CALLABLE Transform(Type t = Id) noexcept
 			: _type(t)
 		{
 
@@ -85,8 +91,26 @@ namespace Frac {
 			this->map(&result.x(), &result.y(), x, y, w, h);
 			return result;
 		}
-		template <typename T> CUDA_CALLABLE
-		void map(T* rx, T* ry, const T x, const T y, const T sx, const T sy) const noexcept {
+        /**
+            Transform the local patch coordinates.
+            @param local_x Local X coordinate to transform.
+            @param local_y Local Y coordinate to transform.
+            @param patch_offset_x Global X position of the patch (in image coordinates).
+            @param patch_offset_y Global Y position of the patch (in image coordinates).
+            @param patch_width Width of the patch.
+            @param patch_height Height of the patch.
+            @return Coordinates of the transformed point in the global image coordinate system.
+        */
+        template <typename T>
+        Point2du map(T local_x, T local_y, T patch_offset_x, T patch_offset_y, T patch_width, T patch_height) const noexcept {
+            FRAC_ASSERT(local_x >= 0 && local_x < patch_width);
+            FRAC_ASSERT(local_y >= 0 && local_y < patch_height);
+            T x, y;
+            this->map(&x, &y, local_x, local_y, patch_width, patch_height);
+            return Point2d<T>(x + patch_offset_x, y + patch_offset_y);
+        }
+		template <typename T, typename U> CUDA_CALLABLE
+		void map(U* rx, U* ry, const T x, const T y, const T sx, const T sy) const noexcept {
 			static const int __map_lookup[8][8] = {
 				/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
 				/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
@@ -101,6 +125,12 @@ namespace Frac {
 			*ry = __map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (sx - 1) + __map_lookup[_type][7] * (sy - 1);
 		}
 		void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const;
+        void copy(const Frac2::ImagePlane& source, 
+            Frac2::ImagePlane& target, 
+            const Frac2::GridItemBase& sourcePatch,
+            const Frac2::GridItemBase& targetPatch,
+            const double contrast = 1.0, 
+            const double brightness = 0.0) const;
 	private:
 		Image _resize_nn(const Image& source, const Size32u& targetSize) const;
 		Image _resize_b(const Image& source, const Size32u& targetSize) const;

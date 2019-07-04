@@ -1,13 +1,14 @@
 #pragma once
 
-#include "datatypes.h"
-#include "partition.h"
-#include "TransformEstimator.h"
-#include "encode_parameters.h"
+#include "encode/datatypes.h"
+#include "image/partition.h"
+#include "encode/TransformEstimator.h"
+#include "encode/encode_parameters.h"
 
 #include <thread>
 #include <iostream>
 #include <iterator>
+#include <condition_variable>
 #include <sstream>
 
 namespace Frac {

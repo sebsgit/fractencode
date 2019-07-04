@@ -31,7 +31,7 @@ public:
 	}
 };
 
-template <typename T, template <typename> typename Allocator = NewAllocator>
+template <typename T, template <typename> class Allocator = NewAllocator>
 class AbstractBuffer {
 public:
 	virtual ~AbstractBuffer() {}
@@ -46,10 +46,10 @@ public:
 	}
 };
 
-template <typename T, template <typename> typename Allocator = NewAllocator>
+template <typename T, template <typename> class Allocator = NewAllocator>
 using AbstractBufferPtr = std::shared_ptr<AbstractBuffer<T, Allocator>>;
 
-template <typename T, template <typename> typename Allocator = NewAllocator>
+template <typename T, template <typename> class Allocator = NewAllocator>
 class Buffer : public AbstractBuffer<T, Allocator> {
 public:
 	Buffer(T* data, const size_t size, std::function<void(T*)> deleter = Allocator<T>::release)
@@ -81,7 +81,7 @@ private:
 	size_t _size;
 };
 
-template <typename T, template <typename> typename Allocator = NewAllocator>
+template <typename T, template <typename> class Allocator = NewAllocator>
 class BufferSlice : public AbstractBuffer<T, Allocator> {
 public:
 	BufferSlice(AbstractBufferPtr<T, Allocator> source, const uint64_t offset, const size_t size)
@@ -114,7 +114,7 @@ private:
 	size_t _size;
 };
 
-template <typename U, typename T, template <typename> typename AllocatorSource = NewAllocator, template <typename> typename AllocatorResult = NewAllocator>
+template <typename U, typename T, template <typename> class AllocatorSource = NewAllocator, template <typename> class AllocatorResult = NewAllocator>
 AbstractBufferPtr<U, AllocatorResult> convert(AbstractBufferPtr<T, AllocatorSource> source) {
 	auto result = Buffer<U, AllocatorResult>::alloc(source->size());
 	for (size_t i=0 ; i<source->size() ; ++i)

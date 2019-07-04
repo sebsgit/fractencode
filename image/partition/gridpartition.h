@@ -1,7 +1,7 @@
 #ifndef GRIDPARTITION_H
 #define GRIDPARTITION_H
 
-#include "partition.h"
+#include "image/partition.h"
 
 namespace Frac {
 

@@ -3,8 +3,8 @@
 
 #include "thirdparty/stb_image/stb_image.h"
 #include "thirdparty/stb_image/stb_image_write.h"
-#include "buffer.hpp"
-#include "size.hpp"
+#include "utils/buffer.hpp"
+#include "utils/size.hpp"
 #include <cstring>
 #include <unordered_map>
 #ifndef FRAC_NO_THREADS
@@ -26,7 +26,15 @@ public:
 	static const int KeyVariance = 2;
 	static const int KeyBlockTypeBrightness = 3;
 
-	ImageData() {}
+	ImageData() {
+		
+#ifndef FRAC_NO_THREADS
+	for (auto & d : _data)
+		d = -1;
+#else
+	_data = {-1, -1, -1, -1};
+#endif
+	}
 
 	void put(int key, double value) {
 		_data[key] = value;
@@ -35,7 +43,7 @@ public:
 		return (_data[key] != -1) ? (double)_data[key] : defaultValue;
 	}
 private:
-	ValueType _data[KeyBlockTypeBrightness + 1] = {-1, -1, -1, -1};
+	ValueType _data[KeyBlockTypeBrightness + 1];
 };
 
 class Image {

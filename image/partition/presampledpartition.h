@@ -1,6 +1,6 @@
 #pragma once
-#include "partition.h"
-#include "gridpartition.h"
+#include "image/partition.h"
+#include "image/partition/gridpartition.h"
 
 namespace Frac {
 

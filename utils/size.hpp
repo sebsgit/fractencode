@@ -2,6 +2,7 @@
 #define SIZE_HPP
 
 #include <inttypes.h>
+#include <iostream>
 
 namespace Frac {
 	template <typename T>
@@ -51,6 +52,10 @@ namespace Frac {
 		const T area() const {
 			return _x * _y;
 		}
+
+        friend std::ostream& operator << (std::ostream& out, const Size& s) {
+            return out << '{' << s.x() << 'x' << s.y() << '}';
+        }
 	private:
 		T _x, _y;
 	};

@@ -1,16 +1,20 @@
 #ifndef TRANSFORMMATCHER_H
 #define TRANSFORMMATCHER_H
 
-#include "Config.h"
-#include "image.h"
-#include "transform.h"
-#include "metrics.h"
-#include "partition.h"
-#include "datatypes.h"
+#include "utils/Config.h"
+#include "image/image.h"
+#include "image/transform.h"
+#include "image/metrics.h"
+#include "image/partition.h"
+#include "encode/datatypes.h"
 #include <iostream>
 
+#include "image/partition2.hpp"
+#include "image/Image2.hpp"
+#include "image/ImageStatistics.hpp"
+
 #ifdef FRAC_WITH_AVX
-#include "sse_utils.h"
+#include "utils/sse_utils.h"
 #include <immintrin.h>
 #endif
 
@@ -144,7 +148,6 @@ public:
 
 		const double N = (double)(a->image().width()) * a->image().height();
 		const Image::Pixel* source_b = b->image().data()->get();
-		const auto stride_b = b->image().stride();
 		FRAC_ALIGNED_16(uint16_t tl_tmp_store[16]);
 		FRAC_ALIGNED_16(uint16_t tr_tmp_store[16]);
 		FRAC_ALIGNED_16(uint16_t bl_tmp_store[16]);
@@ -434,6 +437,44 @@ public:
 	bool checkDistance(const double d) const noexcept {
 		return d <= _rmsThreshold;
 	}
+
+    // Frac2
+
+    transform_score_t match(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+        const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const {
+        transform_score_t result;
+        Transform t(Transform::Id);
+        do {
+            transform_score_t candidate;
+            candidate.distance = this->_metric.distance(source, target, sourcePatch, targetPatch, t);
+            candidate.transform = t.type();
+            if (candidate.distance <= result.distance) {
+                const double N = targetPatch.size.area();
+                double sumA = Frac2::ImageStatistics2::sum(target, targetPatch), sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
+                for (uint32_t y = 0; y < targetPatch.size.y(); ++y) {
+                    for (uint32_t x = 0; x < targetPatch.size.x(); ++x) {
+                        const auto srcY = (y * sourcePatch.size.y()) / targetPatch.size.y();
+                        const auto srcX = (x * sourcePatch.size.x()) / targetPatch.size.x();
+                        const double valA = target.value<double>(targetPatch.origin.x() + x, targetPatch.origin.y() + y);
+                        const double valB = SamplerBilinear::sample<double>(source, sourcePatch, srcX, srcY, t);
+                        sumB += valB;
+                        sumA2 += valA * valA;
+                        sumAB += valA * valB;
+                    }
+                }
+                const double tmp = (N * sumA2 - (sumA - 1) * sumA);
+                const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
+                const double o = (sumB - s * sumA) / N;
+                candidate.contrast = s;
+                candidate.brightness = o;
+                result = candidate;
+            }
+            if (this->checkDistance(result.distance))
+                break;
+        } while (t.next() != Transform::Id);
+        return result;
+    }
+
 private:
 	const Metric& _metric;
 	const double _rmsThreshold;
