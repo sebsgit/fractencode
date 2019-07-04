@@ -148,7 +148,6 @@ public:
 
 		const double N = (double)(a->image().width()) * a->image().height();
 		const Image::Pixel* source_b = b->image().data()->get();
-		const auto stride_b = b->image().stride();
 		FRAC_ALIGNED_16(uint16_t tl_tmp_store[16]);
 		FRAC_ALIGNED_16(uint16_t tr_tmp_store[16]);
 		FRAC_ALIGNED_16(uint16_t bl_tmp_store[16]);

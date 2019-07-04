@@ -17,9 +17,9 @@ namespace Frac2 {
             const UniformGrid& sourceGrid)
             : _sourceImage(sourceImage)
             , _targetImage(targetImage)
-            , _sourceGrid(sourceGrid)
-            , _classifier(std::move(classifier))
+			, _classifier(std::move(classifier))
             , _matcher(matcher)
+            , _sourceGrid(sourceGrid)
         {
 			this->_rejectedMappings = 0;
 		}
