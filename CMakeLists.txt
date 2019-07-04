@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.1)
 set(PROJECT_NAME "fractal_encode")
 project(${PROJECT_NAME})
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_executable(${PROJECT_NAME} "")
 
-set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wall -Werror")
+target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Werror -fmodules-ts)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
