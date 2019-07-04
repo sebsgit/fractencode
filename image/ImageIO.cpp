@@ -3,7 +3,7 @@
 #include "thirdparty/stb_image/stb_image.h"
 #include "thirdparty/stb_image/stb_image_write.h"
 
-#include <gsl/gsl_assert>
+#include <gsl/gsl_util>
 
 using namespace Frac2;
 
@@ -27,19 +27,19 @@ std::array<ImagePlane, 3> ImageIO::rgb2yuv(gsl::not_null<const uint8_t*> rgb, ui
 		ImagePlane({width / 2, height / 2}, uvStride)
 	};
 
-	rgb2yuv(rgb, width, height, stride,
-		result[0].data(), result[0].stride(),
-		result[1].data(), result[1].stride(),
-		result[2].data(), result[2].stride()
+	rgb2yuv({rgb, stride * height * 3}, width, height, stride,
+		{result[0].data(), yStride * height}, result[0].stride(),
+		{result[1].data(), uvStride * height / 2}, result[1].stride(),
+		{result[2].data(), uvStride * height / 2}, result[2].stride()
 	);
 
     return result;
 }
 
-void ImageIO::rgb2yuv(const uint8_t* rgb, uint32_t width, uint32_t height, uint32_t stride,
-						uint8_t* yBuff, uint32_t yStride,
-						uint8_t* uBuff, uint32_t uStride,
-						uint8_t* vBuff, uint32_t vStride) noexcept
+void ImageIO::rgb2yuv(gsl::span<const uint8_t> rgb, uint32_t width, uint32_t height, uint32_t stride,
+						gsl::span<uint8_t> yBuff, uint32_t yStride,
+						gsl::span<uint8_t> uBuff, uint32_t uStride,
+						gsl::span<uint8_t> vBuff, uint32_t vStride) noexcept
 {
 	for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
