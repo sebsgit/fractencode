@@ -33,6 +33,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 		encode/EncodingEngine.cpp
 		encode/EncodingEngine2.cpp)
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE "GSL_THROW_ON_CONTRACT_VIOLATION=1")
+
 if(NOT NO_AVX)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE "FRAC_WITH_AVX=1")
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-msse -msse2 -mavx -mavx2 -march=native")

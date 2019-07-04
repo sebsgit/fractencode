@@ -688,20 +688,24 @@ static void test_quantizer()
 #ifndef FRAC_TESTS
 int main(int argc, char* argv[])
 {
-    test_statistics();
-    test_partition();
-    test_sobel();
-    test_sampler();
-    test_quantizer();
+	try {
+		test_statistics();
+		test_partition();
+		test_sobel();
+		test_sampler();
+		test_quantizer();
 
-    if (argc > 1) {
-        Frac::Image image(argv[1]);
-        if (image.data()) {
-            test_encoder(CmdArgs(argc, argv));
-        }
-    } else {
-        test_encoder(CmdArgs("small.png"));
-    }
+		if (argc > 1) {
+			Frac::Image image(argv[1]);
+			if (image.data()) {
+				test_encoder(CmdArgs(argc, argv));
+			}
+		} else {
+			test_encoder(CmdArgs("small.png"));
+		}
+	} catch (const std::exception& exc) {
+		std::cout << "EXCEPTION CAUGHT: " << exc.what() << '\n';
+	}
     return 0;
 }
 #endif

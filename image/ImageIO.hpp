@@ -2,11 +2,13 @@
 
 #include "image/Image2.hpp"
 #include <string>
+#include <gsl/pointers>
+#include <gsl/span>
 
 namespace Frac2 {
     class ImageIO {
     public:
-        static std::array<ImagePlane, 3> rgb2yuv(const uint8_t* rgb, uint32_t width, uint32_t height, uint32_t stride);
+        static std::array<ImagePlane, 3> rgb2yuv(gsl::not_null<const uint8_t*> rgb, uint32_t width, uint32_t height, uint32_t stride);
 		static void rgb2yuv(const uint8_t* rgb, uint32_t width, uint32_t height, uint32_t stride,
 						uint8_t* yBuff, uint32_t yStride,
 						uint8_t* uBuff, uint32_t uStride,

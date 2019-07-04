@@ -3,6 +3,8 @@
 #include "thirdparty/stb_image/stb_image.h"
 #include "thirdparty/stb_image/stb_image_write.h"
 
+#include <gsl/gsl_assert>
+
 using namespace Frac2;
 
 static uint8_t clamp(const double x) noexcept {
@@ -13,11 +15,12 @@ static uint32_t align64(uint32_t v) noexcept {
     return (v % 64 == 0) ? v : (v + 64 - v % 64);
 }
 
-std::array<ImagePlane, 3> ImageIO::rgb2yuv(const uint8_t* rgb, uint32_t width, uint32_t height, uint32_t stride)
+std::array<ImagePlane, 3> ImageIO::rgb2yuv(gsl::not_null<const uint8_t*> rgb, uint32_t width, uint32_t height, uint32_t stride)
 {
     const uint32_t padding = 32;
 	const uint32_t yStride = align64(width) + padding;
     const uint32_t uvStride = align64(width / 2) + padding;
+
     std::array<ImagePlane, 3> result {
 		ImagePlane({width, height}, yStride),
         ImagePlane({width / 2, height / 2}, uvStride),
@@ -68,7 +71,7 @@ void ImageIO::yuv2rgb(const uint8_t* yBuff, uint32_t ywidth, uint32_t yheight, u
 {
     for (size_t y = 0; y < yheight; ++y) {
         for (size_t x = 0; x < ywidth; ++x) {
-            unsigned char* ptr = rgb + (x * 3 + y * rgbStride * 3);
+            gsl::span<unsigned char, 3> ptr = {rgb + (x * 3 + y * rgbStride * 3), 3};
             double yp = yBuff[x + y * ystride];
             double up = uBuff[(x / 2) + (y / 2) * ustride];
             double vp = vBuff[(x / 2) + (y / 2) * vstride];
