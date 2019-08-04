@@ -5,7 +5,7 @@ using namespace Frac2;
 
 Classifier2::~Classifier2() = default;
 
-int BrightnessBlocksClassifier2::getCategory(float a1, float a2, float a3, float a4) noexcept {
+int BrightnessBlocksClassifier2::getCategory(double a1, double a2, double a3, double a4) noexcept {
     const bool a1a2 = a1 > a2;
     const bool a1a3 = a1 > a3;
     const bool a1a4 = a1 > a4;
@@ -54,10 +54,10 @@ int BrightnessBlocksClassifier2::getCategory(float a1, float a2, float a3, float
 
 int BrightnessBlocksClassifier2::getCategory(const ImagePlane& image, const UniformGridItem& item)
 {
-    const auto a1 = ImageStatistics2::mean(image, item.topLeft());
-    const auto a2 = ImageStatistics2::mean(image, item.topRight());
-    const auto a3 = ImageStatistics2::mean(image, item.bottomLeft());
-    const auto a4 = ImageStatistics2::mean(image, item.bottomRight());
+    const auto a1 = ImageStatistics2::sum(image, item.topLeft());
+    const auto a2 = ImageStatistics2::sum(image, item.topRight());
+    const auto a3 = ImageStatistics2::sum(image, item.bottomLeft());
+    const auto a4 = ImageStatistics2::sum(image, item.bottomRight());
     return BrightnessBlocksClassifier2::getCategory(a1, a2, a3, a4);
 }
 
@@ -65,6 +65,8 @@ bool BrightnessBlocksClassifier2::compare(const UniformGridItem& item1, const Un
 {
     int sourceCategory = -1;
     {
+        /*TODO: make this faster, precompute and dont use std::unordered_map
+
         auto key = this->cacheKey(item1);
         std::shared_lock<std::shared_mutex> readLock(this->_cacheLock);
         auto it = this->_cache.find(key);
@@ -76,7 +78,8 @@ bool BrightnessBlocksClassifier2::compare(const UniformGridItem& item1, const Un
         }
         else {
             sourceCategory = it->second;
-        }
+        } */
+        sourceCategory = getCategory(this->sourceImage(), item1);
     }
     return sourceCategory == getCategory(this->targetImage(), item2);
 }

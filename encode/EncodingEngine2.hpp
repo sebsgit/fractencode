@@ -122,7 +122,7 @@ namespace Frac2 {
             std::mutex doneMutex;
             std::condition_variable queueEmpty;
             int tasksDone = 0;
-            auto jobQueueStart = gridTarget.items().begin();
+            const auto & jobQueue = gridTarget.items();
             for (size_t i = 0; i < this->_engines.size(); ++i) {
                 auto fn = [&, i]() {
                     this->_engines[i]->init();
@@ -131,11 +131,11 @@ namespace Frac2 {
                         bool hasTask = false;
                         {
                             std::lock_guard<std::mutex> lock(queueMutex);
-                            if (jobQueueIndex < gridTarget.items().size()) {
+                            if (jobQueueIndex < jobQueue.size()) {
                                 hasTask = true;
-                                task = *(jobQueueStart + jobQueueIndex);
+                                task = jobQueue[jobQueueIndex];
                                 ++jobQueueIndex;
-                                _reporter->log(jobQueueIndex, gridTarget.items().size());
+                                _reporter->log(jobQueueIndex, jobQueue.size());
                             }
                         }
                         if (hasTask) {

@@ -54,6 +54,6 @@ namespace Frac2 {
         bool compare(const UniformGridItem& item1, const UniformGridItem& item2) const override;
 
     private:
-        static int getCategory(float a1, float a2, float a3, float a4) noexcept;
+        static int getCategory(double a1, double a2, double a3, double a4) noexcept;
     };
 } // namespace Frac2

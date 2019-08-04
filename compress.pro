@@ -26,6 +26,13 @@ SOURCES += main.cpp \
     encode/EncodingEngine2.cpp \
     image/ImageIO.cpp \
     image/ImageStatistics.cpp \
+    tests/ClassifierTest.cpp \
+    tests/ImageIOTest.cpp \
+    tests/ImageSamplerTest.cpp \
+    tests/ImageStatisticsTest.cpp \
+    tests/PartitionTests.cpp \
+    tests/TransformEstimatorTest.cpp \
+    tests/TransformMatcherTest.cpp \
         thirdparty/stb_image/stb_image_impl.c \
         image/sampler.cpp \
         image/transform.cpp \
@@ -44,6 +51,7 @@ HEADERS += \
     image/ImageIO.hpp \
     image/ImageStatistics.hpp \
     image/partition2.hpp \
+    tests/catch.hpp \
         thirdparty/stb_image/stb_image.h \
         thirdparty/stb_image/stb_image_write.h \
         utils/buffer.hpp	\
