@@ -110,6 +110,13 @@ public:
     {
         return this->value<T>(pt.x(), pt.y());
     }
+	template <typename T, typename U>
+	auto sum(const Point2d<U>& p1, const Point2d<U>& p2, const Point2d<U>& p3, const Point2d<U>& p4) const {
+		return static_cast<T>(this->_data[p1.y() * this->_stride + p1.x()]) +
+			static_cast<T>(this->_data[p2.y() * this->_stride + p2.x()]) +
+			static_cast<T>(this->_data[p3.y() * this->_stride + p3.x()]) +
+			static_cast<T>(this->_data[p4.y() * this->_stride + p4.x()]);
+	}
     void setValue(int32_t x, int32_t y, uint8_t value)
     {
         this->_data[y * this->_stride + x] = value;
