@@ -117,6 +117,13 @@ public:
 			static_cast<T>(this->_data[p3.y() * this->_stride + p3.x()]) +
 			static_cast<T>(this->_data[p4.y() * this->_stride + p4.x()]);
 	}
+	template <typename T>
+	auto sumAt(const std::array<std::ptrdiff_t, 4>& offsets) const {
+		return static_cast<T>(this->_data[offsets[0]]) +
+			static_cast<T>(this->_data[offsets[1]]) +
+			static_cast<T>(this->_data[offsets[2]]) +
+			static_cast<T>(this->_data[offsets[3]]);
+	}
     void setValue(int32_t x, int32_t y, uint8_t value)
     {
         this->_data[y * this->_stride + x] = value;

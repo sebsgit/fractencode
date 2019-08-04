@@ -6,6 +6,7 @@
 #include "gpu/cuda/CudaConf.h"
 #include "utils/Assert.hpp"
 #include <iostream>
+#include <array>
 
 namespace Frac2 {
     class ImagePlane;
@@ -139,6 +140,21 @@ namespace Frac {
 			const Point2d<T> p2 = this->map(local_x, local_y + 1, patchSize);
 			const Point2d<T> p3 = this->map(local_x + 1, local_y + 1, patchSize);
 			return {p0 + patchOffset, p1 + patchOffset, p2 + patchOffset, p3 + patchOffset};
+		}
+
+		std::array<std::ptrdiff_t, 4> generateSampleOffsets(uint32_t imageStride, uint32_t local_x, uint32_t local_y, const Point2du& patchOffset, const Size32u& patchSize) const noexcept
+		{
+			FRAC_ASSERT(local_x >= 0 && local_x + 1 < patchSize.x());
+			FRAC_ASSERT(local_y >= 0 && local_y + 1 < patchSize.y());
+			const auto p0 = this->map<uint32_t>(local_x, local_y, patchSize);
+			const auto p1 = this->map<uint32_t>(local_x + 1, local_y, patchSize);
+			const auto p2 = this->map<uint32_t>(local_x, local_y + 1, patchSize);
+			const auto p3 = this->map<uint32_t>(local_x + 1, local_y + 1, patchSize);
+
+			return { (p0.y() + patchOffset.y()) * imageStride + p0.x() + patchOffset.x(),
+				(p1.y() + patchOffset.y()) * imageStride + p1.x() + patchOffset.x(),
+				(p2.y() + patchOffset.y()) * imageStride + p2.x() + patchOffset.x(),
+				(p3.y() + patchOffset.y()) * imageStride + p3.x() + patchOffset.x() };
 		}
 
 		template <typename T> CUDA_CALLABLE

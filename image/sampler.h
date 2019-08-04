@@ -49,8 +49,8 @@ public:
             --x;
         if (y == patch.size.y() - 1)
             --y;
-        auto corners = t.map4(x, y, patch.origin, patch.size);
-        return image.sum<uint16_t>(corners[0], corners[1], corners[2], corners[3]) / static_cast<T>(4);
+        const auto offsets = t.generateSampleOffsets(image.stride(), x, y, patch.origin, patch.size);
+        return image.sumAt<uint16_t>(offsets) / static_cast<T>(4);
     }
 private:
 	const Image::Pixel* _source;
