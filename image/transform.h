@@ -104,14 +104,6 @@ namespace Frac {
             return Point2d<T>(x + patch_offset_x, y + patch_offset_y);
         }
 
-		template <typename T>
-		auto map(T local_x, T local_y, const Point2du& patchOffset, const Size32u& patchSize) const noexcept {
-			FRAC_ASSERT(local_x >= 0 && local_x < patchSize.x());
-			FRAC_ASSERT(local_y >= 0 && local_y < patchSize.y());
-			const Point2d<T> p = this->map(local_x, local_y, patchSize);
-			return Point2d<T>(p.x() + patchOffset.x(), p.y() + patchOffset.y());
-		}
-
 		template <typename T, typename U> CUDA_CALLABLE
 		void map(U* rx, U* ry, const T x, const T y, const T sx, const T sy) const noexcept {
 			static const int __map_lookup[8][8] = {
@@ -127,9 +119,17 @@ namespace Frac {
 			*rx = __map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (sx - 1) + __map_lookup[_type][3] * (sy - 1);
 			*ry = __map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (sx - 1) + __map_lookup[_type][7] * (sy - 1);
 		}
+
+		template <typename T>
+		auto map(T local_x, T local_y, const Point2du& patchOffset, const Size32u& patchSize) const noexcept {
+			FRAC_ASSERT(local_x >= 0 && local_x < patchSize.x());
+			FRAC_ASSERT(local_y >= 0 && local_y < patchSize.y());
+			const Point2d<T> p = this->map(local_x, local_y, patchSize);
+			return Point2d<T>(p.x() + patchOffset.x(), p.y() + patchOffset.y());
+		}
 		template <typename T> CUDA_CALLABLE
 		Point2d<T> map(const T x, const T y, const Size32u& s) const noexcept {
-			static const int __map_lookup[8][8] = {
+			static constexpr int __map_lookup[8][8] = {
 				/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
 				/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
 				/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
