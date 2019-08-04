@@ -27,10 +27,10 @@ std::array<ImagePlane, 3> ImageIO::rgb2yuv(gsl::not_null<const uint8_t*> rgb, ui
 		ImagePlane({width / 2, height / 2}, uvStride)
 	};
 
-	rgb2yuv({rgb, stride * height * 3}, width, height, stride,
-		{result[0].data(), yStride * height}, result[0].stride(),
-		{result[1].data(), uvStride * height / 2}, result[1].stride(),
-		{result[2].data(), uvStride * height / 2}, result[2].stride()
+	rgb2yuv({rgb, static_cast<std::ptrdiff_t>(stride * height * 3)}, width, height, stride,
+		{result[0].data(), static_cast<std::ptrdiff_t>(yStride * height)}, result[0].stride(),
+		{result[1].data(), static_cast<std::ptrdiff_t>(uvStride * height / 2)}, result[1].stride(),
+		{result[2].data(), static_cast<std::ptrdiff_t>(uvStride * height / 2)}, result[2].stride()
 	);
 
     return result;
@@ -88,9 +88,9 @@ void ImageIO::saveImage<3>(const Image2<3>& image, const std::string& path)
     const auto& yPlane = image.plane(0);
     const uint32_t rgbStride = yPlane.stride();
     std::vector<uint8_t> rgbData(yPlane.size().y() * rgbStride * 3);
-    yuv2rgb({yPlane.data(), yPlane.size().y() * yPlane.stride()}, yPlane.size().x(), yPlane.size().y(), yPlane.stride(),
-        {image.plane(1).data(), image.plane(1).stride() * image.plane(1).size().y()}, image.plane(1).stride(),
-		{image.plane(2).data(), image.plane(2).stride() * image.plane(2).size().y()}, image.plane(2).stride(),
+    yuv2rgb({yPlane.data(), static_cast<std::ptrdiff_t>(yPlane.size().y() * yPlane.stride())}, yPlane.size().x(), yPlane.size().y(), yPlane.stride(),
+        {image.plane(1).data(), static_cast<std::ptrdiff_t>(image.plane(1).stride() * image.plane(1).size().y())}, image.plane(1).stride(),
+		{image.plane(2).data(), static_cast<std::ptrdiff_t>(image.plane(2).stride() * image.plane(2).size().y())}, image.plane(2).stride(),
         rgbData, rgbStride);
     stbi_write_png(path.c_str(), yPlane.size().x(), yPlane.size().y(), 3, rgbData.data(), rgbStride * 3);
 }

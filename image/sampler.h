@@ -49,10 +49,10 @@ public:
             --x;
         if (y == patch.size.y() - 1)
             --y;
-        auto tl = t.map(x, y, patch.origin.x(), patch.origin.y(), patch.size.x(), patch.size.y());
-        auto tr = t.map(x + 1, y, patch.origin.x(), patch.origin.y(), patch.size.x(), patch.size.y());
-        auto bl = t.map(x, y + 1, patch.origin.x(), patch.origin.y(), patch.size.x(), patch.size.y());
-        auto br = t.map(x + 1, y + 1, patch.origin.x(), patch.origin.y(), patch.size.x(), patch.size.y());
+        auto tl = t.map(x, y, patch.origin, patch.size);
+        auto tr = t.map(x + 1, y, patch.origin, patch.size);
+        auto bl = t.map(x, y + 1, patch.origin, patch.size);
+        auto br = t.map(x + 1, y + 1, patch.origin, patch.size);
         const T total = image.value<T>(tl) + image.value<T>(tr) + image.value<T>(bl) + image.value<T>(br);
         return total / 4;
     }
