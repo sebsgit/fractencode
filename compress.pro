@@ -1,11 +1,13 @@
 TEMPLATE = app
 TARGET = compress
-CONFIG += console c++14
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += debug_and_release
 
-QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
+!win32 {
+    QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
+}
 
 unix {
     QMAKE_LFLAGS += -pthread
@@ -15,12 +17,19 @@ INCLUDEPATH += .	\
         utils   \
         image   \
         process	\
-	schedule
+        schedule \
+        thirdparty/gsl/include/
 
 SOURCES += main.cpp \
+    encode/Classifier2.cpp \
+    encode/EncodingEngine.cpp \
+    encode/EncodingEngine2.cpp \
+    image/ImageIO.cpp \
+    image/ImageStatistics.cpp \
         thirdparty/stb_image/stb_image_impl.c \
         image/sampler.cpp \
         image/transform.cpp \
+    utils/sse_utils.cpp \
         utils/utils.cpp \
 		utils/sse_debug.cpp \
         image/imageutils.cpp \
@@ -31,6 +40,10 @@ SOURCES += main.cpp \
         encode/edgeclassifier.cpp
 
 HEADERS += \
+    image/Image2.hpp \
+    image/ImageIO.hpp \
+    image/ImageStatistics.hpp \
+    image/partition2.hpp \
         thirdparty/stb_image/stb_image.h \
         thirdparty/stb_image/stb_image_write.h \
         utils/buffer.hpp	\

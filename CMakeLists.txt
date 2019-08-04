@@ -12,7 +12,8 @@ target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Werror)
 target_include_directories(${PROJECT_NAME}
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}
-		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gsl/include/)
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/gsl/include/
+		${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/range-v3/include/)
 
 target_sources(${PROJECT_NAME} PRIVATE main.cpp)
 

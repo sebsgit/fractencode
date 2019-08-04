@@ -54,10 +54,10 @@ int BrightnessBlocksClassifier2::getCategory(float a1, float a2, float a3, float
 
 int BrightnessBlocksClassifier2::getCategory(const ImagePlane& image, const UniformGridItem& item)
 {
-    const float a1 = ImageStatistics2::mean(image, item.topLeft());
-    const float a2 = ImageStatistics2::mean(image, item.topRight());
-    const float a3 = ImageStatistics2::mean(image, item.bottomLeft());
-    const float a4 = ImageStatistics2::mean(image, item.bottomRight());
+    const auto a1 = ImageStatistics2::mean(image, item.topLeft());
+    const auto a2 = ImageStatistics2::mean(image, item.topRight());
+    const auto a3 = ImageStatistics2::mean(image, item.bottomLeft());
+    const auto a4 = ImageStatistics2::mean(image, item.bottomRight());
     return BrightnessBlocksClassifier2::getCategory(a1, a2, a3, a4);
 }
 
