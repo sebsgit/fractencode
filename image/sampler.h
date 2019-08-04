@@ -49,11 +49,8 @@ public:
             --x;
         if (y == patch.size.y() - 1)
             --y;
-        auto tl = t.map(x, y, patch.origin, patch.size);
-        auto tr = t.map(x + 1, y, patch.origin, patch.size);
-        auto bl = t.map(x, y + 1, patch.origin, patch.size);
-        auto br = t.map(x + 1, y + 1, patch.origin, patch.size);
-        return image.sum<uint16_t>(tl, tr, bl, br) / static_cast<T>(4);
+        auto corners = t.map4(x, y, patch.origin, patch.size);
+        return image.sum<uint16_t>(corners[0], corners[1], corners[2], corners[3]) / static_cast<T>(4);
     }
 private:
 	const Image::Pixel* _source;

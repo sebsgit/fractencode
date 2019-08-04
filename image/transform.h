@@ -127,6 +127,20 @@ namespace Frac {
 			const Point2d<T> p = this->map(local_x, local_y, patchSize);
 			return Point2d<T>(p.x() + patchOffset.x(), p.y() + patchOffset.y());
 		}
+		/**
+			Maps 4 pixel coordinates in 1 pixel distance, starting at given x, y.
+		*/
+		template <typename T>
+		std::array<Point2d<T>, 4> map4(T local_x, T local_y, const Point2du& patchOffset, const Size32u& patchSize) const noexcept {
+			FRAC_ASSERT(local_x >= 0 && local_x + 1 < patchSize.x());
+			FRAC_ASSERT(local_y >= 0 && local_y + 1 < patchSize.y());
+			const Point2d<T> p0 = this->map(local_x, local_y, patchSize);
+			const Point2d<T> p1 = this->map(local_x + 1, local_y, patchSize);
+			const Point2d<T> p2 = this->map(local_x, local_y + 1, patchSize);
+			const Point2d<T> p3 = this->map(local_x + 1, local_y + 1, patchSize);
+			return {p0 + patchOffset, p1 + patchOffset, p2 + patchOffset, p3 + patchOffset};
+		}
+
 		template <typename T> CUDA_CALLABLE
 		Point2d<T> map(const T x, const T y, const Size32u& s) const noexcept {
 			static constexpr int __map_lookup[8][8] = {
