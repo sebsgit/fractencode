@@ -144,18 +144,15 @@ namespace Frac {
 				/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
 			};
 
-			const auto patch_offset_x = __map_lookup[_type][0] * local_x + __map_lookup[_type][1] * local_y + __map_lookup[_type][2] * (patchSize.x() - 1) + __map_lookup[_type][3] * (patchSize.y() - 1);
-			const auto patch_offset_y = __map_lookup[_type][4] * local_x + __map_lookup[_type][5] * local_y + __map_lookup[_type][6] * (patchSize.x() - 1) + __map_lookup[_type][7] * (patchSize.y() - 1);
+			const auto patch_offset_x = patchOffset.x() + __map_lookup[_type][0] * local_x + __map_lookup[_type][1] * local_y + __map_lookup[_type][2] * (patchSize.x() - 1) + __map_lookup[_type][3] * (patchSize.y() - 1);
+			const auto patch_stride = imageStride * (patchOffset.y() + __map_lookup[_type][4] * local_x + __map_lookup[_type][5] * local_y + __map_lookup[_type][6] * (patchSize.x() - 1) + __map_lookup[_type][7] * (patchSize.y() - 1));
 
-			const auto p0 = Point2d<uint32_t>{ patch_offset_x, patch_offset_y };
-			const auto p1 = Point2d<uint32_t>{ __map_lookup[_type][0] + patch_offset_x, __map_lookup[_type][4] + patch_offset_y };
-			const auto p2 = Point2d<uint32_t>{ __map_lookup[_type][1] + patch_offset_x, __map_lookup[_type][5] + patch_offset_y };
-			const auto p3 = Point2d<uint32_t>{ __map_lookup[_type][0] + __map_lookup[_type][1] + patch_offset_x, __map_lookup[_type][4] + __map_lookup[_type][5] + patch_offset_y };
+			const std::ptrdiff_t offset_p0 = patch_stride + patch_offset_x;
+			const std::ptrdiff_t offset_p1 = (__map_lookup[_type][4]) * imageStride + patch_stride + __map_lookup[_type][0] + patch_offset_x;
+			const std::ptrdiff_t offset_p2 = (__map_lookup[_type][5]) * imageStride + patch_stride + __map_lookup[_type][1] + patch_offset_x;
+			const std::ptrdiff_t offset_p3 = (__map_lookup[_type][4] + __map_lookup[_type][5]) * imageStride + patch_stride + __map_lookup[_type][0] + __map_lookup[_type][1] + patch_offset_x;
 
-			return { (p0.y() + patchOffset.y()) * imageStride + p0.x() + patchOffset.x(),
-				(p1.y() + patchOffset.y()) * imageStride + p1.x() + patchOffset.x(),
-				(p2.y() + patchOffset.y()) * imageStride + p2.x() + patchOffset.x(),
-				(p3.y() + patchOffset.y()) * imageStride + p3.x() + patchOffset.x() };
+			return { offset_p0, offset_p1, offset_p2, offset_p3 };
 		}
 
 		template <typename T> CUDA_CALLABLE
