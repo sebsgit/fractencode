@@ -13,7 +13,7 @@ unix {
     QMAKE_LFLAGS += -pthread
 }
 
-DEFINES += FRAC_TESTS
+# DEFINES += FRAC_TESTS
 
 INCLUDEPATH += .	\
         utils   \
