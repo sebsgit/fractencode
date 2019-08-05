@@ -128,28 +128,29 @@ namespace Frac {
 			const Point2d<T> p = this->map(local_x, local_y, patchSize);
 			return Point2d<T>(p.x() + patchOffset.x(), p.y() + patchOffset.y());
 		}
-		/**
-			Maps 4 pixel coordinates in 1 pixel distance, starting at given x, y.
-		*/
-		template <typename T>
-		std::array<Point2d<T>, 4> map4(T local_x, T local_y, const Point2du& patchOffset, const Size32u& patchSize) const noexcept {
-			FRAC_ASSERT(local_x >= 0 && local_x + 1 < patchSize.x());
-			FRAC_ASSERT(local_y >= 0 && local_y + 1 < patchSize.y());
-			const Point2d<T> p0 = this->map(local_x, local_y, patchSize);
-			const Point2d<T> p1 = this->map(local_x + 1, local_y, patchSize);
-			const Point2d<T> p2 = this->map(local_x, local_y + 1, patchSize);
-			const Point2d<T> p3 = this->map(local_x + 1, local_y + 1, patchSize);
-			return {p0 + patchOffset, p1 + patchOffset, p2 + patchOffset, p3 + patchOffset};
-		}
-
 		std::array<std::ptrdiff_t, 4> generateSampleOffsets(uint32_t imageStride, uint32_t local_x, uint32_t local_y, const Point2du& patchOffset, const Size32u& patchSize) const noexcept
 		{
 			FRAC_ASSERT(local_x >= 0 && local_x + 1 < patchSize.x());
 			FRAC_ASSERT(local_y >= 0 && local_y + 1 < patchSize.y());
-			const auto p0 = this->map<uint32_t>(local_x, local_y, patchSize);
-			const auto p1 = this->map<uint32_t>(local_x + 1, local_y, patchSize);
-			const auto p2 = this->map<uint32_t>(local_x, local_y + 1, patchSize);
-			const auto p3 = this->map<uint32_t>(local_x + 1, local_y + 1, patchSize);
+
+			static constexpr int __map_lookup[8][8] = {
+				/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
+				/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
+				/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
+				/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
+				/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
+				/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
+				/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
+				/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
+			};
+
+			const auto patch_offset_x = __map_lookup[_type][0] * local_x + __map_lookup[_type][1] * local_y + __map_lookup[_type][2] * (patchSize.x() - 1) + __map_lookup[_type][3] * (patchSize.y() - 1);
+			const auto patch_offset_y = __map_lookup[_type][4] * local_x + __map_lookup[_type][5] * local_y + __map_lookup[_type][6] * (patchSize.x() - 1) + __map_lookup[_type][7] * (patchSize.y() - 1);
+
+			const auto p0 = Point2d<uint32_t>{ patch_offset_x, patch_offset_y };
+			const auto p1 = Point2d<uint32_t>{ __map_lookup[_type][0] + patch_offset_x, __map_lookup[_type][4] + patch_offset_y };
+			const auto p2 = Point2d<uint32_t>{ __map_lookup[_type][1] + patch_offset_x, __map_lookup[_type][5] + patch_offset_y };
+			const auto p3 = Point2d<uint32_t>{ __map_lookup[_type][0] + __map_lookup[_type][1] + patch_offset_x, __map_lookup[_type][4] + __map_lookup[_type][5] + patch_offset_y };
 
 			return { (p0.y() + patchOffset.y()) * imageStride + p0.x() + patchOffset.x(),
 				(p1.y() + patchOffset.y()) * imageStride + p1.x() + patchOffset.x(),

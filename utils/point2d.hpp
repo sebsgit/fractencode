@@ -14,8 +14,8 @@ namespace Frac {
             }
         };
 
-		Point2d() : Point2d(T(), T()) {}
-		Point2d(const T x, const T y)
+		constexpr Point2d() noexcept : Point2d(T(), T()) {}
+		constexpr Point2d(const T x, const T y) noexcept
 			:_x(x), _y(y)
 		{
 
@@ -26,8 +26,8 @@ namespace Frac {
 		const T y() const noexcept {
 			return _y;
 		}
-		T& x() { return _x; }
-		T& y() { return _y; }
+		T& x() noexcept { return _x; }
+		T& y() noexcept { return _y; }
 
         friend std::ostream& operator << (std::ostream& out, const Point2d<T>& p) {
             out << p.x() << ',' << p.y() << ' ';
