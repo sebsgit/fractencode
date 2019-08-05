@@ -13,6 +13,8 @@ unix {
     QMAKE_LFLAGS += -pthread
 }
 
+DEFINES += FRAC_TESTS
+
 INCLUDEPATH += .	\
         utils   \
         image   \

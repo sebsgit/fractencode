@@ -440,17 +440,24 @@ public:
 
     // Frac2
 
-    transform_score_t match(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+	transform_score_t match(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+		const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const
+	{
+		return this->match_generic(source, sourcePatch, target, targetPatch);
+	}
+
+    transform_score_t match_generic(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
         const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const {
         transform_score_t result;
         Transform t(Transform::Id);
+		const double sumA = Frac2::ImageStatistics2::sum(target, targetPatch);
         do {
             transform_score_t candidate;
             candidate.distance = this->_metric.distance(source, target, sourcePatch, targetPatch, t);
             candidate.transform = t.type();
             if (candidate.distance <= result.distance) {
                 const double N = targetPatch.size.area();
-                double sumA = Frac2::ImageStatistics2::sum(target, targetPatch), sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
+                double sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
                 for (uint32_t y = 0; y < targetPatch.size.y(); ++y) {
                     for (uint32_t x = 0; x < targetPatch.size.x(); ++x) {
                         const auto srcY = (y * sourcePatch.size.y()) / targetPatch.size.y();
