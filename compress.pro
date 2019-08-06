@@ -24,7 +24,6 @@ INCLUDEPATH += .	\
 
 SOURCES += main.cpp \
     encode/Classifier2.cpp \
-    encode/EncodingEngine.cpp \
     encode/EncodingEngine2.cpp \
     image/ImageIO.cpp \
     image/ImageStatistics.cpp \
@@ -35,48 +34,37 @@ SOURCES += main.cpp \
     tests/PartitionTests.cpp \
     tests/TransformEstimatorTest.cpp \
     tests/TransformMatcherTest.cpp \
-        thirdparty/stb_image/stb_image_impl.c \
-        image/sampler.cpp \
-        image/transform.cpp \
+    thirdparty/stb_image/stb_image_impl.c \
+    image/transform.cpp \
     utils/sse_utils.cpp \
-        utils/utils.cpp \
-		utils/sse_debug.cpp \
-        image/imageutils.cpp \
-        image/partition/gridpartition.cpp \
-        image/partition/quadtreepartition.cpp \
-        process/gaussian5x5.cpp \
-        process/sobel.cpp \
-        encode/edgeclassifier.cpp
+    utils/utils.cpp \
+    utils/sse_debug.cpp
 
 HEADERS += \
+    gpu/cuda/CudaConf.h \
+    gpu/cuda/CudaEncoderBackend.h \
+    gpu/cuda/CudaEncodingEngine.h \
+    gpu/cuda/CudaPointer.h \
+    gpu/opencl/OpenCLEncodingEngine.hpp \
     image/Image2.hpp \
     image/ImageIO.hpp \
     image/ImageStatistics.hpp \
     image/partition2.hpp \
     tests/catch.hpp \
-        thirdparty/stb_image/stb_image.h \
-        thirdparty/stb_image/stb_image_write.h \
-        utils/buffer.hpp	\
-        image/image.h   \
-        image/transform.h \
-        utils/size.hpp \
-        image/metrics.h \
-        utils/point2d.hpp \
-        image/partition.h \
-        encode/encoder.h \
-        image/sampler.h \
-        encode/classifier.h \
-        encode/transformmatcher.h \
-		encode/TransformEstimator.h \
-        image/partition/gridpartition.h \
-        encode/datatypes.h \
-        utils/timer.h \
-        utils/sse_debug.h \
-        image/partition/quadtreepartition.h \
-        process/gaussian5x5.h \
-        process/abstractprocessor.h \
-        process/sobel.h \
-        encode/edgeclassifier.h
+    thirdparty/stb_image/stb_image.h \
+    thirdparty/stb_image/stb_image_write.h \
+    utils/buffer.hpp	\
+    image/transform.h \
+    utils/size.hpp \
+    image/metrics.h \
+    utils/point2d.hpp \
+    image/sampler.h \
+    encode/transformmatcher.h \
+    encode/TransformEstimator.h \
+    encode/datatypes.h \
+    utils/timer.h \
+    utils/sse_debug.h \
+    process/abstractprocessor.h
 
 OBJECTS_DIR = build
 
@@ -84,3 +72,6 @@ DEFINES += FRAC_WITH_AVX
 
 QMAKE_CXXFLAGS_DEBUG *= -pg
 QMAKE_LFLAGS_DEBUG *= -pg
+
+DISTFILES += \
+    gpu/cuda/CudaEncoderBackend.cu

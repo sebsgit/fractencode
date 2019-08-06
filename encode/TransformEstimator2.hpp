@@ -5,6 +5,8 @@
 #include "encode/transformmatcher.h"
 #include "encode/Classifier2.hpp"
 
+#include <atomic>
+
 
 namespace Frac2 {
     class TransformEstimator2 {

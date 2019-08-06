@@ -14,8 +14,6 @@ namespace Frac2 {
 };
 
 namespace Frac {
-	class Image;
-
 	class Transform {
 	public:
 		enum Type {
@@ -67,8 +65,6 @@ namespace Frac {
 				return *this;
 			}
 		}
-		Image resize(const Image& source, const Size32u& targetSize, Interpolation t = NearestNeighbor) const;
-		Image map(const Image& source) const;
 		Size32u map(const Size32u& s) const noexcept {
 			switch(_type) {
 			case Rotate_90:
@@ -170,16 +166,13 @@ namespace Frac {
 			return Point2d<T>{ __map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (s.x() - 1) + __map_lookup[_type][3] * (s.y() - 1), 
 			__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (s.x() - 1) + __map_lookup[_type][7] * (s.y() - 1)};
 		}
-		void copy(const Image& source, Image& target, const double contrast = 1.0, const double brightness = 0.0) const;
-        void copy(const Frac2::ImagePlane& source, 
+        void copy(const Frac2::ImagePlane& source,
             Frac2::ImagePlane& target, 
             const Frac2::GridItemBase& sourcePatch,
             const Frac2::GridItemBase& targetPatch,
             const double contrast = 1.0, 
             const double brightness = 0.0) const;
-	private:
-		Image _resize_nn(const Image& source, const Size32u& targetSize) const;
-		Image _resize_b(const Image& source, const Size32u& targetSize) const;
+
 	private:
 		Type _type = Id;
 	};

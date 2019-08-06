@@ -1,7 +1,5 @@
 #pragma once
 
-#include "utils/Config.h"
-
 #ifdef FRAC_WITH_CUDA
 
 #include <cuda.h>

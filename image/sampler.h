@@ -1,7 +1,6 @@
 #ifndef SAMPLER_H
 #define SAMPLER_H
 
-#include "image.h"
 #include "Image2.hpp"
 #include "partition2.hpp"
 #include "transform.h"
@@ -10,21 +9,8 @@ namespace Frac {
 
 class Transform;
 
-class SamplerLinear {
-public:
-	explicit SamplerLinear(const Image& source);
-	Image::Pixel operator() (uint32_t x, uint32_t y) const;
-private:
-	const Image::Pixel* _source;
-	const uint32_t _stride;
-};
-
 class SamplerBilinear {
 public:
-	explicit SamplerBilinear(const Image& source);
-	Image::Pixel operator() (uint32_t x, uint32_t y) const;
-	Image::Pixel operator() (uint32_t x, uint32_t y, const Transform& t, const uint32_t w, const uint32_t h) const;
-
     /**
         Interpolate a pixel value.
         @param image Image to read pixels from.
@@ -53,7 +39,6 @@ public:
         return image.sumAt<uint16_t>(offsets) / static_cast<T>(4);
     }
 private:
-	const Image::Pixel* _source;
 	const uint32_t _stride;
 	const uint32_t _width;
 	const uint32_t _height;

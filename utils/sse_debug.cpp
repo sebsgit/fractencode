@@ -1,4 +1,3 @@
-#include "Config.h"
 #include "sse_debug.h"
 
 #ifdef FRAC_WITH_AVX

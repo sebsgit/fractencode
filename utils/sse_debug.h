@@ -1,8 +1,6 @@
 #ifndef FRAC_SSE_DEBUG
 #define FRAC_SSE_DEBUG
 
-#include "Config.h"
-
 #ifdef FRAC_WITH_AVX
 
 #include <immintrin.h>
