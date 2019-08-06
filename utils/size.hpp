@@ -8,19 +8,19 @@ namespace Frac {
 	template <typename T>
 	class Size {
 	public:
-		Size() : _x(T()), _y(T()) {
+        constexpr Size() noexcept : _x(T()), _y(T()) {
 
 		}
-		Size(T x, T y)
+        constexpr Size(T x, T y) noexcept
 			:_x(x), _y(y)
 		{}
-		Size(const Size& other)
+        constexpr Size(const Size& other) noexcept
 			:_x(other._x), _y(other._y)
 		{}
-		const T x() const noexcept {
+        T x() const noexcept {
 			return _x;
 		}
-		const T y() const noexcept {
+        T y() const noexcept {
 			return _y;
 		}
 		void setX(const T& x) noexcept {

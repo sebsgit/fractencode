@@ -9,68 +9,47 @@
 #include <array>
 
 namespace Frac2 {
-    class ImagePlane;
     class GridItemBase;
 };
 
 namespace Frac {
+    enum class TransformType {
+        Id = 0,
+        Rotate_90,
+        Rotate_180,
+        Rotate_270,
+        Flip,
+        Flip_Rotate_90,
+        Flip_Rotate_180,
+        Flip_Rotate_270
+    };
+
+    enum class Interpolation {
+        NearestNeighbor,
+        Bilinear
+    };
+
+    static constexpr int __map_lookup[8][8] = {
+        /*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
+        /*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
+        /*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
+        /*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
+        /*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
+        /*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
+        /*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
+        /*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
+    };
+
+    template <TransformType type>
 	class Transform {
+        static constexpr int _type = static_cast<int>(type);
 	public:
-		enum Type {
-			Id,
-			Rotate_90,
-			Rotate_180,
-			Rotate_270,
-			Flip,
-			Flip_Rotate_90,
-			Flip_Rotate_180,
-			Flip_Rotate_270
-		};
-		enum Interpolation {
-			NearestNeighbor,
-			Bilinear
-		};
-
-		CUDA_CALLABLE Transform(Type t = Id) noexcept
-			: _type(t)
-		{
-
-		}
-		CUDA_CALLABLE ~Transform() { }
-		CUDA_CALLABLE void setType(const Type t) noexcept {
-			this->_type = t;
-		}
-		CUDA_CALLABLE Type type() const noexcept {
-			return _type;
-		}
-		CUDA_CALLABLE Type next() {
-			if (_type == Rotate_270) {
-				_type = Id;
-			} else {
-				_type = static_cast<Type>((int)(_type + 1));
-			}
-			return _type;
-		}
-		CUDA_CALLABLE Transform inverse() const {
-			switch (_type) {
-			case Rotate_90:
-				return Transform(Rotate_270);
-			case Rotate_270:
-				return Transform(Rotate_90);
-			case Flip_Rotate_90:
-				return Transform(Flip_Rotate_270);
-			case Flip_Rotate_270:
-				return Transform(Flip_Rotate_90);
-			default:
-				return *this;
-			}
-		}
-		Size32u map(const Size32u& s) const noexcept {
-			switch(_type) {
-			case Rotate_90:
-			case Rotate_270:
-			case Flip_Rotate_90:
-			case Flip_Rotate_270:
+        constexpr Size32u map(const Size32u& s) const noexcept {
+            switch(type) {
+            case TransformType::Rotate_90:
+            case TransformType::Rotate_270:
+            case TransformType::Flip_Rotate_90:
+            case TransformType::Flip_Rotate_270:
 				return Size32u(s.y(), s.x());
 			default:
 				return s;
@@ -103,17 +82,7 @@ namespace Frac {
 
 		template <typename T, typename U> CUDA_CALLABLE
 		void map(U* rx, U* ry, const T x, const T y, const T sx, const T sy) const noexcept {
-			static const int __map_lookup[8][8] = {
-				/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
-				/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
-				/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
-				/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
-				/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
-				/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
-				/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
-				/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
-			};
-			*rx = __map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (sx - 1) + __map_lookup[_type][3] * (sy - 1);
+            *rx = __map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (sx - 1) + __map_lookup[_type][3] * (sy - 1);
 			*ry = __map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (sx - 1) + __map_lookup[_type][7] * (sy - 1);
 		}
 
@@ -128,18 +97,6 @@ namespace Frac {
 		{
 			FRAC_ASSERT(local_x >= 0 && local_x + 1 < patchSize.x());
 			FRAC_ASSERT(local_y >= 0 && local_y + 1 < patchSize.y());
-
-			static constexpr int __map_lookup[8][8] = {
-				/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
-				/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
-				/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
-				/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
-				/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
-				/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
-				/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
-				/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
-			};
-
 			const auto patch_offset_x = patchOffset.x() + __map_lookup[_type][0] * local_x + __map_lookup[_type][1] * local_y + __map_lookup[_type][2] * (patchSize.x() - 1) + __map_lookup[_type][3] * (patchSize.y() - 1);
 			const auto patch_stride = imageStride * (patchOffset.y() + __map_lookup[_type][4] * local_x + __map_lookup[_type][5] * local_y + __map_lookup[_type][6] * (patchSize.x() - 1) + __map_lookup[_type][7] * (patchSize.y() - 1));
 
@@ -153,28 +110,9 @@ namespace Frac {
 
 		template <typename T> CUDA_CALLABLE
 		Point2d<T> map(const T x, const T y, const Size32u& s) const noexcept {
-			static constexpr int __map_lookup[8][8] = {
-				/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
-				/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
-				/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
-				/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
-				/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
-				/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
-				/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
-				/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
-			};
 			return Point2d<T>{ __map_lookup[_type][0] * x + __map_lookup[_type][1] * y + __map_lookup[_type][2] * (s.x() - 1) + __map_lookup[_type][3] * (s.y() - 1), 
 			__map_lookup[_type][4] * x + __map_lookup[_type][5] * y + __map_lookup[_type][6] * (s.x() - 1) + __map_lookup[_type][7] * (s.y() - 1)};
 		}
-        void copy(const Frac2::ImagePlane& source,
-            Frac2::ImagePlane& target, 
-            const Frac2::GridItemBase& sourcePatch,
-            const Frac2::GridItemBase& targetPatch,
-            const double contrast = 1.0, 
-            const double brightness = 0.0) const;
-
-	private:
-		Type _type = Id;
 	};
 }
 

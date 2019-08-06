@@ -7,8 +7,6 @@
 
 namespace Frac {
 
-class Transform;
-
 class SamplerBilinear {
 public:
     /**
@@ -20,13 +18,13 @@ public:
         @param t Transform to apply to the pixel coordinates within the sampled patch.
         @return Interpolated pixel value.
     */
-    template <typename T>
+    template <typename T, TransformType type>
     static T sample(
         const Frac2::ImagePlane& image,
         const Frac2::GridItemBase& patch,
         uint32_t x,
         uint32_t y,
-        const Transform& t
+        const Transform<type>& t
         )
     {
         FRAC_ASSERT(x >= 0 && x <patch.size.x());
@@ -38,10 +36,47 @@ public:
         const auto offsets = t.generateSampleOffsets(image.stride(), x, y, patch.origin, patch.size);
         return image.sumAt<uint16_t>(offsets) / static_cast<T>(4);
     }
-private:
-	const uint32_t _stride;
-	const uint32_t _width;
-	const uint32_t _height;
+
+    template <typename T>
+    static T sample(
+        const Frac2::ImagePlane& image,
+        const Frac2::GridItemBase& patch,
+        uint32_t x,
+        uint32_t y,
+        TransformType type
+        )
+    {
+        T result = T{};
+        switch (type) {
+            case TransformType::Id:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Id>());
+                break;
+            case TransformType::Flip:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Flip>());
+                break;
+            case TransformType::Rotate_90:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Rotate_90>());
+                break;
+            case TransformType::Rotate_180:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Rotate_180>());
+                break;
+            case TransformType::Rotate_270:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Rotate_270>());
+                break;
+            case TransformType::Flip_Rotate_90:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Flip_Rotate_90>());
+                break;
+            case TransformType::Flip_Rotate_180:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Flip_Rotate_180>());
+                break;
+            case TransformType::Flip_Rotate_270:
+                result = sample<T>(image, patch, x, y, Transform<TransformType::Flip_Rotate_270>());
+                break;
+        };
+        return result;
+    }
+
+
 };
 }
 

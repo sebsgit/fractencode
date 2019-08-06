@@ -10,17 +10,9 @@
 #include <cmath>
 
 namespace Frac {
-	class Metric {
-	public:
-		virtual ~Metric() {}
 
-        virtual double distance(const Frac2::ImagePlane& a, const Frac2::ImagePlane& b,
-            const Frac2::GridItemBase& sliceA,
-            const Frac2::GridItemBase& sliceB,
-            const Transform& t = Transform()) const = 0;
-	};
-
-	class RootMeanSquare : public Metric {
+    template <TransformType transformType>
+    class RootMeanSquare {
 	public:
         /**
             Calculates the distance between two grid elements.
@@ -28,10 +20,9 @@ namespace Frac {
         */
         double distance(const Frac2::ImagePlane& a, const Frac2::ImagePlane& b,
             const Frac2::GridItemBase& sliceA,
-            const Frac2::GridItemBase& sliceB,
-            const Transform& t_a = Transform()) const override 
+            const Frac2::GridItemBase& sliceB) const
         {
-            
+            constexpr auto t_a = Transform<transformType>();
             if (sliceA.size == sliceB.size) {
                 int32_t sum = 0;
                 for (uint32_t y = 0; y < sliceB.size.y(); ++y) {
@@ -59,10 +50,9 @@ namespace Frac {
             }
         }
 
-        double distance(const Frac2::ImagePlane& a, const Frac2::ImagePlane& b,
-            const Transform& t_a = Transform()) const
+        double distance(const Frac2::ImagePlane& a, const Frac2::ImagePlane& b) const
         {
-            return this->distance(a, b, Frac2::GridItemBase{Point2du(0, 0), a.size()}, Frac2::GridItemBase{Point2du(0, 0), b.size()}, t_a);
+            return this->distance(a, b, Frac2::GridItemBase{Point2du(0, 0), a.size()}, Frac2::GridItemBase{Point2du(0, 0), b.size()});
         }
 	};
 }

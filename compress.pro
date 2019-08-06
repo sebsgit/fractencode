@@ -41,6 +41,7 @@ SOURCES += main.cpp \
     utils/sse_debug.cpp
 
 HEADERS += \
+    encode/DecodeUtils.hpp \
     gpu/cuda/CudaConf.h \
     gpu/cuda/CudaEncoderBackend.h \
     gpu/cuda/CudaEncodingEngine.h \

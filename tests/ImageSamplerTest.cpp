@@ -21,28 +21,28 @@ TEST_CASE("ImageSampler", "[image]")
             29, 29, 30, 30, 31, 31, 32, 32 });
 
         //
-        auto sample2x2 = [](const auto& image, int32_t x, int32_t y, Transform t) {
+        auto sample2x2 = [](const auto& image, int32_t x, int32_t y, TransformType t) {
             GridItemBase patch{Point2du(x, y), Size32u(2, 2)};
             return SamplerBilinear::sample<float>(image, patch, 0, 0, t);
         };
-        auto sample4x4 = [](const auto& image, int32_t x, int32_t y, Transform t) {
+        auto sample4x4 = [](const auto& image, int32_t x, int32_t y, TransformType t) {
             GridItemBase patch{ Point2du(x, y), Size32u(4, 4)};
             return SamplerBilinear::sample<float>(image, patch, 0, 0, t);
         };
-        REQUIRE(sample2x2(image, 0, 0, Transform::Id) == (1 + 1 + 5 + 5) / 4.0f);
-        REQUIRE(sample2x2(image, 1, 0, Transform::Id) == (1 + 2 + 5 + 6) / 4.0f);
-        REQUIRE(sample2x2(image, 3, 3, Transform::Id) == (14 + 15 + 18 + 19) / 4.0f);
-        REQUIRE(sample2x2(image, 3, 6, Transform::Id) == (26 + 27 + 30 + 31) / 4.0f);
+        REQUIRE(sample2x2(image, 0, 0, TransformType::Id) == (1 + 1 + 5 + 5) / 4.0f);
+        REQUIRE(sample2x2(image, 1, 0, TransformType::Id) == (1 + 2 + 5 + 6) / 4.0f);
+        REQUIRE(sample2x2(image, 3, 3, TransformType::Id) == (14 + 15 + 18 + 19) / 4.0f);
+        REQUIRE(sample2x2(image, 3, 6, TransformType::Id) == (26 + 27 + 30 + 31) / 4.0f);
 
-        REQUIRE(sample4x4(image, 0, 0, Transform::Id) == (1 + 1 + 5 + 5) / 4.0f);
-        REQUIRE(sample4x4(image, 0, 0, Transform::Rotate_270) == (2 + 2 + 6 + 6) / 4.0f);
-        REQUIRE(sample4x4(image, 0, 0, Transform::Flip) == (9 + 9 + 13 + 13) / 4.0f);
+        REQUIRE(sample4x4(image, 0, 0, TransformType::Id) == (1 + 1 + 5 + 5) / 4.0f);
+        REQUIRE(sample4x4(image, 0, 0, TransformType::Rotate_270) == (2 + 2 + 6 + 6) / 4.0f);
+        REQUIRE(sample4x4(image, 0, 0, TransformType::Flip) == (9 + 9 + 13 + 13) / 4.0f);
 
-        REQUIRE(sample4x4(image, 3, 4, Transform::Id) == (18 + 19 + 22 + 23) / 4.0f);
-        REQUIRE(sample4x4(image, 3, 4, Transform::Rotate_90) == (26 + 27 + 30 + 31) / 4.0f);
-        REQUIRE(sample4x4(image, 3, 4, Transform::Rotate_180) == (27 + 28 + 31 + 32) / 4.0f);
-        REQUIRE(sample4x4(image, 3, 4, Transform::Rotate_270) == (19 + 20 + 23 + 24) / 4.0f);
-        REQUIRE(sample4x4(image, 3, 4, Transform::Flip) == (26 + 27 + 30 + 31) / 4.0f);
+        REQUIRE(sample4x4(image, 3, 4, TransformType::Id) == (18 + 19 + 22 + 23) / 4.0f);
+        REQUIRE(sample4x4(image, 3, 4, TransformType::Rotate_90) == (26 + 27 + 30 + 31) / 4.0f);
+        REQUIRE(sample4x4(image, 3, 4, TransformType::Rotate_180) == (27 + 28 + 31 + 32) / 4.0f);
+        REQUIRE(sample4x4(image, 3, 4, TransformType::Rotate_270) == (19 + 20 + 23 + 24) / 4.0f);
+        REQUIRE(sample4x4(image, 3, 4, TransformType::Flip) == (26 + 27 + 30 + 31) / 4.0f);
     }
 }
 #endif

@@ -9,7 +9,7 @@ namespace Frac {
 		double distance = 100000.0;
 		double contrast = 0.0;
 		double brightness = 0.0;
-		Transform::Type transform = Transform::Id;
+        TransformType transform = TransformType::Id;
 	};
 	struct item_match_t {
 		transform_score_t score;

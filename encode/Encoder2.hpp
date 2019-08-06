@@ -3,6 +3,7 @@
 #include "encode/EncodingEngine2.hpp"
 #include "image/ImageIO.hpp"
 #include "encode/Classifier2.hpp"
+#include "encode/DecodeUtils.hpp"
 
 namespace Frac2 {
     class DummyReporter2 : public ProgressReporter2
@@ -25,13 +26,12 @@ namespace Frac2 {
     public:
         Encoder2(const ImagePlane& image, const encode_parameters_t& p, const UniformGrid& sourcePartition, const UniformGrid& targetPartition, ProgressReporter2* reporter = nullptr)
             : _encodeParameters(p)
-            , _metric(new RootMeanSquare())
             , _reporter(reporter ? reporter : new DummyReporter2())
         {
             std::unique_ptr<Classifier2> classifier = std::make_unique<BrightnessBlocksClassifier2>(image, image);
             if (p.noclassifier)
                 classifier = std::make_unique<DummyClassifier>(image, image);
-            this->_estimator.reset(new TransformEstimator2(image, image, std::move(classifier), std::make_shared<TransformMatcher>(*_metric, p.rmsThreshold, p.sMax), sourcePartition));
+            this->_estimator.reset(new TransformEstimator2(image, image, std::move(classifier), std::make_shared<TransformMatcher>(p.rmsThreshold, p.sMax), sourcePartition));
             this->_engine.reset(new EncodingEngineCore2(_encodeParameters, image, sourcePartition, *_estimator, _reporter.get()));
             this->_engine->encode(targetPartition);
             this->_stats.totalMappings = sourcePartition.items().size() * targetPartition.items().size();
@@ -45,7 +45,6 @@ namespace Frac2 {
         const encode_parameters_t _encodeParameters;
         mutable encode_stats_t _stats;
         std::unique_ptr<TransformEstimator2> _estimator;
-        std::shared_ptr<Metric> _metric;
         std::unique_ptr<EncodingEngineCore2> _engine;
         std::unique_ptr<ProgressReporter2> _reporter;
     };
@@ -67,7 +66,7 @@ namespace Frac2 {
             std::vector<uint8_t> buffer(_target.height() * _target.stride());
             std::memset(buffer.data(), 100, buffer.size());
             ImagePlane source(_target.size(), _target.stride(), std::move(buffer));
-            RootMeanSquare metric;
+            RootMeanSquare<TransformType::Id> metric;
             int i = 0;
             double rms = 0.0;
             if (_saveSteps)
@@ -93,8 +92,7 @@ namespace Frac2 {
                 const item_match_t match = enc.match;
                 GridItemBase sourcePatch{Point2du(match.x, match.y), match.sourceItemSize};
                 GridItemBase targetPatch{Point2du(enc.x, enc.y), Size32u(enc.w, enc.h)};
-                Transform t = Transform(match.score.transform);
-                t.copy(source, target, sourcePatch, targetPatch, match.score.contrast, match.score.brightness);
+                Frac::copy(source, target, sourcePatch, targetPatch, match.score.contrast, match.score.brightness, match.score.transform);
             }
         }
     private:

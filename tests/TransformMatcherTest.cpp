@@ -26,12 +26,11 @@ TEST_CASE("TransformMatcher", "[encode][matcher]")
             0, 0, 0, 0,
             1, 1, 1, 1 });
 
-        Frac::RootMeanSquare metric;
-        Frac::TransformMatcher matcher(metric, 0.0, 100.0);
+        Frac::TransformMatcher matcher(0.0, 100.0);
         auto score = matcher.match(source, UniformGridItem{ Point2du(0, 0), Size32u{4, 4} }, 
             target, UniformGridItem{ Point2du(0, 0), Size32u{2, 2} });
         REQUIRE(score.distance == Approx(0.0));
-        REQUIRE(score.transform == Transform::Rotate_270);
+        REQUIRE(score.transform == TransformType::Rotate_270);
         REQUIRE(score.contrast < 1.0);
         REQUIRE(score.brightness < 1.0);
     }

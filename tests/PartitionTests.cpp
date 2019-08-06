@@ -36,7 +36,7 @@ TEST_CASE("Partition", "[image][partition]")
     SECTION("distance (same size)")
     {
         using namespace Frac2;
-        Frac::RootMeanSquare metrics;
+        Frac::RootMeanSquare<TransformType::Id> metrics;
         ImagePlane imageA({ 16, 16 }, 16);
         ImagePlane imageB({ 16, 16 }, 16);
         for (int y = 0; y < 16; ++y) {

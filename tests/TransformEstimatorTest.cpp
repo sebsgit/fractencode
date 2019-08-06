@@ -33,7 +33,7 @@ TEST_CASE("TransformEstimator", "[encode][estimator]")
         expectedResults[{0, 2}] = { 4, 4 };
         expectedResults[{2, 2}] = { 0, 4 };
 
-        auto matcher = std::make_unique<TransformMatcher>(Frac::RootMeanSquare(), 0.0, 100.0);
+        auto matcher = std::make_unique<TransformMatcher>(0.0, 100.0);
         auto sourceGrid = Frac2::createUniformGrid(source.size(), Size32u(4, 4), Size32u(2, 2));
         TransformEstimator2 estimator(source, target, std::make_unique<DummyClassifier>(source, target), std::move(matcher), sourceGrid);
         auto targetGrid = Frac2::createUniformGrid(target.size(), Size32u(2, 2), Size32u(2, 2));

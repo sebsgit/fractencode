@@ -16,22 +16,10 @@
 #endif
 
 namespace Frac {
-	static const int __map_lookup[8][8] = {
-		/*ID*/{ 1, 0, 0, 0,  0, 1, 0, 0 },
-		/*90*/{ 0, 1, 0, 0,  -1, 0, 1, 0 },
-		/*180*/{ -1, 0, 1, 0,  0, -1, 0, 1 },
-		/*270*/{ 0, -1, 0, 1,  1, 0, 0, 0 },
-		/*flip*/{ 1, 0, 0, 0,   0, -1, 0, 1 },
-		/*fl 90*/{ 0, 1, 0, 0,   1, 0, 0, 0 },
-		/*fl 180*/{ -1, 0, 1, 0,  0, 1, 0, 0 },
-		/*fl 270*/{ 0, -1, 0, 1, -1, 0, 1, 0 }
-	};
-
 class TransformMatcher {
 public:
-	TransformMatcher(const Metric& metric, const double rmsThreshold, const double sMax)
-		:_metric(metric)
-		,_rmsThreshold(rmsThreshold)
+    TransformMatcher(const double rmsThreshold, const double sMax)
+        :_rmsThreshold(rmsThreshold)
 		,_sMax(sMax)
 	{
 
@@ -50,85 +38,112 @@ public:
 	transform_score_t match(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
 		const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const
 	{
-		if (sourcePatch.size.x() == 16 && sourcePatch.size.y() == 16 && targetPatch.size.x() == 4 && targetPatch.size.y() == 4)
-			return this->match_16to4(source, sourcePatch, target, targetPatch);
-		return this->match_generic(source, sourcePatch, target, targetPatch);
+        return this->matchTransformTypes<
+                TransformType::Id,
+                TransformType::Rotate_90,
+                TransformType::Rotate_180,
+                TransformType::Rotate_270>(source, sourcePatch, target, targetPatch, transform_score_t{});
 	}
 
-    transform_score_t match_generic(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
-        const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const {
-        transform_score_t result;
-        Transform t(Transform::Id);
-		const double sumA = Frac2::ImageStatistics2::sum(target, targetPatch);
-        do {
-            transform_score_t candidate;
-            candidate.distance = this->_metric.distance(source, target, sourcePatch, targetPatch, t);
-            candidate.transform = t.type();
-            if (candidate.distance <= result.distance) {
-                const double N = targetPatch.size.area();
-                double sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
-                for (uint32_t y = 0; y < targetPatch.size.y(); ++y) {
-                    for (uint32_t x = 0; x < targetPatch.size.x(); ++x) {
-                        const auto srcY = (y * sourcePatch.size.y()) / targetPatch.size.y();
-                        const auto srcX = (x * sourcePatch.size.x()) / targetPatch.size.x();
-                        const double valA = target.value<double>(targetPatch.origin.x() + x, targetPatch.origin.y() + y);
-                        const double valB = SamplerBilinear::sample<double>(source, sourcePatch, srcX, srcY, t);
-                        sumB += valB;
-                        sumA2 += valA * valA;
-                        sumAB += valA * valB;
-                    }
-                }
-                const double tmp = (N * sumA2 - (sumA - 1) * sumA);
-                const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
-                const double o = (sumB - s * sumA) / N;
-                candidate.contrast = s;
-                candidate.brightness = o;
-                result = candidate;
-            }
-            if (this->checkDistance(result.distance))
-                break;
-        } while (t.next() != Transform::Id);
-        return result;
+
+    template <TransformType lastType>
+    transform_score_t matchTransformTypes(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+                                          const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch,
+                                          const transform_score_t& previousResult) const
+    {
+        auto result = this->matchTransformType<lastType>(source, sourcePatch, target, targetPatch, previousResult);
+        if (this->checkDistance(result.distance))
+            return result;
+        return result.distance <= previousResult.distance ? result : previousResult;
+    }
+    template <TransformType firstType, TransformType secondType, TransformType ... rest>
+    transform_score_t matchTransformTypes(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+                                          const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch,
+                                          const transform_score_t& previousResult) const
+    {
+        auto result = this->matchTransformType<firstType>(source, sourcePatch, target, targetPatch, previousResult);
+        if (this->checkDistance(result.distance))
+            return result;
+        return this->matchTransformTypes<secondType, rest...>(source, sourcePatch, target, targetPatch, result.distance <= previousResult.distance ? result : previousResult);
     }
 
-	transform_score_t match_16to4(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
-		const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch) const {
-		transform_score_t result;
-		Transform t(Transform::Id);
+    template <TransformType type>
+    transform_score_t matchTransformType(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+                                         const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch,
+                                         const transform_score_t& previousResult) const
+    {
+        if (sourcePatch.size.x() == 16 && sourcePatch.size.y() == 16 && targetPatch.size.x() == 4 && targetPatch.size.y() == 4)
+            return this->match_16to4<type>(source, sourcePatch, target, targetPatch, previousResult);
+        return this->match_generic<type>(source, sourcePatch, target, targetPatch, previousResult);
+    }
+
+    template <TransformType transformType>
+    transform_score_t match_generic(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+        const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch, const transform_score_t& previousResult) const {
+        Transform<transformType> t;
+        RootMeanSquare<transformType> metric;
 		const double sumA = Frac2::ImageStatistics2::sum(target, targetPatch);
-		do {
-			transform_score_t candidate;
-			candidate.distance = this->_metric.distance(source, target, sourcePatch, targetPatch, t);
-			candidate.transform = t.type();
-			if (candidate.distance <= result.distance) {
-				const double N = targetPatch.size.area();
-				double sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
-				for (uint32_t y = 0; y < 4; ++y) {
-					const auto srcY = y * 4;
-					for (uint32_t x = 0; x < 4; ++x) {
-						const auto srcX = x * 4;
-						const double valA = target.value<double>(targetPatch.origin.x() + x, targetPatch.origin.y() + y);
-						const double valB = SamplerBilinear::sample<double>(source, sourcePatch, srcX, srcY, t);
-						sumB += valB;
-						sumA2 += valA * valA;
-						sumAB += valA * valB;
-					}
-				}
-				const double tmp = (N * sumA2 - (sumA - 1) * sumA);
-				const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
-				const double o = (sumB - s * sumA) / N;
-				candidate.contrast = s;
-				candidate.brightness = o;
-				result = candidate;
-			}
-			if (this->checkDistance(result.distance))
-				break;
-		} while (t.next() != Transform::Id);
-		return result;
+        transform_score_t candidate;
+        candidate.distance = metric.distance(source, target, sourcePatch, targetPatch);
+        candidate.transform = transformType;
+        if (candidate.distance <= previousResult.distance) {
+            const double N = targetPatch.size.area();
+            double sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
+            for (uint32_t y = 0; y < targetPatch.size.y(); ++y) {
+                for (uint32_t x = 0; x < targetPatch.size.x(); ++x) {
+                    const auto srcY = (y * sourcePatch.size.y()) / targetPatch.size.y();
+                    const auto srcX = (x * sourcePatch.size.x()) / targetPatch.size.x();
+                    const double valA = target.value<double>(targetPatch.origin.x() + x, targetPatch.origin.y() + y);
+                    const double valB = SamplerBilinear::sample<double>(source, sourcePatch, srcX, srcY, t);
+                    sumB += valB;
+                    sumA2 += valA * valA;
+                    sumAB += valA * valB;
+                }
+            }
+            const double tmp = (N * sumA2 - (sumA - 1) * sumA);
+            const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
+            const double o = (sumB - s * sumA) / N;
+            candidate.contrast = s;
+            candidate.brightness = o;
+            return candidate;
+        }
+        return previousResult;
+    }
+
+    template <TransformType transformType>
+	transform_score_t match_16to4(const Frac2::ImagePlane& source, const Frac2::UniformGridItem& sourcePatch,
+        const Frac2::ImagePlane& target, const Frac2::UniformGridItem& targetPatch, const transform_score_t& previousResult) const {
+        Transform<transformType> t;
+        RootMeanSquare<transformType> metric;
+		const double sumA = Frac2::ImageStatistics2::sum(target, targetPatch);
+        transform_score_t candidate;
+        candidate.distance = metric.distance(source, target, sourcePatch, targetPatch);
+        candidate.transform = transformType;
+        if (candidate.distance <= previousResult.distance) {
+            const double N = targetPatch.size.area();
+            double sumA2 = 0.0, sumB = 0.0, sumAB = 0.0;
+            for (uint32_t y = 0; y < 4; ++y) {
+                const auto srcY = y * 4;
+                for (uint32_t x = 0; x < 4; ++x) {
+                    const auto srcX = x * 4;
+                    const double valA = target.value<double>(targetPatch.origin.x() + x, targetPatch.origin.y() + y);
+                    const double valB = SamplerBilinear::sample<double>(source, sourcePatch, srcX, srcY, t);
+                    sumB += valB;
+                    sumA2 += valA * valA;
+                    sumAB += valA * valB;
+                }
+            }
+            const double tmp = (N * sumA2 - (sumA - 1) * sumA);
+            const double s = this->truncateSMax(fabs(tmp) < 0.00001 ? 0.0 : (N * sumAB - sumA * sumB) / tmp);
+            const double o = (sumB - s * sumA) / N;
+            candidate.contrast = s;
+            candidate.brightness = o;
+            return candidate;
+        }
+        return previousResult;
 	}
 
 private:
-	const Metric& _metric;
 	const double _rmsThreshold;
 	const double _sMax;
 };
