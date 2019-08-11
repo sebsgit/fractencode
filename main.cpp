@@ -152,9 +152,14 @@ static Frac2::ImagePlane encode_image2(const CmdArgs& args, const Frac2::ImagePl
     std::unique_ptr<Classifier2> classifier = std::make_unique<BrightnessBlocksClassifier2>(image, image);
     if (args.encoderParams.noclassifier)
         classifier = std::make_unique<DummyClassifier>(image, image);
+    auto classifierCallback = [&](const Point2du& origin, const Size32u& size) {
+        UniformGridItem::ExtraData data;
+        classifier->preclassify(origin, size, data);
+        return data;
+    };
 
-    auto sourceGrid = Frac2::createUniformGrid(image.size(), gridSizeSource, gridOffset);
-    auto targetGrid = Frac2::createUniformGrid(image.size(), gridSizeTarget, gridSizeTarget);
+    auto sourceGrid = Frac2::createUniformGrid(image.size(), gridSizeSource, gridOffset, classifierCallback);
+    auto targetGrid = Frac2::createUniformGrid(image.size(), gridSizeTarget, gridSizeTarget, classifierCallback);
 
     Timer timer;
     timer.start();

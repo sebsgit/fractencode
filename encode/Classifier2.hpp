@@ -20,6 +20,10 @@ namespace Frac2 {
 
         virtual bool compare(const UniformGridItem& source, const UniformGridItem& target) const = 0;
 
+        virtual void preclassify(const Point2du&, const Size32u&, typename UniformGridItem::ExtraData&) const {
+
+        }
+
     protected:
         inline static uint64_t cacheKey(const GridItemBase& it) noexcept
         {
@@ -52,6 +56,8 @@ namespace Frac2 {
         static int getCategory(const ImagePlane& image, const UniformGridItem& item);
 
         bool compare(const UniformGridItem& item1, const UniformGridItem& item2) const override;
+
+        void preclassify(const Point2du& origin, const Size32u& size, typename UniformGridItem::ExtraData& data) const override;
 
     private:
         static int getCategory(double a1, double a2, double a3, double a4) noexcept;

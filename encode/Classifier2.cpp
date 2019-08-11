@@ -61,25 +61,21 @@ int BrightnessBlocksClassifier2::getCategory(const ImagePlane& image, const Unif
     return BrightnessBlocksClassifier2::getCategory(a1, a2, a3, a4);
 }
 
+void BrightnessBlocksClassifier2::preclassify(const Point2du &origin, const Size32u &size, typename UniformGridItem::ExtraData &data) const
+{
+    const UniformGridItem it{origin, size};
+    data.bb_classifierBin = this->getCategory(this->_sourceImage, it);
+}
+
 bool BrightnessBlocksClassifier2::compare(const UniformGridItem& item1, const UniformGridItem& item2) const
 {
-    int sourceCategory = -1;
-    {
-        /*TODO: make this faster, precompute and dont use std::unordered_map
-
-        auto key = this->cacheKey(item1);
-        std::shared_lock<std::shared_mutex> readLock(this->_cacheLock);
-        auto it = this->_cache.find(key);
-        readLock.unlock();
-        if (it == this->_cache.end()) {
-            sourceCategory = getCategory(this->sourceImage(), item1);
-            std::unique_lock<std::shared_mutex> writeLock(this->_cacheLock);
-            this->_cache[key] = sourceCategory;
-        }
-        else {
-            sourceCategory = it->second;
-        } */
+    int sourceCategory = item1.data.bb_classifierBin;
+    int targetCategory = item2.data.bb_classifierBin;
+    if (sourceCategory == -1) {
         sourceCategory = getCategory(this->sourceImage(), item1);
     }
-    return sourceCategory == getCategory(this->targetImage(), item2);
+    if (targetCategory == -1) {
+        targetCategory = getCategory(this->targetImage(), item2);
+    }
+    return sourceCategory == targetCategory;
 }

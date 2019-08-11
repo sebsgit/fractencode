@@ -86,6 +86,7 @@ namespace Frac2 {
 
     struct GridItemData {
         // any grid per-item data lands here
+        int bb_classifierBin = -1;
     };
 
     using UniformGridItem = GridItem<GridItemData>;
