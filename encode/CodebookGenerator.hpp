@@ -22,7 +22,7 @@ namespace Frac {
 			return this->_generated.size();
 		}
 		size_t next() {
-			if (this->_generated.size() == this->_distribution.b())
+			if (this->_generated.size() == this->_distribution.b() + 1)
 				return std::numeric_limits<size_t>::max();
 			auto result = this->_distribution(this->_generator);
 			while (this->_generated.find(result) != this->_generated.end()) {

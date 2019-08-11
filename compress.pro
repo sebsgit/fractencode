@@ -13,7 +13,7 @@ unix {
     QMAKE_LFLAGS += -pthread
 }
 
-# DEFINES += FRAC_TESTS
+DEFINES += FRAC_TESTS
 
 INCLUDEPATH += .	\
         utils   \
@@ -28,6 +28,7 @@ SOURCES += main.cpp \
     image/ImageIO.cpp \
     image/ImageStatistics.cpp \
     tests/ClassifierTest.cpp \
+    tests/CodebookGeneratorTests.cpp \
     tests/ImageIOTest.cpp \
     tests/ImageSamplerTest.cpp \
     tests/ImageStatisticsTest.cpp \
@@ -79,6 +80,3 @@ DEFINES += FRAC_WITH_AVX
 
 QMAKE_CXXFLAGS_DEBUG *= -pg
 QMAKE_LFLAGS_DEBUG *= -pg
-
-DISTFILES += \
-    gpu/cuda/CudaEncoderBackend.cu
