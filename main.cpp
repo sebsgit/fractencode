@@ -145,16 +145,20 @@ static Frac2::ImagePlane encode_image2(const CmdArgs& args, const Frac2::ImagePl
     const Size32u gridSizeTarget(args.encoderParams.targetGridSize, args.encoderParams.targetGridSize);
     const Size32u gridSizeSource(args.encoderParams.sourceGridSize, args.encoderParams.sourceGridSize);
     const Size32u gridOffset = gridSizeSource / args.encoderParams.latticeSize;
-    ProgressReporter2* reporter = nullptr;
+    std::unique_ptr<ProgressReporter2> reporter;
     if (args.logProgress)
-        reporter = new StdoutReporter2();
+        reporter = std::make_unique<StdoutReporter2>();
+
+    std::unique_ptr<Classifier2> classifier = std::make_unique<BrightnessBlocksClassifier2>(image, image);
+    if (args.encoderParams.noclassifier)
+        classifier = std::make_unique<DummyClassifier>(image, image);
 
     auto sourceGrid = Frac2::createUniformGrid(image.size(), gridSizeSource, gridOffset);
     auto targetGrid = Frac2::createUniformGrid(image.size(), gridSizeTarget, gridSizeTarget);
 
     Timer timer;
     timer.start();
-    Encoder2 encoder(image, args.encoderParams, sourceGrid, targetGrid, reporter);
+    Encoder2 encoder(image, args.encoderParams, sourceGrid, targetGrid, std::move(classifier), std::move(reporter));
     auto data = encoder.data();
     std::cout << "encoded in " << timer.elapsed() << " s.\n";
     std::cout << data.encoded.size() << " elements.\n";

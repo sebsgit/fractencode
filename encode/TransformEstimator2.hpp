@@ -47,7 +47,7 @@ namespace Frac2 {
             return result;
         }
 
-        int rejectedMappings() const noexcept {
+        uint64_t rejectedMappings() const noexcept {
             return this->_rejectedMappings;
         }
     private:
@@ -56,6 +56,6 @@ namespace Frac2 {
         std::unique_ptr<Classifier2> _classifier;
         std::shared_ptr<TransformMatcher> _matcher;
         const UniformGrid& _sourceGrid;
-        mutable std::atomic_int _rejectedMappings;
+        mutable std::atomic_ulong _rejectedMappings;
     };
 }

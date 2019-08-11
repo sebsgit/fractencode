@@ -24,13 +24,15 @@ namespace Frac2 {
         };
 
     public:
-        Encoder2(const ImagePlane& image, const encode_parameters_t& p, const UniformGrid& sourcePartition, const UniformGrid& targetPartition, ProgressReporter2* reporter = nullptr)
+        Encoder2(const ImagePlane& image,
+                 const encode_parameters_t& p,
+                 const UniformGrid& sourcePartition,
+                 const UniformGrid& targetPartition,
+                 std::unique_ptr<Classifier2>&& classifier,
+                 std::unique_ptr<ProgressReporter2> && reporter)
             : _encodeParameters(p)
-            , _reporter(reporter ? reporter : new DummyReporter2())
+            , _reporter(reporter ? std::move(reporter) : std::make_unique<DummyReporter2>())
         {
-            std::unique_ptr<Classifier2> classifier = std::make_unique<BrightnessBlocksClassifier2>(image, image);
-            if (p.noclassifier)
-                classifier = std::make_unique<DummyClassifier>(image, image);
             this->_estimator.reset(new TransformEstimator2(image, image, std::move(classifier), std::make_shared<TransformMatcher>(p.rmsThreshold, p.sMax), sourcePartition));
             this->_engine.reset(new EncodingEngineCore2(_encodeParameters, image, sourcePartition, *_estimator, _reporter.get()));
             this->_engine->encode(targetPartition);
