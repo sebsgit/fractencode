@@ -4,6 +4,7 @@
 #include "thirdparty/stb_image/stb_image_write.h"
 
 #include <gsl/gsl_util>
+#include <string>
 
 using namespace Frac2;
 

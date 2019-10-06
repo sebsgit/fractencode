@@ -20,7 +20,8 @@ INCLUDEPATH += .	\
         image   \
         process	\
         schedule \
-        thirdparty/gsl/include/
+        thirdparty/gsl/include/ \
+        thirdparty/range-v3/include/
 
 SOURCES += main.cpp \
     encode/Classifier2.cpp \
