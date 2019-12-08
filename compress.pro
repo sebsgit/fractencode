@@ -7,6 +7,7 @@ CONFIG += debug_and_release
 
 !win32 {
     QMAKE_CXXFLAGS += -msse -msse2 -mavx -mavx2 -march=native
+    QMAKE_LIBS += -ldl
 }
 
 unix {
@@ -36,6 +37,7 @@ SOURCES += main.cpp \
     tests/PartitionTests.cpp \
     tests/TransformEstimatorTest.cpp \
     tests/TransformMatcherTest.cpp \
+    tests/OpenCLTest.cpp \
     thirdparty/stb_image/stb_image_impl.c \
     image/transform.cpp \
     utils/sse_utils.cpp \

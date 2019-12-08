@@ -14,7 +14,11 @@ static constexpr bool is64Bit() noexcept
 
 static std::string openclLibPath()
 {
+#ifdef __linux__
+    return "/usr/lib/x86_64-linux-gnu/libOpenCL.so.1.0.0";
+#else
 	return is64Bit() ? "C:/Windows/SysWOW64/OpenCL.dll" : "C:/Windows/System32/OpenCL.dll";
+#endif
 }
 
 TEST_CASE("OpenCL", "[gpu][opencl]")
@@ -173,14 +177,14 @@ TEST_CASE("OpenCL", "[gpu][opencl]")
 
 		auto gridBuffer = context.create_buffer<grid_item_t>(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, grid_gpu.size(), grid_gpu.data());
 
-		auto sumKernel = program.kernel("sum_blocks");
-		sumKernel.set_args(image_size_t{ width, height, stride },
-			inputBuffer.handle(),
-			gridBuffer.handle(),
-			grid_gpu.size(),
-			outputSumBuffer.handle());
+        auto sumKernel = program.create_kernel("sum_blocks");
+        REQUIRE_NOTHROW(sumKernel.set_arg(0, image_size_t{ width, height, stride }));
+        REQUIRE_NOTHROW(sumKernel.set_arg(1, inputBuffer.handle()));
+        REQUIRE_NOTHROW(sumKernel.set_arg(2, gridBuffer.handle()));
+        REQUIRE_NOTHROW(sumKernel.set_arg(3, static_cast<uint32_t>(grid_gpu.size())));
+        REQUIRE_NOTHROW(sumKernel.set_arg(4, outputSumBuffer.handle()));
 
-		auto categoryKernel = program.kernel("create_categories");
+        auto categoryKernel = program.create_kernel("create_categories");
 		categoryKernel.set_args(outputSumBuffer.handle(),
 			resultBuffer.handle());
 

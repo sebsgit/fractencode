@@ -3,6 +3,7 @@
 #include "so_loader.hpp"
 
 #include <CL/cl.h>
+
 #include <array>
 #include <sstream>
 #include <string>
@@ -112,13 +113,7 @@ private:
     }
 };
 
-#ifndef _MSC_VER 
-#define CURRENT_FUNC __PRETTY_FUNCTION__
-#else 
-#define CURRENT_FUNC __FUNCSIG__ 
-#endif
-
-#define THROW_ERROR(code) throw error((code), std::string(CURRENT_FUNC))
+#define THROW_ERROR(code) throw error((code), std::string(__PRETTY_FUNCTION__))
 
 template <int param>
 struct device_param_trait;
@@ -243,6 +238,14 @@ public:
         opencl_rt::clGetDeviceInfo(handle(), param, size, priv::address(result), nullptr);
         return result;
     }
+
+	friend std::ostream& operator<< (std::ostream& out, const device& d)
+    {
+        out << "name: " << d.info<CL_DEVICE_NAME>() << '\n';
+        out << "driver: " << d.info<CL_DRIVER_VERSION>() << '\n';
+        out << "opencl: " << d.info<CL_DEVICE_VERSION>() << '\n';
+        return out;
+    }
 };
 
 class platform : public backend<cl_platform_id> {
@@ -269,6 +272,14 @@ public:
         for (auto d : devices)
             result.emplace_back(d);
         return result;
+    }
+
+    friend std::ostream& operator<< (std::ostream& out, const platform& p)
+    {
+        out << "name: " << p.info(CL_PLATFORM_NAME) << '\n';
+        out << "vendor: " << p.info(CL_PLATFORM_VENDOR) << '\n';
+        out << "extensions: " << p.info(CL_PLATFORM_EXTENSIONS) << '\n';
+        return out;
     }
 };
 
@@ -392,17 +403,20 @@ public:
     }
 
     template <typename T>
-    void setArg(cl_uint index, const T& value)
+    void set_arg(cl_uint index, const T& value)
     {
         auto result = opencl_rt::clSetKernelArg(handle(), index, sizeof(T), &value);
         if (result != CL_SUCCESS)
             THROW_ERROR(result);
     }
-	template <typename ... Args>
-	void set_args(Args&& ... args) {
-		cl_uint i = 0;
-		(void)std::initializer_list<int>{( setArg(i++, args), 0) ...};
-	}
+    
+    template <typename ... Args>
+    void set_args(Args && ... args)
+    {
+        cl_uint idx = 0;
+        std::initializer_list<int>{ ( set_arg(idx++, std::forward<Args>(args)), 0) ... };
+    }
+    
     template <cl_kernel_arg_info param>
     auto arg_info(cl_uint index) const
     {
@@ -457,10 +471,8 @@ public:
         const std::array<cl_event, NumInputEvents>& input_events = std::array<cl_event, NumInputEvents>())
     {
         static_assert(N > 0 && N <= 3);
-        auto result = opencl_rt::clEnqueueNDRangeKernel(handle(), k.handle(), N, nullptr, global_work_size.data(), local_work_size.data(), NumInputEvents, NumInputEvents == 0 ? nullptr : input_events.data(), output_event ? &output_event->handle() : nullptr);
-		if (result != CL_SUCCESS)
-			THROW_ERROR(result);
-	}
+        opencl_rt::clEnqueueNDRangeKernel(handle(), k.handle(), N, nullptr, global_work_size.data(), local_work_size.data(), NumInputEvents, NumInputEvents == 0 ? nullptr : input_events.data(), output_event ? &output_event->handle() : nullptr);
+    }
     void finish()
     {
         opencl_rt::clFinish(handle());
@@ -532,8 +544,6 @@ private:
 };
 
 class program : public backend<cl_program> {
-    using kernel_class = kernel;
-
 public:
     explicit program(context& ctx, const std::string& source)
         : backend(create(ctx, source))
@@ -576,9 +586,9 @@ public:
         opencl_rt::clGetProgramBuildInfo(handle(), dev.handle(), CL_PROGRAM_BUILD_LOG, size, &result[0], nullptr);
         return result;
     }
-    kernel_class kernel(const std::string& name)
+    [[nodiscard]] kernel create_kernel(const std::string& name)
     {
-        return kernel_class(opencl_rt::clCreateKernel(handle(), name.c_str(), nullptr));
+        return kernel(opencl_rt::clCreateKernel(handle(), name.c_str(), nullptr));
     }
 
 private:

@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(${PROJECT_NAME} "")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+
 target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Werror -O2)
 
 target_include_directories(${PROJECT_NAME}

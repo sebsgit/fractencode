@@ -60,7 +60,7 @@ namespace Frac {
             return out << '{' << s.x() << 'x' << s.y() << '}';
         }
 	private:
-		T _x, _y;
+        T _x = {}, _y = {};
 	};
 	using Size32u = Size<uint32_t>;
 }

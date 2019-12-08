@@ -43,7 +43,7 @@ namespace Frac {
             return Point2d{ p0._x + p1._x, p0._y + p1._y };
         }
 	private:
-		T _x, _y;
+        T _x = {}, _y = {};
 	};
 
 	using Point2du = Point2d<uint32_t>;
