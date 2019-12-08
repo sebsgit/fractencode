@@ -56,7 +56,11 @@ HEADERS += \
     gpu/cuda/CudaEncoderBackend.h \
     gpu/cuda/CudaEncodingEngine.h \
     gpu/cuda/CudaPointer.h \
+    gpu/opencl/OpenCLBrightnessBlockClassifier.hpp \
     gpu/opencl/OpenCLEncodingEngine.hpp \
+    gpu/opencl/OpenCLGridPartition.hpp \
+    gpu/opencl/OpenCLImagePlane.hpp \
+    gpu/opencl/common.hpp \
     image/Image2.hpp \
     image/ImageIO.hpp \
     image/ImageStatistics.hpp \
