@@ -379,6 +379,10 @@ class kernel : public backend<cl_kernel> {
 public:
     using backend::backend;
 
+    kernel() noexcept
+        : backend(nullptr)
+    {
+    }
     kernel(kernel&& other) noexcept
         : backend(other.handle())
     {
@@ -545,6 +549,10 @@ private:
 
 class program : public backend<cl_program> {
 public:
+    program() noexcept
+        : backend(nullptr)
+    {
+    }
     explicit program(context& ctx, const std::string& source)
         : backend(create(ctx, source))
     {

@@ -70,6 +70,12 @@ namespace Frac2 {
     template <typename Item>
     class GridPartition {
     public:
+        static GridPartition createEmpty(size_t n)
+        {
+            GridPartition result;
+            result._items.resize(n);
+            return result;
+        }
         const auto& items() const noexcept { return this->_items; }
         void reserve(size_t n) { this->_items.reserve(n); }
         void add(const Point2du& origin, const Size32u& size, typename Item::ExtraData&& d)

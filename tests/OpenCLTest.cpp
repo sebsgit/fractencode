@@ -38,23 +38,176 @@ static std::string commonDatatypes()
 
     return "typedef struct {uint x; uint y;} u32x2;\n"
            "typedef struct {u32x2 size; uint stride;} image_size_t;\n"
-           "typedef struct {u32x2 pos; u32x2 size; int category;} grid_item_t;\n";
+           "typedef struct {u32x2 pos; u32x2 size; int category;} grid_item_t;\n"
+           "typedef struct {image_size_t size; __global const uchar* data;} image_t;\n"
+           "static uchar read_pixel(const image_t image, uint px, uint py) {"
+           "    return image.data[px + py * image.size.stride];"
+           "}\n";
 }
 }
+
+class OpenCLImagePlane
+{
+public:
+    struct image_size_t {
+        cl_uint w = 0, h = 0, stride = 0;
+    };
+
+    explicit OpenCLImagePlane(opencl_rt::context& context, const Frac2::ImagePlane& image)
+        :context_(context)
+        ,data_(context.create_buffer<uint8_t>(CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, image.width() * image.stride(), image.data()))
+        ,size_{image.width(), image.height(), image.stride()}
+    {
+    }
+    auto handle() const noexcept { return data_.handle(); }
+    auto size() const noexcept { return size_; }
+    auto & context() const noexcept { return context_; }
+private:
+    opencl_rt::context& context_;
+    opencl_rt::buffer<uint8_t> data_;
+    const image_size_t size_;
+};
 
 class OpenCLGridPartition
 {
 public:
     explicit OpenCLGridPartition(opencl_rt::context& context, const Frac2::UniformGrid& grid)
-        :buffer_(context.create_buffer<UniformGridItem>(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, grid.items().size(), strip_const(grid.items().data())))
+        :context_(context)
+        ,buffer_(context.create_buffer<UniformGridItem>(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, grid.items().size(), strip_const(grid.items().data())))
         ,count_(static_cast<cl_uint>(grid.items().size()))
     {
     }
     auto handle() const noexcept { return buffer_.handle(); }
     cl_uint size() const noexcept { return count_; }
+    auto & context() const noexcept { return context_; }
+
+    template <size_t InputEventCount = 0>
+    [[nodiscard]] opencl_rt::event copy(opencl_rt::command_queue& queue, Frac2::UniformGrid& output, const std::array<cl_event, InputEventCount>& inputEvents = {})
+    {
+        opencl_rt::event result;
+        queue.enqueue_non_blocking_read(buffer_, 0, count_ * buffer_.element_size(), strip_const(output.items().data()), result, inputEvents);
+        return result;
+    }
 private:
+    opencl_rt::context & context_;
     opencl_rt::buffer<UniformGridItem> buffer_;
     const cl_uint count_;
+};
+
+class OpenCLBrightnessBlockClassifier
+{
+public:
+    explicit OpenCLBrightnessBlockClassifier(OpenCLGridPartition& partition)
+        :partition_(partition)
+    {
+        const std::string createSums =
+            kernels::commonDatatypes() +
+            "\n"
+            "static int sum_pixels(const image_t image, const grid_item_t p, int block_id) {"
+            "    int result = 0;"
+            "    uint i, j;"
+            "    uint x = p.pos.x;"
+            "    uint y = p.pos.y;"
+            "    uint w = p.size.x / 2;"
+            "    uint h = p.size.y / 2;"
+            "    if (block_id == 1) x += w;"
+            "    else if (block_id == 2) y += h;"
+            "    else if (block_id == 3) { x += w; y += h; }"
+            "    for (i=0 ; i<h ; ++i) {"
+            "        for (j=0 ; j<w ; ++j) {"
+            "            result += read_pixel(image, x+j, y+i);"
+            "        }"
+            "    }"
+            "    return result;"
+            "}"
+            "\n"
+            "int sum_block(const image_t image,"
+            "        __global const grid_item_t* grid,"
+            "        uint grid_size,"
+            "        uint grid_item_id,"
+            "        uint block_id)"
+            "{"
+            "    if (grid_item_id < grid_size) { "
+            "        return sum_pixels(image, grid[grid_item_id], block_id);"
+            "    }"
+            "    return 0;"
+            "}"
+            "\n"
+            "static int get_category(int a1, int a2, int a3, int a4) {"
+            "const bool a1a2 = a1 > a2;"
+            "const bool a1a3 = a1 > a3;"
+            "const bool a1a4 = a1 > a4;"
+            "const bool a2a1 = a2 > a1;"
+            "const bool a2a3 = a2 > a3;"
+            "const bool a2a4 = a2 > a4;"
+            "const bool a3a1 = a3 > a1;"
+            "const bool a3a2 = a3 > a2;"
+            "const bool a3a4 = a3 > a4;"
+            "const bool a4a1 = a4 > a1;"
+            "const bool a4a2 = a4 > a2;"
+            "const bool a4a3 = a4 > a3;"
+                ""
+            "if (a1a2 && a2a3 && a3a4) return 0;"
+            "if (a3a1 && a1a4 && a4a2) return 0;"
+            "if (a4a3 && a3a2 && a2a1) return 0;"
+            "if (a2a4 && a4a1 && a1a3) return 0;"
+                ""
+            "if (a1a3 && a3a2 && a2a4) return 1;"
+            "if (a2a1 && a1a4 && a4a3) return 1;"
+            "if (a4a2 && a2a3 && a3a1) return 1;"
+            "if (a3a4 && a4a1 && a1a2) return 1;"
+                ""
+            "if (a1a4 && a4a3 && a3a2) return 2;"
+            "if (a4a1 && a1a2 && a2a3) return 2;"
+            "if (a3a2 && a2a4 && a4a1) return 2;"
+            "if (a2a3 && a3a1 && a1a4) return 2;"
+                ""
+            "if (a1a2 && a2a4 && a4a3) return 3;"
+            "if (a3a1 && a1a2 && a2a4) return 3;"
+            "if (a4a3 && a3a1 && a1a2) return 3;"
+            "if (a2a4 && a4a3 && a3a1) return 3;"
+                ""
+            "if (a2a1 && a1a3 && a3a4) return 4;"
+            "if (a1a3 && a3a4 && a4a2) return 4;"
+            "if (a3a4 && a4a2 && a2a1) return 4;"
+            "if (a4a2 && a2a1 && a1a3) return 4;"
+                ""
+            "if (a1a4 && a4a2 && a2a3) return 5;"
+            "if (a4a1 && a1a3 && a3a4) return 5;"
+            "if (a2a3 && a3a4 && a4a1) return 5;"
+            "if (a3a2 && a2a1 && a1a4) return 5;"
+            ""
+            "return -1;"
+            "}"
+            "\n"
+            "__kernel void classify(__global grid_item_t * grid, const uint grid_size, __global const uchar* data, const image_size_t size) {"
+            "    const int idx = get_global_size(0) * get_global_id(1) + get_global_id(0);"
+            "    image_t image; image.data = data; image.size = size;"
+            "    int block_0 = sum_block(image, grid, grid_size, idx, 0);"
+            "    int block_1 = sum_block(image, grid, grid_size, idx, 1);"
+            "    int block_2 = sum_block(image, grid, grid_size, idx, 2);"
+            "    int block_3 = sum_block(image, grid, grid_size, idx, 3);"
+            "    grid[idx].category = get_category(block_0, block_1, block_2, block_3);"
+            "}";
+        classifyProgram_ = opencl_rt::program(partition.context(), createSums);
+        classifyProgram_.build("-w -Werror");
+        classifyKernel_ = classifyProgram_.create_kernel("classify");
+    }
+    [[nodiscard]] opencl_rt::event classify(opencl_rt::command_queue& queue, const OpenCLImagePlane& image)
+    {
+        opencl_rt::event result;
+        const cl_uint gridItemCount = partition_.size();
+        classifyKernel_.set_arg(0, partition_.handle());
+        classifyKernel_.set_arg(1, gridItemCount);
+        classifyKernel_.set_arg(2, image.handle());
+        classifyKernel_.set_arg(3, image.size());
+        queue.enqueue(classifyKernel_, std::array<size_t, 2>{gridItemCount / 4, 4}, std::array<size_t, 2>{4, 4}, &result);
+        return result;
+    }
+private:
+    OpenCLGridPartition & partition_;
+    opencl_rt::program classifyProgram_;
+    opencl_rt::kernel classifyKernel_;
 };
 
 }
@@ -80,158 +233,39 @@ TEST_CASE("OpenCL", "[gpu][opencl]")
         const uint32_t blockSize = 4;
 		const Size32u gridSize(blockSize, blockSize);
 		const Size32u gridOffset(blockSize, blockSize / 2);
-		const auto grid = Frac2::createUniformGrid(testImage.size(), gridSize, gridOffset);
-		BrightnessBlocksClassifier2 classifier(testImage, testImage);
-		std::vector<int> categoriesCpu;
-		for (auto & item : grid.items()) {
-			categoriesCpu.push_back(classifier.getCategory(testImage, item));
-		}
-		REQUIRE(categoriesCpu.size() == grid.items().size());
+        BrightnessBlocksClassifier2 classifier(testImage, testImage);
+        auto classifierCallback = [&](const Point2du& origin, const Size32u& size) {
+            UniformGridItem::ExtraData data;
+            classifier.preclassify(origin, size, data);
+            return data;
+        };
+        const auto grid = Frac2::createUniformGrid(testImage.size(), gridSize, gridOffset, classifierCallback);
+        REQUIRE_FALSE(std::all_of(grid.items().begin(), grid.items().end(), [](const UniformGridItem& item) {
+            return item.data.bb_classifierBin == 0;
+        }));
 
 		auto device = std::move(opencl_rt::gpu_devices()[0]);
 		auto context = opencl_rt::context(device);
 		auto queue = opencl_rt::command_queue(context, device);
-		auto inputBuffer = context.create_buffer<uint8_t>(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, width * stride, testImage.data());
+        auto inputBuffer = OpenCLImagePlane(context, testImage);
 		REQUIRE(inputBuffer.handle());
 
-		const size_t gridItemCount = grid.items().size();
-		const size_t sumCount = gridItemCount * 4;
-		auto outputSumBuffer = context.create_buffer<int>(CL_MEM_READ_WRITE, sumCount, nullptr);
-		auto resultBuffer = context.create_buffer<int>(CL_MEM_WRITE_ONLY, sumCount / 4, nullptr);
-
-		struct image_size_t {
-			cl_uint w = 0, h = 0, stride = 0;
-		};
-
-		const std::string createSums = 
-            kernels::commonDatatypes() +
-			"\n"
-			"static uchar read_pixel(__global const uchar* data, const image_size_t size, uint px, uint py) {"
-			"    return data[px + py * size.stride];"
-			"}"
-			"\n"
-			"static int sum_pixels(__global const uchar* data, const image_size_t size, const grid_item_t p, int block_id) {"
-			"    int result = 0;"
-			"    uint i, j;"
-            "    uint x = p.pos.x;"
-            "    uint y = p.pos.y;"
-            "    uint w = p.size.x / 2;"
-            "    uint h = p.size.y / 2;"
-			"    if (block_id == 1) x += w;"
-			"    else if (block_id == 2) y += h;"
-			"    else if (block_id == 3) { x += w; y += h; }"
-			"    for (i=0 ; i<h ; ++i) {"
-			"        for (j=0 ; j<w ; ++j) {"
-			"            result += read_pixel(data, size, x+j, y+i);"
-			"        }"
-			"    }"
-			"    return result;"
-			"}"
-			"\n"
-			"__kernel void sum_blocks(const image_size_t image_size, "
-			"        __global const uchar* data,"
-			"        __global const grid_item_t* grid,"
-            "        uint grid_size,"
-            "        __global int* output)"
-			"{"
-			"    const int sum_index = get_global_size(0) * get_global_id(1) + get_global_id(0);"
-			"    const int grid_item_id = sum_index / 4;"
-			"    const int block_id = sum_index % 4;"
-			"    if (grid_item_id < grid_size) { "
-			"        output[sum_index] = sum_pixels(data, image_size, grid[grid_item_id], block_id);"
-			"    }"
-			"}"
-			"\n"
-			"static int get_category(int a1, int a2, int a3, int a4) {"
-			"const bool a1a2 = a1 > a2;"
-			"const bool a1a3 = a1 > a3;"
-			"const bool a1a4 = a1 > a4;"
-			"const bool a2a1 = a2 > a1;"
-			"const bool a2a3 = a2 > a3;"
-			"const bool a2a4 = a2 > a4;"
-			"const bool a3a1 = a3 > a1;"
-			"const bool a3a2 = a3 > a2;"
-			"const bool a3a4 = a3 > a4;"
-			"const bool a4a1 = a4 > a1;"
-			"const bool a4a2 = a4 > a2;"
-			"const bool a4a3 = a4 > a3;"
-				""
-			"if (a1a2 && a2a3 && a3a4) return 0;"
-			"if (a3a1 && a1a4 && a4a2) return 0;"
-			"if (a4a3 && a3a2 && a2a1) return 0;"
-			"if (a2a4 && a4a1 && a1a3) return 0;"
-				""
-			"if (a1a3 && a3a2 && a2a4) return 1;"
-			"if (a2a1 && a1a4 && a4a3) return 1;"
-			"if (a4a2 && a2a3 && a3a1) return 1;"
-			"if (a3a4 && a4a1 && a1a2) return 1;"
-				""
-			"if (a1a4 && a4a3 && a3a2) return 2;"
-			"if (a4a1 && a1a2 && a2a3) return 2;"
-			"if (a3a2 && a2a4 && a4a1) return 2;"
-			"if (a2a3 && a3a1 && a1a4) return 2;"
-				""
-			"if (a1a2 && a2a4 && a4a3) return 3;"
-			"if (a3a1 && a1a2 && a2a4) return 3;"
-			"if (a4a3 && a3a1 && a1a2) return 3;"
-			"if (a2a4 && a4a3 && a3a1) return 3;"
-				""
-			"if (a2a1 && a1a3 && a3a4) return 4;"
-			"if (a1a3 && a3a4 && a4a2) return 4;"
-			"if (a3a4 && a4a2 && a2a1) return 4;"
-			"if (a4a2 && a2a1 && a1a3) return 4;"
-				""
-			"if (a1a4 && a4a2 && a2a3) return 5;"
-			"if (a4a1 && a1a3 && a3a4) return 5;"
-			"if (a2a3 && a3a4 && a4a1) return 5;"
-			"if (a3a2 && a2a1 && a1a4) return 5;"
-			""
-			"return -1;"
-			"}"
-			"\n"
-			"__kernel void create_categories(__global const int* input, __global int* output) {"
-			"    const int output_index = get_global_size(0) * get_global_id(1) + get_global_id(0);"
-			"    const int x = output_index * 4;"
-			"    output[output_index] = get_category(input[x], input[x + 1], input[x + 2], input[x + 3]);"
-			"}";
-		auto program = opencl_rt::program(context, createSums);
-		try {
-			program.build("-w -Werror");
-		}
-		catch (const std::exception& exc) {
-			std::cout << program.build_log(device) << ' ' << exc.what();
-			REQUIRE(false);
-		}
-
         auto gridBuffer = OpenCLGridPartition(context, grid);
-        auto sumKernel = program.create_kernel("sum_blocks");
-        REQUIRE_NOTHROW(sumKernel.set_arg(0, image_size_t{ width, height, stride }));
-        REQUIRE_NOTHROW(sumKernel.set_arg(1, inputBuffer.handle()));
-        REQUIRE_NOTHROW(sumKernel.set_arg(2, gridBuffer.handle()));
-        REQUIRE_NOTHROW(sumKernel.set_arg(3, static_cast<uint32_t>(gridBuffer.size())));
-        REQUIRE_NOTHROW(sumKernel.set_arg(4, outputSumBuffer.handle()));
+        auto gpuClassifier = OpenCLBrightnessBlockClassifier(gridBuffer);
+        auto classifyEvent = gpuClassifier.classify(queue, inputBuffer);
 
-        auto categoryKernel = program.create_kernel("create_categories");
-		categoryKernel.set_args(outputSumBuffer.handle(),
-			resultBuffer.handle());
+        Frac2::UniformGrid gpuGrid = UniformGrid::createEmpty(grid.items().size());
+        REQUIRE(gpuGrid.items().size() == grid.items().size());
+        auto copyEvent = gridBuffer.copy(queue, gpuGrid, std::array<cl_event, 1>{classifyEvent.handle()});
+        copyEvent.wait();
+        REQUIRE(gpuGrid.items().size() == grid.items().size());
 
-		opencl_rt::event sum_kernel_done;
-		opencl_rt::event category_kernel_done;
-		queue.enqueue(sumKernel, std::array<size_t, 2>{sumCount / 4, 4}, std::array<size_t, 2>{4, 4}, &sum_kernel_done);
-		queue.enqueue(categoryKernel, std::array<size_t, 2>{gridItemCount / 32, 32}, std::array<size_t, 2>{4, 8}, &category_kernel_done, std::array<cl_event, 1>{sum_kernel_done.handle()});
-
-		std::vector<int> categoriesGpu;
-		categoriesGpu.resize(gridItemCount);
-		opencl_rt::event read_done;
-		queue.enqueue_non_blocking_read(resultBuffer, 0, resultBuffer.element_size() * gridItemCount, categoriesGpu.data(), read_done, std::array<cl_event, 1> {category_kernel_done.handle()});
-		read_done.wait();
-
-		REQUIRE(categoriesCpu.size() == categoriesGpu.size());
-		for (size_t i = 0; i < categoriesGpu.size(); ++i) {
-			if (categoriesCpu[i] != categoriesGpu[i])
-				std::cout << i << ':' << categoriesCpu[i] << '/' << categoriesGpu[i] << '\n';
-			REQUIRE(categoriesCpu[i] == categoriesGpu[i]);
-		}
-	}
+        for (size_t i=0 ; i<gpuGrid.items().size() ; ++i)
+        {
+            REQUIRE(gpuGrid.items()[i].size == grid.items()[i].size);
+            REQUIRE(gpuGrid.items()[i].origin == grid.items()[i].origin);
+            REQUIRE(gpuGrid.items()[i].data.bb_classifierBin == grid.items()[i].data.bb_classifierBin);
+        }
+    }
 }
 #endif
