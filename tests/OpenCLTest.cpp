@@ -21,25 +21,63 @@ static std::string openclLibPath()
 #endif
 }
 
+namespace {
+
+template <typename T>
+auto strip_const(const T* t) noexcept
+{
+    return const_cast<T*>(t);
+}
+
+namespace kernels
+{
+static std::string commonDatatypes()
+{
+    static_assert(sizeof(UniformGridItem) == 4 * sizeof(uint32_t) + 1 * sizeof(int32_t),
+                  "Incompatible size for OpenCL grid item");
+
+    return "typedef struct {uint x; uint y;} u32x2;\n"
+           "typedef struct {u32x2 size; uint stride;} image_size_t;\n"
+           "typedef struct {u32x2 pos; u32x2 size; int category;} grid_item_t;\n";
+}
+}
+
+class OpenCLGridPartition
+{
+public:
+    explicit OpenCLGridPartition(opencl_rt::context& context, const Frac2::UniformGrid& grid)
+        :buffer_(context.create_buffer<UniformGridItem>(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, grid.items().size(), strip_const(grid.items().data())))
+        ,count_(static_cast<cl_uint>(grid.items().size()))
+    {
+    }
+    auto handle() const noexcept { return buffer_.handle(); }
+    cl_uint size() const noexcept { return count_; }
+private:
+    opencl_rt::buffer<UniformGridItem> buffer_;
+    const cl_uint count_;
+};
+
+}
+
 TEST_CASE("OpenCL", "[gpu][opencl]")
 {
-	SECTION("gpu detection")
-	{
-		REQUIRE(opencl_rt::load(openclLibPath()));
-		REQUIRE_FALSE(opencl_rt::gpu_devices().empty());
-	}
-	SECTION("bb classify opencl")
-	{
-		const uint32_t width = 512;
-		const uint32_t height = 512;
-		const uint32_t stride = width;
-		ImagePlane testImage(Size32u(width, height), stride);
-		for (uint32_t h = 0; h < height; ++h) {
-			for (uint32_t w = 0; w < width; ++w) {
-				testImage.setValue(w, h, (w * 11 + h * 43 + 124) % 256);
-			}
-		}
-		const uint32_t blockSize = 4;
+    SECTION("gpu detection")
+    {
+        REQUIRE(opencl_rt::load(openclLibPath()));
+        REQUIRE_FALSE(opencl_rt::gpu_devices().empty());
+    }
+    SECTION("bb classify opencl")
+    {
+        const uint32_t width = 512;
+        const uint32_t height = 512;
+        const uint32_t stride = width;
+        ImagePlane testImage(Size32u(width, height), stride);
+        for (uint32_t h = 0; h < height; ++h) {
+            for (uint32_t w = 0; w < width; ++w) {
+                testImage.setValue(w, h, (w * 11 + h * 43 + 124) % 256);
+            }
+        }
+        const uint32_t blockSize = 4;
 		const Size32u gridSize(blockSize, blockSize);
 		const Size32u gridOffset(blockSize, blockSize / 2);
 		const auto grid = Frac2::createUniformGrid(testImage.size(), gridSize, gridOffset);
@@ -61,17 +99,12 @@ TEST_CASE("OpenCL", "[gpu][opencl]")
 		auto outputSumBuffer = context.create_buffer<int>(CL_MEM_READ_WRITE, sumCount, nullptr);
 		auto resultBuffer = context.create_buffer<int>(CL_MEM_WRITE_ONLY, sumCount / 4, nullptr);
 
-		struct grid_item_t {
-			cl_uint x, y, w, h;
-		};
-
 		struct image_size_t {
 			cl_uint w = 0, h = 0, stride = 0;
 		};
 
 		const std::string createSums = 
-			"typedef struct {uint x, y, w, h;} grid_item_t;"
-			"typedef struct { uint w, h, stride; } image_size_t;"
+            kernels::commonDatatypes() +
 			"\n"
 			"static uchar read_pixel(__global const uchar* data, const image_size_t size, uint px, uint py) {"
 			"    return data[px + py * size.stride];"
@@ -80,10 +113,10 @@ TEST_CASE("OpenCL", "[gpu][opencl]")
 			"static int sum_pixels(__global const uchar* data, const image_size_t size, const grid_item_t p, int block_id) {"
 			"    int result = 0;"
 			"    uint i, j;"
-			"    uint x = p.x;"
-			"    uint y = p.y;"
-			"    uint w = p.w / 2;"
-			"    uint h = p.h / 2;"
+            "    uint x = p.pos.x;"
+            "    uint y = p.pos.y;"
+            "    uint w = p.size.x / 2;"
+            "    uint h = p.size.y / 2;"
 			"    if (block_id == 1) x += w;"
 			"    else if (block_id == 2) y += h;"
 			"    else if (block_id == 3) { x += w; y += h; }"
@@ -98,8 +131,8 @@ TEST_CASE("OpenCL", "[gpu][opencl]")
 			"__kernel void sum_blocks(const image_size_t image_size, "
 			"        __global const uchar* data,"
 			"        __global const grid_item_t* grid,"
-			"        uint grid_size,"
-			"        __global int* output)"
+            "        uint grid_size,"
+            "        __global int* output)"
 			"{"
 			"    const int sum_index = get_global_size(0) * get_global_id(1) + get_global_id(0);"
 			"    const int grid_item_id = sum_index / 4;"
@@ -170,18 +203,12 @@ TEST_CASE("OpenCL", "[gpu][opencl]")
 			REQUIRE(false);
 		}
 
-		std::vector<grid_item_t> grid_gpu;
-		for (auto & it : grid.items()) {
-			grid_gpu.push_back(grid_item_t{it.origin.x(), it.origin.y(), it.size.x(), it.size.y()});
-		}
-
-		auto gridBuffer = context.create_buffer<grid_item_t>(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, grid_gpu.size(), grid_gpu.data());
-
+        auto gridBuffer = OpenCLGridPartition(context, grid);
         auto sumKernel = program.create_kernel("sum_blocks");
         REQUIRE_NOTHROW(sumKernel.set_arg(0, image_size_t{ width, height, stride }));
         REQUIRE_NOTHROW(sumKernel.set_arg(1, inputBuffer.handle()));
         REQUIRE_NOTHROW(sumKernel.set_arg(2, gridBuffer.handle()));
-        REQUIRE_NOTHROW(sumKernel.set_arg(3, static_cast<uint32_t>(grid_gpu.size())));
+        REQUIRE_NOTHROW(sumKernel.set_arg(3, static_cast<uint32_t>(gridBuffer.size())));
         REQUIRE_NOTHROW(sumKernel.set_arg(4, outputSumBuffer.handle()));
 
         auto categoryKernel = program.create_kernel("create_categories");

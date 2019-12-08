@@ -9,7 +9,7 @@ public:
         const ImagePlane& sourceImage,
         const UniformGrid& sourceGrid);
 
-    ~OpenCLEncodingEngine();
+    ~OpenCLEncodingEngine() override;
 
 protected:
     encode_item_t encode_impl(const UniformGridItem& targetItem) const override;
