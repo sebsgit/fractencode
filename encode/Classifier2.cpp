@@ -1,5 +1,5 @@
 #include "Classifier2.hpp"
-#include "image\ImageStatistics.hpp"
+#include "image/ImageStatistics.hpp"
 
 using namespace Frac2;
 

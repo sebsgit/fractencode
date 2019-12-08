@@ -9,7 +9,7 @@ EncodingEngineCore2::EncodingEngineCore2(const encode_parameters_t& params, cons
     , _reporter(reporter)
 {
     FRAC_ASSERT(reporter);
-    const auto maxThreads = std::thread::hardware_concurrency() - 1;
+    const auto maxThreads = std::thread::hardware_concurrency();
     if (!params.nocpu)
         for (size_t i = 0; i < maxThreads; ++i) {
             auto engine = std::unique_ptr<CpuEncodingEngine2>(new CpuEncodingEngine2(params, image, gridSource, this->_estimator));

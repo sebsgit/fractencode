@@ -10,6 +10,11 @@
 #include <memory>
 #include <cstring>
 
+#ifdef __linux__
+#define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
+#define _aligned_free free
+#endif
+
 namespace Frac2 {
 using namespace Frac;
 

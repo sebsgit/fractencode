@@ -18,7 +18,7 @@ TEST_CASE("ImageIO", "[image]")
     {
         std::array<ImagePlane, 3> result = ImageIO::loadImage("tests/input/lenna512x512.png");
         Image2<3> image(std::move(result));
-        ImageIO::saveImage(image, "tests/output/lenna512_out.png");
+        ImageIO::saveImage<3>(image, "tests/output/lenna512_out.png");
     }
 }
 #endif

@@ -14,9 +14,12 @@ namespace Frac {
         constexpr Size(T x, T y) noexcept
 			:_x(x), _y(y)
 		{}
-        constexpr Size(const Size& other) noexcept
-			:_x(other._x), _y(other._y)
-		{}
+		
+		constexpr Size(const Size& other) noexcept = default;
+		constexpr Size& operator= (const Size& other) noexcept = default;
+        constexpr Size(Size&& other) noexcept = default;
+		constexpr Size& operator= (Size&& other) noexcept = default;
+        
         T x() const noexcept {
 			return _x;
 		}

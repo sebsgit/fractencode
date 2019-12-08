@@ -121,7 +121,7 @@ namespace Frac2 {
             std::mutex queueMutex;
             std::mutex doneMutex;
             std::condition_variable queueEmpty;
-            int tasksDone = 0;
+            size_t tasksDone = 0;
             const auto & jobQueue = gridTarget.items();
             for (size_t i = 0; i < this->_engines.size(); ++i) {
                 auto fn = [&, i]() {
