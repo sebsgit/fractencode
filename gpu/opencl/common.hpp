@@ -1,7 +1,7 @@
 #ifndef CLCOMMON_HPP
 #define CLCOMMON_HPP
 
-#include "partition2.hpp"
+#include "image/partition2.hpp"
 
 namespace Frac2
 {

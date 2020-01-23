@@ -12,6 +12,10 @@
 #define DECLARE_CL_API(name) inline decltype(::name)*(name) = nullptr
 #define LOAD_CL_API(name) name = reinterpret_cast<decltype(name)>(library_handle.symbol(#name))
 
+#ifndef __PRETTY_FUNCTION__
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
 namespace opencl_rt {
 
 inline so_loader::library library_handle;

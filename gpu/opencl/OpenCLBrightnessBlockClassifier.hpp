@@ -1,7 +1,7 @@
 #ifndef OPENCLBRIGHTNESSBLOCKCLASSIFIER_HPP
 #define OPENCLBRIGHTNESSBLOCKCLASSIFIER_HPP
 
-#include "opencl/opencl_rt.hpp"
+#include "utils/opencl/opencl_rt.hpp"
 #include "common.hpp"
 #include "OpenCLGridPartition.hpp"
 #include "OpenCLImagePlane.hpp"

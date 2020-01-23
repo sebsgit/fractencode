@@ -2,7 +2,7 @@
 #define OPENCLGRIDPARTITION_HPP
 
 #include "common.hpp"
-#include "opencl/opencl_rt.hpp"
+#include "utils/opencl/opencl_rt.hpp"
 
 namespace Frac2
 {

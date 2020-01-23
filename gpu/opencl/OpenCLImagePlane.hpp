@@ -2,7 +2,7 @@
 #define OPENCLIMAGEPLANE_HPP
 
 #include "image/Image2.hpp"
-#include "opencl/opencl_rt.hpp"
+#include "utils/opencl/opencl_rt.hpp"
 #include "common.hpp"
 
 namespace Frac2 {
